@@ -329,7 +329,7 @@ export const LandingPage = () => {
                 <Reveal key={title} delay={index * 0.04}>
                   <Link to="/gigs" className="group relative flex h-full items-center gap-3 rounded-xl border border-slate-800/80 bg-[#091627]/80 p-3.5 transition duration-300 ease-out hover:-translate-y-1 hover:border-primary-300/50 hover:bg-slate-900 hover:shadow-lg hover:shadow-primary-950/30 focus-ring">
                     <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 ease-out group-hover:scale-110 ${iconClassName}`}><Icon className="h-4 w-4" /></span>
-                    <span className="min-w-0"><span className="block truncate text-xs font-medium text-slate-200 group-hover:text-white">{title}</span><span className="mt-1 block text-[10px] text-slate-500">{count}</span></span>
+                    <span className="min-w-0 pr-12"><span className="block truncate text-xs font-medium text-slate-200 group-hover:text-white">{title}</span><span className="mt-1 block text-[10px] text-slate-500">{count}</span></span>
                     {badge && <span className={`absolute right-2.5 top-2.5 rounded-full border px-1.5 py-0.5 text-[8px] font-medium leading-none ${badgeClassName}`}>{badge}</span>}
                   </Link>
                 </Reveal>
@@ -349,7 +349,7 @@ export const LandingPage = () => {
                       <span className="text-xs font-medium text-primary-300">For Clients</span>
                       <h2 className="mt-2 text-2xl font-bold text-white">Build. Hire. Grow.</h2>
                       <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">Post your project, get matched with the best freelancers, and bring your ideas to life.</p>
-                      <div className="mt-5"><Link to="/register" className="btn-primary px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-primary-500/25">Post a Project</Link></div>
+                      <div className="mt-5"><Link to="/client/gigs/new" className="btn-primary px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-primary-500/25"><span>Post a Project</span></Link></div>
                     </div>
                     <div className="rounded-xl border border-primary-400/15 bg-[#081426]/80 p-3 text-xs text-slate-400">
                       {['Post Project', 'Get Matched', 'Review Proposals', 'Hire & Get Work Done'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><motion.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></motion.span></div>)}
@@ -366,7 +366,7 @@ export const LandingPage = () => {
                       <span className="text-xs font-medium text-emerald-300">For Freelancers</span>
                       <h2 className="mt-2 text-2xl font-bold text-white">Find Work. Earn. Succeed.</h2>
                       <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-400">Discover projects that match your skills, submit proposals, and grow your career.</p>
-                      <div className="mt-5"><Link to="/gigs" className="btn-success px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-emerald-500/20">Browse Projects</Link></div>
+                      <div className="mt-5"><Link to="/gigs" className="btn-success px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-emerald-500/20"><span>Browse Projects</span></Link></div>
                     </div>
                     <div className="rounded-xl border border-emerald-400/15 bg-[#081725]/80 p-3 text-xs text-slate-400">
                       {['Create Profile', 'Find Projects', 'Submit Proposals', 'Get Hired & Earn'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><motion.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></motion.span></div>)}

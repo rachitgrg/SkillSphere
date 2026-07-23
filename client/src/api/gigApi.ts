@@ -11,6 +11,9 @@ export const gigApi = {
   createGig: (data: GigFormData) =>
     axiosInstance.post('/gigs', data),
 
+  analyzeCareer: (resumeText: string) =>
+    axiosInstance.post('/gigs/analyze-career', { resumeText }),
+
   updateGig: (id: string, data: Partial<GigFormData>) =>
     axiosInstance.put(`/gigs/${id}`, data),
 

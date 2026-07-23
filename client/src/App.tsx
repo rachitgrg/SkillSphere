@@ -17,6 +17,7 @@ import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { UserManagement } from './pages/admin/UserManagement';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { ScrollToTop } from './components/common/ScrollToTop';
 import { useAppSelector } from './hooks/useRedux';
 
 const getDashboardPath = (role: 'client' | 'freelancer' | 'admin') => {
@@ -29,13 +30,15 @@ const ProtectedRoute = ({ children, role }: { children: React.ReactNode, role?: 
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role) return <Navigate to={getDashboardPath(user.role)} replace />;
+  if (role && user.role !== role && user.role !== 'admin') return <Navigate to={getDashboardPath(user.role)} replace />;
   return <>{children}</>;
 };
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -82,5 +85,6 @@ export default function App() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    </>
   );
 }

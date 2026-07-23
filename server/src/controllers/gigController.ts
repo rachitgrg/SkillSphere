@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import Gig from '../models/Gig';
+import aiMatchingService from '../services/aiMatchingService';
 import { AuthRequest, UserRole, GigStatus } from '../types';
 
 export const createGig = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -50,6 +51,26 @@ export const getGigs = async (req: AuthRequest, res: Response): Promise<void> =>
         total,
         pages: Math.ceil(total / +limit)
       }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const analyzeCareer = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { resumeText } = req.body;
+    if (!resumeText) {
+      res.status(400).json({ success: false, message: 'resumeText is required' });
+      return;
+    }
+
+    const report = await aiMatchingService.analyzeCareerFromResume(resumeText);
+
+    res.status(200).json({
+      success: true,
+      message: 'Career analysis complete',
+      data: report
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

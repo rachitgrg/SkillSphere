@@ -3,6 +3,7 @@ import { StatCard } from '../../components/dashboard/StatCard';
 import { RecentActivity } from '../../components/dashboard/RecentActivity';
 import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
+import { ResumeMatcher } from '../../components/freelancer/ResumeMatcher';
 
 export const FreelancerDashboard: React.FC = () => {
   return (
@@ -23,6 +24,8 @@ export const FreelancerDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          <ResumeMatcher />
+          
           <div className="glass-card p-6 rounded-2xl border border-slate-800">
             <h3 className="font-semibold text-white mb-4">Current Milestones</h3>
             <MilestoneTimeline milestones={[

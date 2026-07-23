@@ -138,11 +138,10 @@ gigSchema.index({ createdAt: -1 });
 gigSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
 // Pre-validate: budgetMax >= budgetMin
-gigSchema.pre('validate', function (next) {
+gigSchema.pre('validate', function () {
   if (this.budgetMax < this.budgetMin) {
     this.invalidate('budgetMax', 'Maximum budget must be >= minimum budget');
   }
-  next();
 });
 
 const Gig = mongoose.model<IGig>('Gig', gigSchema);

@@ -4,7 +4,7 @@ import User from '../models/User';
 import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { AuthRequest, UserRole } from '../types';
-import { generateToken, generateRefreshToken } from '../utils/generateToken';
+import { generateAccessToken, generateRefreshToken } from '../utils/generateToken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -67,8 +67,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       await freelancerProfile.save();
     }
 
-    const token = generateToken(user._id.toString(), user.role);
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateAccessToken({ id: user._id.toString(), role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id.toString() });
     user.refreshToken = refreshToken;
     await user.save();
 
@@ -86,7 +86,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       res.status(401).json({ success: false, message: 'Invalid email or password' });
       return;
@@ -104,8 +104,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     user.lastLogin = new Date();
-    const token = generateToken(user._id.toString(), user.role);
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateAccessToken({ id: user._id.toString(), role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id.toString() });
     user.refreshToken = refreshToken;
     await user.save();
 

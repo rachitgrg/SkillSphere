@@ -1,4 +1,5 @@
 import http from 'http';
+import path from 'path';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import app from './app';
@@ -6,8 +7,8 @@ import connectDB from './config/db';
 import { chatSocket } from './sockets/chatSocket';
 import { notificationSocket } from './sockets/notificationSocket';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root .env
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Initialize server
 const server = http.createServer(app);

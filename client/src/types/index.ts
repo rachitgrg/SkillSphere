@@ -391,6 +391,8 @@ export interface GigFormData {
   currency: string;
   estimatedDuration: number;
   durationUnit: 'hours' | 'days' | 'weeks' | 'months';
+  duration?: string;
+  experienceLevel?: string;
   milestones: Milestone[];
   tags: string[];
   deadline?: string;

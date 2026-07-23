@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Avatar } from '../../components/common/Avatar';
 import { Badge } from '../../components/common/Badge';
 import { Clock, DollarSign, Calendar, MapPin, Share2, Heart, ShieldCheck } from 'lucide-react';
+import { ApplyModal } from './ApplyModal';
+
 
 export const GigDetailPage: React.FC = () => {
   const { id } = useParams();
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
@@ -69,11 +72,11 @@ export const GigDetailPage: React.FC = () => {
                 </div>
               </div>
               
-              <Link to={`/gigs/${id}/apply`} className="btn-primary w-full py-3 rounded-xl flex justify-center text-lg font-medium mb-3">
+              <button 
+                onClick={() => setIsApplyModalOpen(true)}
+                className="btn-primary w-full py-3 rounded-xl flex justify-center text-lg font-medium mb-3"
+              >
                 Apply Now
-              </Link>
-              <button className="btn-secondary w-full py-3 rounded-xl flex justify-center text-white bg-slate-800 border border-slate-700 hover:bg-slate-700">
-                Save Job
               </button>
             </div>
             
@@ -96,6 +99,7 @@ export const GigDetailPage: React.FC = () => {
         </div>
       </main>
       <Footer />
+      {id && <ApplyModal isOpen={isApplyModalOpen} onClose={() => setIsApplyModalOpen(false)} gigId={id} />}
     </div>
   );
 };

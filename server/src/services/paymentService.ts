@@ -20,6 +20,9 @@ class PaymentService {
       receipt: receipt || `receipt_${Date.now()}`,
     };
 
+    if (!razorpayInstance) {
+      throw new Error('Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env');
+    }
     const order = await razorpayInstance.orders.create(options);
 
     return {
@@ -85,6 +88,9 @@ class PaymentService {
     // Process refund through Razorpay if payment was captured
     if (payment.razorpayPaymentId) {
       try {
+        if (!razorpayInstance) {
+          throw new Error('Razorpay is not configured');
+        }
         await razorpayInstance.payments.refund(payment.razorpayPaymentId, {
           amount: Math.round(payment.amount * 100),
           notes: { reason },
