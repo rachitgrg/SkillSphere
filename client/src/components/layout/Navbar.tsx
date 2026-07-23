@@ -2,23 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Menu, X, Bell, Search, ChevronDown, User, Settings, LogOut,
-  LayoutDashboard, Briefcase, MessageSquare, Zap,
+  Menu, X, Bell, Search, ChevronDown, User, LogOut,
+  LayoutDashboard, MessageSquare, Zap,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { logout } from '../../store/slices/authSlice';
-import { toggleMobileMenu, setMobileMenuOpen } from '../../store/slices/uiSlice';
+import { toggleMobileMenu, setMobileMenuOpen, setNotificationDropdownOpen, toggleNotificationDropdown } from '../../store/slices/uiSlice';
 import { Avatar } from '../common/Avatar';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 
 export function Navbar() {
   const { user, isAuthenticated } = useAppSelector((s) => s.auth);
-  const { mobileMenuOpen } = useAppSelector((s) => s.ui);
+  const { mobileMenuOpen, notificationDropdownOpen } = useAppSelector((s) => s.ui);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,10 +54,10 @@ export function Navbar() {
     return '/client/dashboard';
   };
 
-  const navLinks = [
-    { label: 'Browse Gigs', href: '/gigs', icon: <Briefcase className="w-4 h-4" /> },
-    { label: 'How It Works', href: '/#how-it-works', icon: <Zap className="w-4 h-4" /> },
-  ];
+  const getProfilePath = () => {
+    if (!user || user.role === 'admin') return getDashboardPath();
+    return `/${user.role}/profile`;
+  };
 
   return (
     <nav
@@ -66,38 +66,22 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow">
+          <Link to="/" className="group flex items-center gap-2.5 rounded-xl transition-transform duration-300 ease-out hover:scale-[1.015] focus-ring">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 shadow-lg shadow-primary-500/25 transition-shadow duration-300 ease-out group-hover:shadow-primary-500/40">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-bold gradient-text hidden sm:block">SkillSphere</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  location.pathname === link.href
-                    ? 'text-primary-400 bg-primary-500/10'
-                    : 'text-dark-300 hover:text-white hover:bg-dark-700/50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
           {/* Right section */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {/* Search toggle */}
             <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
+              onClick={() => navigate('/gigs')}
+              aria-label="Search SkillSphere"
+              className="focus-ring rounded-lg p-2 text-dark-400 transition-all duration-300 ease-out hover:-translate-y-px hover:bg-dark-700/50 hover:text-white"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -105,13 +89,22 @@ export function Navbar() {
             {isAuthenticated && user ? (
               <>
                 {/* Notifications */}
-                <Link
-                  to="/notifications"
-                  className="relative p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
-                </Link>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => dispatch(toggleNotificationDropdown())}
+                    aria-label="Open notifications"
+                    className="relative p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
+                  >
+                    <Bell className="w-5 h-5" />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
+                  </button>
+                  <NotificationDropdown
+                    isOpen={notificationDropdownOpen}
+                    onClose={() => dispatch(setNotificationDropdownOpen(false))}
+                    notifications={[]}
+                  />
+                </div>
 
                 {/* Messages */}
                 <Link
@@ -125,7 +118,7 @@ export function Navbar() {
                 <div ref={profileRef} className="relative">
                   <button
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-dark-700/50 transition-all"
+                    className="focus-ring flex items-center gap-2 rounded-xl p-1.5 transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-dark-700/50"
                   >
                     <Avatar
                       src={user.avatar}
@@ -156,11 +149,8 @@ export function Navbar() {
                         <Link to={getDashboardPath()} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all">
                           <LayoutDashboard className="w-4 h-4" /> Dashboard
                         </Link>
-                        <Link to={`/${user.role}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all">
+                        <Link to={getProfilePath()} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all">
                           <User className="w-4 h-4" /> Profile
-                        </Link>
-                        <Link to="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all">
-                          <Settings className="w-4 h-4" /> Settings
                         </Link>
                         <hr className="divider my-1" />
                         <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 w-full transition-all">
@@ -176,7 +166,7 @@ export function Navbar() {
                 <Link to="/login" className="btn-ghost px-4 py-2 text-sm hidden sm:block">
                   Sign In
                 </Link>
-                <Link to="/register" className="btn-primary px-4 py-2 text-sm">
+                <Link to={isAuthenticated && user ? getDashboardPath() : '/register'} className="btn-primary px-4 py-2 text-sm">
                   <span>Get Started</span>
                 </Link>
               </div>
@@ -193,36 +183,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Search bar overlay */}
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-t border-dark-700/50"
-          >
-            <div className="max-w-2xl mx-auto px-4 py-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search gigs, freelancers, skills..."
-                  className="glass-input w-full pl-12 pr-4 py-3 text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      navigate(`/search?q=${(e.target as HTMLInputElement).value}`);
-                      setSearchOpen(false);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -233,16 +193,6 @@ export function Navbar() {
             className="md:hidden glass border-t border-dark-700/50"
           >
             <div className="px-4 py-4 space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all"
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
               {isAuthenticated && (
                 <>
                   <Link to="/chat" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-dark-300 hover:text-white hover:bg-dark-700/50 transition-all">

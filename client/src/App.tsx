@@ -13,15 +13,23 @@ import { GigListPage } from './pages/gigs/GigListPage';
 import { GigDetailPage } from './pages/gigs/GigDetailPage';
 import { CreateGigPage } from './pages/gigs/CreateGigPage';
 import { ChatPage } from './pages/chat/ChatPage';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { UserManagement } from './pages/admin/UserManagement';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { useAppSelector } from './hooks/useRedux';
 
+const getDashboardPath = (role: 'client' | 'freelancer' | 'admin') => {
+  if (role === 'admin') return '/admin/dashboard';
+  if (role === 'freelancer') return '/freelancer/dashboard';
+  return '/client/dashboard';
+};
+
 const ProtectedRoute = ({ children, role }: { children: React.ReactNode, role?: 'client' | 'freelancer' | 'admin' }) => {
-  // Mock auth check
-  const isAuthenticated = true;
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
+  if (role && user.role !== role) return <Navigate to={getDashboardPath(user.role)} replace />;
   return <>{children}</>;
 };
 
@@ -41,6 +49,14 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/2fa" element={<TwoFactorPage />} />
+
+      {/* Shared authenticated pages */}
+      <Route path="/chat" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route index element={<ChatPage />} />
+      </Route>
+      <Route path="/notifications" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route index element={<NotificationsPage />} />
+      </Route>
 
       {/* Client Routes */}
       <Route path="/client" element={<ProtectedRoute role="client"><DashboardLayout /></ProtectedRoute>}>

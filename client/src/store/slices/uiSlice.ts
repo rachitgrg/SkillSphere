@@ -55,6 +55,9 @@ const uiSlice = createSlice({
     toggleNotificationDropdown: (state) => {
       state.notificationDropdownOpen = !state.notificationDropdownOpen;
     },
+    setNotificationDropdownOpen: (state, action: PayloadAction<boolean>) => {
+      state.notificationDropdownOpen = action.payload;
+    },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
@@ -71,6 +74,7 @@ export const {
   toggleMobileMenu,
   setMobileMenuOpen,
   toggleNotificationDropdown,
+  setNotificationDropdownOpen,
   setSearchQuery,
 } = uiSlice.actions;
 

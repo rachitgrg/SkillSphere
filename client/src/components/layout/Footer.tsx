@@ -32,16 +32,16 @@ export function Footer() {
     <footer className="border-t border-dark-700/50 bg-dark-950/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main footer */}
-        <div className="py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 py-14 sm:gap-x-10 sm:py-16 md:grid-cols-5 lg:gap-x-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+            <Link to="/" className="group mb-5 flex items-center gap-2 rounded-lg focus-ring">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 transition-transform duration-300 ease-out group-hover:scale-105">
                 <Zap className="w-4 h-4 text-white" />
               </div>
               <span className="text-lg font-bold gradient-text">SkillSphere</span>
             </Link>
-            <p className="text-sm text-dark-400 mb-4 leading-relaxed">
+            <p className="mb-5 text-sm leading-relaxed text-dark-400">
               Connect with world-class freelancers and bring your projects to life.
             </p>
             <div className="flex gap-3">
@@ -54,7 +54,7 @@ export function Footer() {
                 <a
                   key={i}
                   href={social.href}
-                  className="w-9 h-9 rounded-lg bg-dark-800 flex items-center justify-center text-dark-400 hover:text-white hover:bg-dark-700 transition-all"
+                  className="focus-ring flex h-9 w-9 items-center justify-center rounded-lg bg-dark-800 text-dark-400 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-dark-700 hover:text-white"
                 >
                   {social.icon}
                 </a>
@@ -65,13 +65,13 @@ export function Footer() {
           {/* Links */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
-              <h3 className="text-sm font-semibold text-white mb-4">{title}</h3>
-              <ul className="space-y-2.5">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-dark-200">{title}</h3>
+              <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.href}>
                     <Link
                       to={link.href}
-                      className="text-sm text-dark-400 hover:text-primary-400 transition-colors"
+                      className="focus-ring inline-flex rounded text-sm text-dark-400 transition duration-300 ease-out hover:translate-x-0.5 hover:text-primary-400"
                     >
                       {link.label}
                     </Link>
@@ -83,14 +83,14 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="py-6 border-t border-dark-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-dark-700/50 py-7 sm:flex-row">
           <p className="text-sm text-dark-500">
             © {new Date().getFullYear()} SkillSphere. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link to="/terms" className="text-xs text-dark-500 hover:text-dark-300 transition-colors">Terms</Link>
-            <Link to="/privacy" className="text-xs text-dark-500 hover:text-dark-300 transition-colors">Privacy</Link>
-            <Link to="/cookies" className="text-xs text-dark-500 hover:text-dark-300 transition-colors">Cookies</Link>
+            <Link to="/terms" className="focus-ring rounded text-xs text-dark-500 transition-colors duration-300 hover:text-dark-300">Terms</Link>
+            <Link to="/privacy" className="focus-ring rounded text-xs text-dark-500 transition-colors duration-300 hover:text-dark-300">Privacy</Link>
+            <Link to="/cookies" className="focus-ring rounded text-xs text-dark-500 transition-colors duration-300 hover:text-dark-300">Cookies</Link>
           </div>
         </div>
       </div>

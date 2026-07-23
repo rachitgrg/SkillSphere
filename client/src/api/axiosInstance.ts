@@ -3,7 +3,7 @@ import { store } from '../store/store';
 import { logout } from '../store/slices/authSlice';
 
 const axiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '/api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -28,7 +28,8 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthenticationRequest = error.config?.url?.startsWith('/auth/');
+    if (error.response?.status === 401 && !isAuthenticationRequest) {
       store.dispatch(logout());
       window.location.href = '/login';
     }
