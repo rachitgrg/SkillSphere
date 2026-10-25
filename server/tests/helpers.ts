@@ -1,7 +1,8 @@
 import User from '../src/models/User';
 import ClientProfile from '../src/models/ClientProfile';
 import FreelancerProfile from '../src/models/FreelancerProfile';
-import { UserRole } from '../src/types';
+import Gig from '../src/models/Gig';
+import { GigStatus, UserRole } from '../src/types';
 import { generateAccessToken } from '../src/utils/generateToken';
 
 let counter = 0;
@@ -26,3 +27,20 @@ export const createUser = async (role: UserRole = UserRole.FREELANCER, overrides
   const token = generateAccessToken({ id: user._id.toString(), role: user.role });
   return { user, token, auth: { Authorization: `Bearer ${token}` } };
 };
+
+/** Creates an open, public gig owned by `clientId`. */
+export const createGig = (clientId: unknown, overrides: Record<string, unknown> = {}) =>
+  new Gig({
+    client: clientId,
+    title: 'Build a React dashboard',
+    description: 'Charts and tables',
+    category: 'Web Development',
+    skills: ['React'],
+    budgetType: 'fixed',
+    budgetMin: 5000,
+    budgetMax: 10000,
+    duration: '2 weeks',
+    experienceLevel: 'intermediate',
+    status: GigStatus.OPEN,
+    ...overrides,
+  }).save();

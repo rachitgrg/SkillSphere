@@ -212,18 +212,19 @@ export const updateGigSchema = z.object({
 
 export const createProposalSchema = z.object({
   body: z.object({
-    coverLetter: z.string().min(1, 'Cover letter is required').max(3000),
-    proposedAmount: z.number().min(0, 'Amount must be positive'),
-    estimatedDuration: z.string().min(1, 'Duration is required'),
-    milestones: z.array(z.object({
-      title: z.string().min(1),
-      description: z.string().min(1),
-      amount: z.number().min(0),
-      dueDate: z.string(),
-    })).optional(),
+    gigId: z.string().min(1, 'Gig is required'),
+    coverLetter: z.string().trim().min(1, 'Cover letter is required').max(3000),
+    proposedAmount: z.number().positive('Amount must be positive'),
+    estimatedDuration: z.string().trim().min(1, 'Duration is required').max(100),
+    milestones: z.array(milestoneInput).max(20).optional(),
+    attachments: z.array(z.string().url()).max(10).optional(),
   }),
-  params: z.object({
-    gigId: z.string().min(1),
+});
+
+export const updateProposalStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(['accepted', 'rejected', 'negotiating']),
+    clientNotes: z.string().max(2000).optional(),
   }),
 });
 

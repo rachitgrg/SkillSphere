@@ -166,7 +166,7 @@
     - creates 1 admin, 3 clients and 8 freelancers with real skills, proficiency, hourly rates and **GeoJSON locations** in a few Indian cities
     - creates ~16 gigs (move the content of `client/src/pages/gigs/GigListPage.tsx` `INITIAL_GIGS` here, with correct `budgetType` and owners = clients)
     - creates some proposals, one in‑progress gig with milestones, one completed gig with reviews, and payments in each state.
-- [ ] **1.12 Proposal logic.** In `createProposal`:
+- [x] **1.12 Proposal logic.** In `createProposal`:
   - Gig must be `open`.
   - The freelancer is not the gig owner.
   - Duplicate submissions → 409 (catch E11000).
