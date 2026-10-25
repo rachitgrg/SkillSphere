@@ -3,6 +3,7 @@ import FreelancerProfile from '../models/FreelancerProfile';
 import { IGig, IFreelancerProfile, MatchScore, AvailabilityStatus } from '../types';
 import { Types } from 'mongoose';
 import { env } from '../config/env';
+import { containsRegex } from '../utils/helpers';
 
 export interface CareerReport {
   targetRoles: string[];
@@ -25,7 +26,7 @@ class AIMatchingService {
     try {
       // Step 1: Find freelancers with matching skills (database-level filtering)
       const matchingProfiles = await FreelancerProfile.find({
-        'skills.name': { $in: gig.skills.map((s) => new RegExp(s, 'i')) },
+        'skills.name': { $in: gig.skills.map((s) => containsRegex(s)) },
         availability: { $ne: AvailabilityStatus.UNAVAILABLE },
       })
         .populate('user', 'firstName lastName email avatar isActive isBanned')
@@ -342,7 +343,7 @@ Respond ONLY with a JSON object exactly like this, no markdown, no other text:
     limit: number
   ): Promise<MatchScore[]> {
     const profiles = await FreelancerProfile.find({
-      'skills.name': { $in: gig.skills.map((s) => new RegExp(s, 'i')) },
+      'skills.name': { $in: gig.skills.map((s) => containsRegex(s)) },
     })
       .populate('user', 'firstName lastName')
       .sort({ averageRating: -1, completedGigs: -1 })

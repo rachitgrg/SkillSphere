@@ -2,7 +2,7 @@ import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import User from '../models/User';
 import { SearchFilters, PaginationOptions, GigStatus } from '../types';
-import { buildPaginationResponse } from '../utils/helpers';
+import { buildPaginationResponse, containsRegex } from '../utils/helpers';
 
 class SearchService {
   async searchGigs(
@@ -76,7 +76,7 @@ class SearchService {
     // Skills filter
     if (filters.skills && filters.skills.length > 0) {
       query['skills.name'] = {
-        $in: filters.skills.map((s) => new RegExp(s, 'i')),
+        $in: filters.skills.map((s) => containsRegex(s)),
       };
     }
 
@@ -132,9 +132,9 @@ class SearchService {
 
     if (queryStr) {
       query.$or = [
-        { firstName: new RegExp(queryStr, 'i') },
-        { lastName: new RegExp(queryStr, 'i') },
-        { email: new RegExp(queryStr, 'i') },
+        { firstName: containsRegex(queryStr) },
+        { lastName: containsRegex(queryStr) },
+        { email: containsRegex(queryStr) },
       ];
     }
 
@@ -160,7 +160,7 @@ class SearchService {
     if (!query || query.length < 2) return [];
 
     const gigs = await Gig.find({
-      title: new RegExp(query, 'i'),
+      title: containsRegex(query),
       status: GigStatus.OPEN,
     })
       .select('title')

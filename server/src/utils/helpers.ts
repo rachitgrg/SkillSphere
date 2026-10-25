@@ -113,3 +113,9 @@ export const pick = <K extends string>(
   }
   return out;
 };
+
+/** Escapes RegExp metacharacters so user input matches literally (e.g. "C++", "Node.js"). */
+export const escapeRegex = (input: string): string => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Case-insensitive "contains" matcher for untrusted input. */
+export const containsRegex = (input: string): RegExp => new RegExp(escapeRegex(String(input)), 'i');
