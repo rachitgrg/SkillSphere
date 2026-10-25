@@ -271,7 +271,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - `ApplyModal` calls `POST /proposals` (cover letter, bid, duration, optional milestones). **Remove the `setTimeout` fake.**
   - New page `/freelancer/proposals`: My proposals with status tabs, withdraw, respond to counter‑offers.
   - New page `/client/gigs/:id/proposals`: list with `ProposalCard`, accept / reject / counter‑offer modal, and links to freelancer profiles and AI match score.
-- [ ] **3.4 Client area.**
+- [x] **3.4 Client area.**
   - `/client/dashboard`: real stats from `/analytics/client`, active gigs and recent notifications.
   - `/client/gigs`: My gigs with status tabs.
   - `CreateGigPage`: add a milestones editor (title, description, amount, due date, and the sum must fit the budget), attachments upload, location (browser geolocation + city text) with `locationType`, and an invite‑freelancers picker. On success, navigate to the new gig.

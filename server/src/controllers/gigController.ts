@@ -213,8 +213,10 @@ export const cancelGig = async (req: AuthRequest, res: Response, next: NextFunct
       return;
     }
 
+    const wasActive = gig.status === GigStatus.IN_PROGRESS;
     gig.status = GigStatus.CANCELLED;
     await gig.save();
+    if (wasActive) await ClientProfile.updateOne({ user: gig.client, activeGigs: { $gt: 0 } }, { $inc: { activeGigs: -1 } });
 
     const open = await Proposal.find({ gig: gig._id, status: { $in: [ProposalStatus.PENDING, ProposalStatus.NEGOTIATING] } });
     await Proposal.updateMany(

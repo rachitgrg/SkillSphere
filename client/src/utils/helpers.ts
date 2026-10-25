@@ -7,6 +7,9 @@ export const formatDate = (date: string) => {
   return format(parsed, 'MMM d, yyyy');
 };
 
+/** Calendar date only, e.g. "25 Oct 2026". */
+export const formatDay = (date: string) => format(parseISO(date), 'd MMM yyyy');
+
 export const formatTimeAgo = (date: string) => {
   return formatDistanceToNow(parseISO(date), { addSuffix: true });
 };
@@ -134,4 +137,39 @@ export const PROPOSAL_STATUS_VARIANT: Record<
   accepted: 'success',
   rejected: 'error',
   withdrawn: 'secondary',
+};
+
+export const GIG_STATUS_META: Record<
+  'draft' | 'pending_approval' | 'rejected' | 'open' | 'in_progress' | 'completed' | 'cancelled',
+  { label: string; variant: 'primary' | 'success' | 'warning' | 'error' | 'secondary' }
+> = {
+  draft: { label: 'Draft', variant: 'secondary' },
+  pending_approval: { label: 'Awaiting approval', variant: 'warning' },
+  rejected: { label: 'Not approved', variant: 'error' },
+  open: { label: 'Open', variant: 'primary' },
+  in_progress: { label: 'In progress', variant: 'primary' },
+  completed: { label: 'Completed', variant: 'success' },
+  cancelled: { label: 'Cancelled', variant: 'secondary' },
+};
+
+export const PAYMENT_STATUS_META: Record<
+  'pending' | 'escrow' | 'released' | 'refunded' | 'disputed',
+  { label: string; variant: 'primary' | 'success' | 'warning' | 'error' | 'secondary' }
+> = {
+  pending: { label: 'Awaiting payment', variant: 'secondary' },
+  escrow: { label: 'In escrow', variant: 'primary' },
+  released: { label: 'Released', variant: 'success' },
+  refunded: { label: 'Refunded', variant: 'warning' },
+  disputed: { label: 'Disputed', variant: 'error' },
+};
+
+/** Downloads rows as a CSV file (values are quoted; first row is the header). */
+export const downloadCsv = (filename: string, rows: (string | number)[][]) => {
+  const csv = rows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 };

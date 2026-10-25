@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import Proposal from '../models/Proposal';
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
+import ClientProfile from '../models/ClientProfile';
 import notificationService from '../services/notificationService';
 import { toStringList } from '../services/gigQuery';
 import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
@@ -165,6 +166,7 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
       }
 
       proposal.finalAmount = proposal.finalAmount ?? proposal.proposedAmount;
+      await ClientProfile.updateOne({ user: gig.client }, { $inc: { activeGigs: 1 } });
 
       const others = await Proposal.find({
         gig: gig._id,

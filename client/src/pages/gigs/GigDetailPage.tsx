@@ -37,6 +37,7 @@ import {
   formatBudget,
   formatCurrency,
   formatDate,
+  formatDay,
   formatTimeAgo,
   fullName,
   getErrorMessage,
@@ -302,7 +303,7 @@ export const GigDetailPage: React.FC = () => {
                     <div className="flex justify-between"><dt>Gigs posted</dt><dd className="font-medium text-white">{clientProfile.data.postedGigs}</dd></div>
                     <div className="flex justify-between"><dt>Total spent</dt><dd className="font-medium text-white">{formatCurrency(clientProfile.data.totalSpent)}</dd></div>
                     {client.address?.city && <div className="flex justify-between"><dt>Location</dt><dd className="text-white">{client.address.city}</dd></div>}
-                    <div className="flex justify-between"><dt>Member since</dt><dd className="text-white">{formatDate(clientProfile.data.user.createdAt)}</dd></div>
+                    <div className="flex justify-between"><dt>Member since</dt><dd className="text-white">{formatDay(clientProfile.data.user.createdAt)}</dd></div>
                   </dl>
                 )}
                 {user && !isOwner && user.role !== 'admin' && (

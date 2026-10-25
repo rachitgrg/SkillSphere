@@ -1,49 +1,47 @@
 import React from 'react';
-import { formatCurrency } from '../../utils/helpers';
-import { ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
+import { Link } from 'react-router';
+import { ArrowDownRight, ArrowUpRight, Clock } from 'lucide-react';
+import { Badge } from '../common/Badge';
+import type { Payment, UserRole, UserSummary } from '../../types';
+import { formatCurrency, formatDate, fullName, PAYMENT_STATUS_META, populated } from '../../utils/helpers';
 
-export interface TransactionItem {
-  id?: string;
-  type: 'credit' | 'debit';
-  description?: string;
-  date?: string;
-  amount?: number | string;
-  status?: string;
-}
+/** One payment, shown from the viewer's side: freelancers see their net amount, clients the amount paid. */
+export const TransactionCard: React.FC<{ payment: Payment; viewerRole: UserRole }> = ({ payment, viewerRole }) => {
+  const incoming = viewerRole === 'freelancer';
+  const gig = populated<{ _id: string; title: string }>(payment.gig as { _id: string; title: string });
+  const counterparty = populated<UserSummary>((incoming ? payment.client : payment.freelancer) as UserSummary);
+  const amount = incoming ? payment.freelancerAmount : payment.amount;
+  const meta = PAYMENT_STATUS_META[payment.status];
 
-export const TransactionCard: React.FC<{ transaction: TransactionItem }> = ({ transaction }) => {
-  const isCredit = transaction.type === 'credit';
-  
   return (
-    <div className="flex items-center justify-between p-4 border-b border-slate-800 last:border-0 hover:bg-slate-800/30 transition-colors">
-      <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-          isCredit ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-        }`}>
-          {isCredit ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+    <div className="flex items-center justify-between gap-4 p-4 border-b border-slate-800 last:border-0 hover:bg-slate-800/30 transition-colors">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${incoming ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+          {incoming ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
         </div>
-        <div>
-          <h4 className="font-medium text-white">{transaction.description || 'Payment for Milestone 1'}</h4>
-          <div className="flex items-center text-xs text-slate-500 mt-1">
-            <Clock className="w-3 h-3 mr-1" />
-            <span>{transaction.date || 'Oct 24, 2023'}</span>
-            <span className="mx-2">•</span>
-            <span>Ref: {transaction.id || '#TXN-12345'}</span>
+        <div className="min-w-0">
+          {gig ? (
+            <Link to={`/projects/${gig._id}`} className="font-medium text-white hover:text-indigo-400 truncate block">
+              {payment.description || gig.title}
+            </Link>
+          ) : (
+            <span className="font-medium text-white">{payment.description || 'Payment'}</span>
+          )}
+          <div className="flex flex-wrap items-center text-xs text-slate-500 mt-1 gap-x-2">
+            <span className="flex items-center"><Clock className="w-3 h-3 mr-1" />{formatDate(payment.createdAt)}</span>
+            {counterparty && <span>· {incoming ? 'from' : 'to'} {fullName(counterparty)}</span>}
+            {payment.razorpayPaymentId && <span>· {payment.razorpayPaymentId}</span>}
           </div>
         </div>
       </div>
-      
-      <div className="text-right">
-        <div className={`font-semibold ${isCredit ? 'text-emerald-400' : 'text-white'}`}>
-          {isCredit ? '+' : '-'}{formatCurrency(Number(transaction.amount ?? 0))}
+
+      <div className="text-right shrink-0">
+        <div className={`font-semibold ${incoming ? 'text-emerald-400' : 'text-white'}`}>
+          {incoming ? '+' : '−'}
+          {formatCurrency(amount)}
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${
-          transaction.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
-          transaction.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400' :
-          'bg-slate-800 text-slate-400'
-        }`}>
-          {transaction.status || 'completed'}
-        </span>
+        {incoming && <div className="text-[10px] text-slate-500">after {formatCurrency(payment.platformFee)} fee</div>}
+        <Badge variant={meta.variant} className="mt-1">{meta.label}</Badge>
       </div>
     </div>
   );
