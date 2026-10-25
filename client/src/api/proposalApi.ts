@@ -1,25 +1,22 @@
 import axiosInstance from './axiosInstance';
-import type { ProposalFormData } from '../types';
+import { data, paginated, toParams } from './request';
+import type { ApiResponse, Proposal, ProposalInput, ProposalStatus } from '../types';
 
 export const proposalApi = {
-  submitProposal: (gigId: string, data: ProposalFormData) =>
-    axiosInstance.post(`/proposals/gig/${gigId}`, data),
+  submit: (input: ProposalInput) => data(axiosInstance.post<ApiResponse<Proposal>>('/proposals', input)),
 
-  getProposalsForGig: (gigId: string) =>
-    axiosInstance.get(`/proposals/gig/${gigId}`),
+  /** The signed-in freelancer's proposals (gig populated). */
+  getMine: (params?: { status?: ProposalStatus[]; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<Proposal[]>>('/proposals/mine', { params: toParams(params) })),
 
-  getMyProposals: (params?: { status?: string; page?: number; limit?: number }) =>
-    axiosInstance.get('/proposals/my-proposals', { params }),
+  /** Gig owner (or admin): all proposals for a gig. */
+  getForGig: (gigId: string) => data(axiosInstance.get<ApiResponse<Proposal[]>>(`/proposals/gig/${gigId}`)),
 
-  getProposalById: (id: string) =>
-    axiosInstance.get(`/proposals/${id}`),
+  getProposal: (id: string) => data(axiosInstance.get<ApiResponse<Proposal>>(`/proposals/${id}`)),
 
-  updateProposalStatus: (id: string, status: string, note?: string) =>
-    axiosInstance.put(`/proposals/${id}/status`, { status, note }),
+  /** Client: accept (hires the freelancer), reject, or mark as negotiating. */
+  updateStatus: (id: string, status: 'accepted' | 'rejected' | 'negotiating', clientNotes?: string) =>
+    data(axiosInstance.put<ApiResponse<Proposal>>(`/proposals/${id}/status`, { status, clientNotes })),
 
-  withdrawProposal: (id: string) =>
-    axiosInstance.put(`/proposals/${id}/withdraw`),
-
-  getReceivedProposals: (params?: { status?: string; page?: number; limit?: number }) =>
-    axiosInstance.get('/proposals/received', { params }),
+  withdraw: (id: string) => data(axiosInstance.put<ApiResponse<Proposal>>(`/proposals/${id}/withdraw`)),
 };

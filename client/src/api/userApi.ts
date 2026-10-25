@@ -1,52 +1,63 @@
 import axiosInstance from './axiosInstance';
-import type { FreelancerFilters } from '../types';
+import { data } from './request';
+import type {
+  Address,
+  ApiResponse,
+  ClientProfile,
+  FreelancerProfile,
+  GeoPoint,
+  MeResponse,
+  PublicClientProfile,
+  PublicFreelancerProfile,
+  User,
+} from '../types';
+
+export interface UpdateMeInput {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  bio?: string;
+  address?: Address;
+  location?: GeoPoint;
+}
+
+export type FreelancerProfileInput = Partial<
+  Pick<
+    FreelancerProfile,
+    | 'title'
+    | 'headline'
+    | 'skills'
+    | 'portfolio'
+    | 'certifications'
+    | 'workExperience'
+    | 'education'
+    | 'hourlyRate'
+    | 'availability'
+    | 'availabilitySlots'
+    | 'languages'
+    | 'socialLinks'
+    | 'milestonePricing'
+  >
+> & { location?: GeoPoint };
+
+export type ClientProfileInput = Partial<
+  Pick<ClientProfile, 'companyName' | 'companyWebsite' | 'companySize' | 'industry' | 'description'>
+>;
 
 export const userApi = {
-  getProfile: () =>
-    axiosInstance.get('/users/profile'),
+  getMe: () => data(axiosInstance.get<ApiResponse<MeResponse>>('/users/me')),
 
-  updateProfile: (data: Record<string, unknown>) =>
-    axiosInstance.put('/users/profile', data),
+  updateMe: (input: UpdateMeInput) => data(axiosInstance.put<ApiResponse<User>>('/users/me', input)),
 
-  uploadAvatar: (formData: FormData) =>
-    axiosInstance.post('/users/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  getFreelancerProfile: (userId: string) =>
+    data(axiosInstance.get<ApiResponse<PublicFreelancerProfile>>(`/users/freelancers/${userId}`)),
 
-  uploadCover: (formData: FormData) =>
-    axiosInstance.post('/users/cover', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  updateFreelancerProfile: (input: FreelancerProfileInput) =>
+    data(axiosInstance.put<ApiResponse<FreelancerProfile>>('/users/freelancers/me', input)),
 
-  getFreelancerProfile: (id: string) =>
-    axiosInstance.get(`/users/freelancers/${id}`),
+  getClientProfile: (userId: string) =>
+    data(axiosInstance.get<ApiResponse<PublicClientProfile>>(`/users/clients/${userId}`)),
 
-  getClientProfile: (id: string) =>
-    axiosInstance.get(`/users/clients/${id}`),
-
-  searchFreelancers: (filters?: FreelancerFilters) =>
-    axiosInstance.get('/users/freelancers', { params: filters }),
-
-  getFreelancerStats: () =>
-    axiosInstance.get('/users/freelancer/stats'),
-
-  getClientStats: () =>
-    axiosInstance.get('/users/client/stats'),
-
-  updateAvailability: (availability: string) =>
-    axiosInstance.put('/users/availability', { availability }),
-
-  getPortfolio: (userId: string) =>
-    axiosInstance.get(`/users/${userId}/portfolio`),
-
-  addPortfolioItem: (data: FormData) =>
-    axiosInstance.post('/users/portfolio', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-
-  deletePortfolioItem: (id: string) =>
-    axiosInstance.delete(`/users/portfolio/${id}`),
-
-  getAnalytics: (period?: string) =>
-    axiosInstance.get('/users/analytics', { params: { period } }),
+  updateClientProfile: (input: ClientProfileInput) =>
+    data(axiosInstance.put<ApiResponse<ClientProfile>>('/users/clients/me', input)),
 };

@@ -1,18 +1,27 @@
 import axiosInstance from './axiosInstance';
+import { data, paginated, toParams } from './request';
+import type {
+  ApiResponse,
+  FreelancerFilters,
+  FreelancerSearchResult,
+  Gig,
+  GigFilters,
+  SearchSuggestions,
+  TrendingSkill,
+} from '../types';
 
 export const searchApi = {
-  searchGigs: (query: string, filters?: Record<string, unknown>) =>
-    axiosInstance.get('/search/gigs', { params: { q: query, ...filters } }),
+  searchGigs: (filters?: GigFilters) =>
+    paginated(axiosInstance.get<ApiResponse<Gig[]>>('/search/gigs', { params: toParams(filters) })),
 
-  searchFreelancers: (query: string, filters?: Record<string, unknown>) =>
-    axiosInstance.get('/search/freelancers', { params: { q: query, ...filters } }),
+  searchFreelancers: (filters?: FreelancerFilters) =>
+    paginated(
+      axiosInstance.get<ApiResponse<FreelancerSearchResult[]>>('/search/freelancers', { params: toParams(filters) })
+    ),
 
-  getSuggestions: (query: string) =>
-    axiosInstance.get('/search/suggestions', { params: { q: query } }),
+  getTrendingSkills: (params?: { days?: number; limit?: number }) =>
+    data(axiosInstance.get<ApiResponse<TrendingSkill[]>>('/search/trending-skills', { params: toParams(params) })),
 
-  getPopularSearches: () =>
-    axiosInstance.get('/search/popular'),
-
-  getTrendingSkills: () =>
-    axiosInstance.get('/search/trending-skills'),
+  getSuggestions: (q: string) =>
+    data(axiosInstance.get<ApiResponse<SearchSuggestions>>('/search/suggestions', { params: { q } })),
 };

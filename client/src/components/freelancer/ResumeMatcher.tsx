@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../common/Button';
-import { gigApi } from '../../api/gigApi';
+import { aiApi } from '../../api/aiApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/helpers';
 import { Sparkles, FileText, Loader2, Target, Zap, AlertTriangle } from 'lucide-react';
@@ -25,8 +25,7 @@ export const ResumeMatcher: React.FC = () => {
 
     try {
       setIsProcessing(true);
-      const response = await gigApi.analyzeCareer(resumeText);
-      setReport(response.data.data);
+      setReport(await aiApi.analyzeCareer(resumeText));
       toast.success('Career analysis complete!');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to analyze resume'));

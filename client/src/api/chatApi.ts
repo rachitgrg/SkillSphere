@@ -1,29 +1,20 @@
 import axiosInstance from './axiosInstance';
+import { data, toParams } from './request';
+import type { ApiResponse, Conversation, MessagePage } from '../types';
 
+/** History over REST; sending, typing and read receipts go over the socket. */
 export const chatApi = {
-  getConversations: () =>
-    axiosInstance.get('/chat/conversations'),
+  getConversations: () => data(axiosInstance.get<ApiResponse<Conversation[]>>('/chat/conversations')),
 
-  getConversation: (id: string) =>
-    axiosInstance.get(`/chat/conversations/${id}`),
+  /** Opens (or reuses) a 1:1 conversation, optionally about a gig. */
+  startConversation: (participantId: string, gigId?: string) =>
+    data(axiosInstance.post<ApiResponse<Conversation>>('/chat/conversations', { participantId, gigId })),
 
-  createConversation: (participantId: string, gigId?: string) =>
-    axiosInstance.post('/chat/conversations', { participantId, gigId }),
-
-  getMessages: (conversationId: string, params?: { page?: number; limit?: number }) =>
-    axiosInstance.get(`/chat/conversations/${conversationId}/messages`, { params }),
-
-  sendMessage: (conversationId: string, data: { content: string; messageType?: string }) =>
-    axiosInstance.post(`/chat/conversations/${conversationId}/messages`, data),
-
-  sendFileMessage: (conversationId: string, formData: FormData) =>
-    axiosInstance.post(`/chat/conversations/${conversationId}/messages/file`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-
-  markAsRead: (conversationId: string) =>
-    axiosInstance.put(`/chat/conversations/${conversationId}/read`),
-
-  deleteMessage: (conversationId: string, messageId: string) =>
-    axiosInstance.delete(`/chat/conversations/${conversationId}/messages/${messageId}`),
+  /** Newest page first; pass `before` (a message id) to load older messages. */
+  getMessages: (conversationId: string, params?: { before?: string; limit?: number }) =>
+    data(
+      axiosInstance.get<ApiResponse<MessagePage>>(`/chat/conversations/${conversationId}/messages`, {
+        params: toParams(params),
+      })
+    ),
 };

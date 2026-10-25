@@ -1,27 +1,32 @@
 import axiosInstance from './axiosInstance';
+import { data, paginated, toParams } from './request';
+import type {
+  ApiResponse,
+  CreateOrderInput,
+  OrderResult,
+  Payment,
+  PaymentConfig,
+  PaymentStatus,
+  PaymentSummary,
+  VerifyPaymentInput,
+} from '../types';
 
 export const paymentApi = {
-  createPayment: (data: { gigId: string; milestoneId?: string; amount: number; paymentMethod: string }) =>
-    axiosInstance.post('/payments', data),
+  getConfig: () => data(axiosInstance.get<ApiResponse<PaymentConfig>>('/payments/config')),
 
-  getPaymentHistory: (params?: { page?: number; limit?: number; status?: string }) =>
-    axiosInstance.get('/payments/history', { params }),
+  /** Creates a Razorpay order (test mode) for a milestone or amount; opens Checkout with the result. */
+  createOrder: (input: CreateOrderInput) => data(axiosInstance.post<ApiResponse<OrderResult>>('/payments/orders', input)),
 
-  getPaymentById: (id: string) =>
-    axiosInstance.get(`/payments/${id}`),
+  /** Sends Checkout's success payload; the payment moves into escrow. */
+  verify: (input: VerifyPaymentInput) => data(axiosInstance.post<ApiResponse<Payment>>('/payments/verify', input)),
 
-  getEarnings: (params?: { period?: string }) =>
-    axiosInstance.get('/payments/earnings', { params }),
+  release: (paymentId: string) => data(axiosInstance.post<ApiResponse<Payment>>(`/payments/${paymentId}/release`)),
 
-  requestPayout: (data: { amount: number; method: string }) =>
-    axiosInstance.post('/payments/payout', data),
+  refund: (paymentId: string, reason?: string) =>
+    data(axiosInstance.post<ApiResponse<Payment>>(`/payments/${paymentId}/refund`, { reason })),
 
-  getEscrowBalance: () =>
-    axiosInstance.get('/payments/escrow'),
+  getHistory: (params?: { status?: PaymentStatus; gig?: string; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<Payment[]>>('/payments', { params: toParams(params) })),
 
-  releaseEscrow: (paymentId: string) =>
-    axiosInstance.post(`/payments/${paymentId}/release`),
-
-  refundPayment: (paymentId: string, reason: string) =>
-    axiosInstance.post(`/payments/${paymentId}/refund`, { reason }),
+  getSummary: () => data(axiosInstance.get<ApiResponse<PaymentSummary>>('/payments/summary')),
 };

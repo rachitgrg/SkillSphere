@@ -1,39 +1,21 @@
 import axiosInstance from './axiosInstance';
+import { data } from './request';
+import type { ApiResponse, AuthResponse, RegisterInput, User } from '../types';
 
 export const authApi = {
-  login: (data: { email: string; password: string }) =>
-    axiosInstance.post('/auth/login', data),
+  register: (input: RegisterInput) =>
+    data(axiosInstance.post<ApiResponse<AuthResponse>>('/auth/register', input)),
 
-  register: (data: { firstName: string; lastName: string; email: string; password: string; role: string }) =>
-    axiosInstance.post('/auth/register', data),
+  login: (input: { email: string; password: string }) =>
+    data(axiosInstance.post<ApiResponse<AuthResponse>>('/auth/login', input)),
 
-  getMe: () =>
-    axiosInstance.get('/auth/me'),
+  /** Exchanges the httpOnly refresh cookie for a new access token. */
+  refresh: () => data(axiosInstance.post<ApiResponse<AuthResponse>>('/auth/refresh')),
 
-  verifyEmail: (token: string) =>
-    axiosInstance.get(`/auth/verify-email/${token}`),
+  logout: () => axiosInstance.post('/auth/logout'),
 
-  forgotPassword: (email: string) =>
-    axiosInstance.post('/auth/forgot-password', { email }),
+  getMe: () => data(axiosInstance.get<ApiResponse<User>>('/auth/me')),
 
-  resetPassword: (token: string, password: string) =>
-    axiosInstance.post(`/auth/reset-password/${token}`, { password }),
-
-  verifyTwoFactor: (code: string) =>
-    axiosInstance.post('/auth/verify-2fa', { code }),
-
-  enableTwoFactor: () =>
-    axiosInstance.post('/auth/enable-2fa'),
-
-  changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    axiosInstance.put('/auth/change-password', data),
-
-  googleAuth: (tokenId: string) =>
-    axiosInstance.post('/auth/google', { tokenId }),
-
-  refresh: () =>
-    axiosInstance.post('/auth/refresh'),
-
-  logout: () =>
-    axiosInstance.post('/auth/logout'),
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    data(axiosInstance.put<ApiResponse<{ token: string }>>('/auth/change-password', input)),
 };

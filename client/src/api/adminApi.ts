@@ -1,51 +1,54 @@
 import axiosInstance from './axiosInstance';
+import { data, paginated, toParams } from './request';
+import type {
+  AdminAnalytics,
+  AdminLog,
+  AdminPayments,
+  AdminStats,
+  AdminUserDetails,
+  AnalyticsPeriod,
+  ApiResponse,
+  FraudReport,
+  Gig,
+  PaymentStatus,
+  Review,
+  User,
+  UserRole,
+} from '../types';
 
 export const adminApi = {
-  getDashboardStats: () =>
-    axiosInstance.get('/admin/stats'),
+  getStats: () => data(axiosInstance.get<ApiResponse<AdminStats>>('/admin/stats')),
 
-  getUsers: (params?: { page?: number; limit?: number; role?: string; search?: string; status?: string }) =>
-    axiosInstance.get('/admin/users', { params }),
+  getAnalytics: (period: AnalyticsPeriod = '12m') =>
+    data(axiosInstance.get<ApiResponse<AdminAnalytics>>('/admin/analytics', { params: { period } })),
 
-  getUserById: (id: string) =>
-    axiosInstance.get(`/admin/users/${id}`),
+  getUsers: (params?: { search?: string; role?: UserRole; status?: 'active' | 'suspended' | 'inactive'; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<User[]>>('/admin/users', { params: toParams(params) })),
 
-  updateUserStatus: (id: string, data: { isActive?: boolean; isVerified?: boolean }) =>
-    axiosInstance.put(`/admin/users/${id}/status`, data),
+  getUser: (id: string) => data(axiosInstance.get<ApiResponse<AdminUserDetails>>(`/admin/users/${id}`)),
 
-  deleteUser: (id: string) =>
-    axiosInstance.delete(`/admin/users/${id}`),
+  /** Omit `durationDays` for an indefinite suspension. */
+  suspendUser: (id: string, input: { reason: string; durationDays?: number }) =>
+    data(axiosInstance.put<ApiResponse<User>>(`/admin/users/${id}/suspend`, input)),
+
+  unsuspendUser: (id: string) => data(axiosInstance.put<ApiResponse<User>>(`/admin/users/${id}/unsuspend`)),
 
   getPendingGigs: (params?: { page?: number; limit?: number }) =>
-    axiosInstance.get('/admin/gigs/pending', { params }),
+    paginated(axiosInstance.get<ApiResponse<Gig[]>>('/admin/gigs/pending', { params: toParams(params) })),
 
-  approveGig: (id: string) =>
-    axiosInstance.put(`/admin/gigs/${id}/approve`),
+  approveGig: (id: string) => data(axiosInstance.put<ApiResponse<Gig>>(`/admin/gigs/${id}/approve`)),
 
   rejectGig: (id: string, reason: string) =>
-    axiosInstance.put(`/admin/gigs/${id}/reject`, { reason }),
+    data(axiosInstance.put<ApiResponse<Gig>>(`/admin/gigs/${id}/reject`, { reason })),
 
-  getTransactions: (params?: { page?: number; limit?: number; status?: string }) =>
-    axiosInstance.get('/admin/transactions', { params }),
+  getPayments: (params?: { status?: PaymentStatus; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<AdminPayments>>('/admin/payments', { params: toParams(params) })),
 
-  getDisputes: (params?: { page?: number; limit?: number; status?: string }) =>
-    axiosInstance.get('/admin/disputes', { params }),
+  getFraudReport: () => data(axiosInstance.get<ApiResponse<FraudReport>>('/admin/fraud')),
 
-  resolveDispute: (id: string, data: { decision: string; refundAmount?: number }) =>
-    axiosInstance.put(`/admin/disputes/${id}/resolve`, data),
+  setReviewVisibility: (reviewId: string, isVisible: boolean) =>
+    data(axiosInstance.put<ApiResponse<Review>>(`/admin/reviews/${reviewId}/visibility`, { isVisible })),
 
-  getAnalytics: (params?: { period?: string; type?: string }) =>
-    axiosInstance.get('/admin/analytics', { params }),
-
-  getRevenueChart: (period?: string) =>
-    axiosInstance.get('/admin/analytics/revenue', { params: { period } }),
-
-  getUserGrowthChart: (period?: string) =>
-    axiosInstance.get('/admin/analytics/user-growth', { params: { period } }),
-
-  getCategoryStats: () =>
-    axiosInstance.get('/admin/analytics/categories'),
-
-  manageCategory: (data: { name: string; description?: string }) =>
-    axiosInstance.post('/admin/categories', data),
+  getLogs: (params?: { action?: string; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<AdminLog[]>>('/admin/logs', { params: toParams(params) })),
 };

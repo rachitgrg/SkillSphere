@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import type { User, AuthResponse } from '../../types';
+import type { User, RegisterInput } from '../../types';
 import { authApi } from '../../api/authApi';
 import { refreshAccessToken } from '../../api/axiosInstance';
 import { getErrorMessage } from '../../utils/helpers';
@@ -30,8 +30,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await authApi.login(credentials);
-      return response.data.data as AuthResponse;
+      return await authApi.login(credentials);
     } catch (err: unknown) {
       return rejectWithValue(getErrorMessage(err, 'Login failed'));
     }
@@ -40,10 +39,9 @@ export const loginUser = createAsyncThunk(
 
 export const registerUser = createAsyncThunk(
   'auth/register',
-  async (data: { firstName: string; lastName: string; email: string; password: string; role: string }, { rejectWithValue }) => {
+  async (data: RegisterInput, { rejectWithValue }) => {
     try {
-      const response = await authApi.register(data);
-      return response.data.data as AuthResponse;
+      return await authApi.register(data);
     } catch (err: unknown) {
       return rejectWithValue(getErrorMessage(err, 'Registration failed'));
     }
@@ -73,8 +71,7 @@ export const loadUser = createAsyncThunk(
   'auth/loadUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authApi.getMe();
-      return response.data.data as User;
+      return await authApi.getMe();
     } catch (err: unknown) {
       return rejectWithValue(getErrorMessage(err, 'Failed to load user'));
     }

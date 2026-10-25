@@ -1,42 +1,24 @@
 import axiosInstance from './axiosInstance';
-import type { GigFilters, GigFormData } from '../types';
+import { data, paginated, toParams } from './request';
+import type { ApiResponse, Gig, GigFilters, GigInput, GigStatus } from '../types';
 
 export const gigApi = {
+  /** Public marketplace: open, public gigs only. */
   getGigs: (filters?: GigFilters) =>
-    axiosInstance.get('/gigs', { params: filters }),
+    paginated(axiosInstance.get<ApiResponse<Gig[]>>('/gigs', { params: toParams(filters) })),
 
-  getGigById: (id: string) =>
-    axiosInstance.get(`/gigs/${id}`),
+  getGig: (id: string) => data(axiosInstance.get<ApiResponse<Gig>>(`/gigs/${id}`)),
 
-  createGig: (data: GigFormData) =>
-    axiosInstance.post('/gigs', data),
+  /** The signed-in client's gigs in every status. */
+  getMyGigs: (params?: { status?: GigStatus[]; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<Gig[]>>('/gigs/mine', { params: toParams(params) })),
 
-  analyzeCareer: (resumeText: string) =>
-    axiosInstance.post('/gigs/analyze-career', { resumeText }),
+  /** New gigs go to the admin approval queue (`pending_approval`). */
+  createGig: (input: GigInput) => data(axiosInstance.post<ApiResponse<Gig>>('/gigs', input)),
 
-  updateGig: (id: string, data: Partial<GigFormData>) =>
-    axiosInstance.put(`/gigs/${id}`, data),
+  updateGig: (id: string, input: Partial<GigInput>) => data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}`, input)),
 
-  deleteGig: (id: string) =>
-    axiosInstance.delete(`/gigs/${id}`),
+  cancelGig: (id: string) => data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/cancel`)),
 
-  getMyGigs: (params?: { status?: string; page?: number; limit?: number }) =>
-    axiosInstance.get('/gigs/my-gigs', { params }),
-
-  getCategories: () =>
-    axiosInstance.get('/gigs/categories'),
-
-  uploadAttachment: (gigId: string, formData: FormData) =>
-    axiosInstance.post(`/gigs/${gigId}/attachments`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-
-  updateMilestoneStatus: (gigId: string, milestoneId: string, status: string) =>
-    axiosInstance.put(`/gigs/${gigId}/milestones/${milestoneId}`, { status }),
-
-  getFeaturedGigs: () =>
-    axiosInstance.get('/gigs/featured'),
-
-  getRelatedGigs: (id: string) =>
-    axiosInstance.get(`/gigs/${id}/related`),
+  deleteGig: (id: string) => axiosInstance.delete(`/gigs/${id}`),
 };

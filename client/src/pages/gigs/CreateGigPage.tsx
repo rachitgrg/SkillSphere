@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { gigApi } from '../../api/gigApi';
-import type { GigFormData } from '../../types';
+import type { GigFormData, GigInput } from '../../types';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/helpers';
 
@@ -64,13 +64,23 @@ export const CreateGigPage: React.FC = () => {
     
     try {
       setIsSubmitting(true);
-      const payload = {
-        ...formData,
-        duration: `${formData.estimatedDuration} ${formData.durationUnit}`
+      const payload: GigInput = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        subCategory: formData.subcategory || undefined,
+        skills: formData.skills,
+        budgetType: formData.budgetType,
+        budgetMin: formData.budgetMin,
+        budgetMax: formData.budgetMax,
+        duration: `${formData.estimatedDuration} ${formData.durationUnit}`,
+        experienceLevel: (formData.experienceLevel || 'intermediate') as GigInput['experienceLevel'],
+        tags: formData.tags,
+        deadline: formData.deadline || undefined,
       };
-      await gigApi.createGig(payload);
-      toast.success('Gig posted successfully!');
-      navigate('/gigs');
+      const gig = await gigApi.createGig(payload);
+      toast.success('Gig submitted for admin approval');
+      navigate(`/gigs/${gig._id}`);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to post gig'));
     } finally {

@@ -1,27 +1,19 @@
 import axiosInstance from './axiosInstance';
+import { data } from './request';
+import type { ApiResponse, Review, ReviewBreakdown, ReviewCategories } from '../types';
 
 export const reviewApi = {
-  createReview: (data: {
-    gigId: string;
-    rating: number;
-    title: string;
-    comment: string;
-    categories: { communication: number; quality: number; timeliness: number; value: number };
-  }) =>
-    axiosInstance.post('/reviews', data),
+  /** Only the client or hired freelancer of a completed gig; the reviewee is derived server-side. */
+  create: (input: { gigId: string; categories: ReviewCategories; comment: string }) =>
+    data(axiosInstance.post<ApiResponse<Review>>('/reviews', input)),
 
-  getReviewsForUser: (userId: string, params?: { page?: number; limit?: number }) =>
-    axiosInstance.get(`/reviews/user/${userId}`, { params }),
+  getForUser: (userId: string) => data(axiosInstance.get<ApiResponse<Review[]>>(`/reviews/user/${userId}`)),
 
-  getReviewsForGig: (gigId: string) =>
-    axiosInstance.get(`/reviews/gig/${gigId}`),
+  getBreakdown: (userId: string) =>
+    data(axiosInstance.get<ApiResponse<ReviewBreakdown>>(`/reviews/user/${userId}/breakdown`)),
 
-  respondToReview: (reviewId: string, comment: string) =>
-    axiosInstance.post(`/reviews/${reviewId}/respond`, { comment }),
+  reply: (reviewId: string, response: string) =>
+    data(axiosInstance.post<ApiResponse<Review>>(`/reviews/${reviewId}/reply`, { response })),
 
-  markHelpful: (reviewId: string) =>
-    axiosInstance.post(`/reviews/${reviewId}/helpful`),
-
-  getMyReviews: (params?: { type?: 'given' | 'received'; page?: number }) =>
-    axiosInstance.get('/reviews/my-reviews', { params }),
+  report: (reviewId: string, reason: string) => axiosInstance.post(`/reviews/${reviewId}/report`, { reason }),
 };

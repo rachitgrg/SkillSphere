@@ -246,7 +246,7 @@ Make the server expose exactly this API (paths relative to `/api/v1`), then rewr
 
 - [x] **2.1** Restructure the server routes/controllers to the table. Keep RBAC via `authorize()`. Every admin mutation writes an `AdminLog`.
   - *Scope note (session 1):* routes whose behaviour is a Phase‑4 feature are added with that task and to the smoke test then: 2FA/Google/email verification/password reset (4.1), uploads — avatar, resume, portfolio, gig attachments, chat files, dispute evidence (4.3/4.4/4.6/4.13), verification request + admin verification queue (4.3), invite/progress/milestone actions/complete (4.4/4.14), negotiate (4.5), payment webhook (4.7), schedule (4.12), dispute messages (4.13).
-- [ ] **2.2** Rewrite `client/src/api/*.ts` to the table, with types.
+- [x] **2.2** Rewrite `client/src/api/*.ts` to the table, with types.
 - [ ] **2.3** Add a Supertest "route smoke test" that hits every route with the correct role and asserts no 404/500.
 - [ ] **2.4** Add **Swagger** (`swagger-jsdoc` + `swagger-ui-express`) at `/api/docs`, or commit a Postman collection in `docs/`.
 

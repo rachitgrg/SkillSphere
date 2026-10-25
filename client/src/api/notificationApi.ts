@@ -1,21 +1,16 @@
 import axiosInstance from './axiosInstance';
+import { paginated, data, toParams } from './request';
+import type { ApiResponse, Notification, NotificationPage } from '../types';
 
 export const notificationApi = {
-  getNotifications: (params?: { page?: number; limit?: number; unreadOnly?: boolean }) =>
-    axiosInstance.get('/notifications', { params }),
+  getNotifications: (params?: { page?: number; limit?: number; unread?: boolean }) =>
+    paginated(axiosInstance.get<ApiResponse<NotificationPage>>('/notifications', { params: toParams(params) })),
 
-  markAsRead: (id: string) =>
-    axiosInstance.put(`/notifications/${id}/read`),
+  getUnreadCount: () => data(axiosInstance.get<ApiResponse<{ count: number }>>('/notifications/unread-count')),
 
-  markAllAsRead: () =>
-    axiosInstance.put('/notifications/read-all'),
+  markAsRead: (id: string) => data(axiosInstance.put<ApiResponse<Notification>>(`/notifications/${id}/read`)),
 
-  deleteNotification: (id: string) =>
-    axiosInstance.delete(`/notifications/${id}`),
+  markAllAsRead: () => axiosInstance.put('/notifications/read-all'),
 
-  getUnreadCount: () =>
-    axiosInstance.get('/notifications/unread-count'),
-
-  updatePreferences: (data: Record<string, boolean>) =>
-    axiosInstance.put('/notifications/preferences', data),
+  delete: (id: string) => axiosInstance.delete(`/notifications/${id}`),
 };
