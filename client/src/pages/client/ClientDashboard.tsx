@@ -24,8 +24,8 @@ export const ClientDashboard: React.FC = () => {
           <div className="glass-card p-6 rounded-2xl border border-slate-800">
             <h3 className="font-semibold text-white mb-4">Your Active Gigs</h3>
             <div className="grid sm:grid-cols-2 gap-4">
-              <GigCard gig={{ id: 1, title: 'React Native App Development', budget: '8000', client: { name: 'You' } }} />
-              <GigCard gig={{ id: 2, title: 'UI/UX Design for SaaS', budget: '3500', client: { name: 'You' } }} />
+              <GigCard gig={{ id: 1, title: 'React Native App Development', budget: 8000, description: '', skills: [], client: { name: 'You' } }} />
+              <GigCard gig={{ id: 2, title: 'UI/UX Design for SaaS', budget: 3500, description: '', skills: [], client: { name: 'You' } }} />
             </div>
           </div>
         </div>
