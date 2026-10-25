@@ -77,6 +77,7 @@ const userSchema = new Schema<IUser>(
     banReason: String,
     googleId: {
       type: String,
+      unique: true,
       sparse: true,
     },
     twoFactorEnabled: {
@@ -117,8 +118,6 @@ const userSchema = new Schema<IUser>(
 );
 
 // Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ googleId: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ location: '2dsphere' });
 userSchema.index({ isActive: 1, isBanned: 1 });

@@ -107,7 +107,7 @@
   - Refuse to start when `NODE_ENV=production` and secrets equal the `.env.example` placeholders.
   - Generate real local secrets (rule 0.2.5).
   - Acceptance: a request with `Origin: http://localhost:5173` gets `Access-Control-Allow-Origin: http://localhost:5173`.
-- [ ] **0.8 Duplicate index warnings.** Remove the duplicate `schema.index()` calls for fields already `unique: true`: `User.email`, `ClientProfile.user`, `FreelancerProfile.user`. Make `User.googleId` `unique: true, sparse: true` and drop its extra index. Boot must print no Mongoose duplicate‑index warnings.
+- [x] **0.8 Duplicate index warnings.** Remove the duplicate `schema.index()` calls for fields already `unique: true`: `User.email`, `ClientProfile.user`, `FreelancerProfile.user`. Make `User.googleId` `unique: true, sparse: true` and drop its extra index. Boot must print no Mongoose duplicate‑index warnings.
 
 ---
 

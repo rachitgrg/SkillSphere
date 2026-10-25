@@ -46,7 +46,6 @@ const clientProfileSchema = new Schema<IClientProfile>(
 );
 
 // Indexes
-clientProfileSchema.index({ user: 1 });
 clientProfileSchema.index({ industry: 1 });
 clientProfileSchema.index({ averageRating: -1 });
 clientProfileSchema.index({ totalSpent: -1 });

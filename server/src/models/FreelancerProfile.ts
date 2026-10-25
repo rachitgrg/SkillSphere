@@ -132,7 +132,6 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
 );
 
 // Indexes
-freelancerProfileSchema.index({ user: 1 });
 freelancerProfileSchema.index({ 'skills.name': 1 });
 freelancerProfileSchema.index({ hourlyRate: 1 });
 freelancerProfileSchema.index({ availability: 1 });
