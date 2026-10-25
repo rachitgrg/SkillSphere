@@ -295,7 +295,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **3.7 Notifications.**
   - `NotificationDropdown` in `Navbar` shows the live unread count via the socket `notification` event.
   - `/notifications` page with paginated list, mark read / all read, delete; clicking navigates to `link`.
-- [ ] **3.8 Admin.** Real data for `/admin/dashboard`, `/admin/users` (search, filter, suspend/unsuspend, verify), `/admin/gigs` (approval queue), `/admin/payments`, `/admin/disputes`, `/admin/analytics` and `/admin/logs`. Remove `/admin/settings` from the sidebar unless you build it.
+- [x] **3.8 Admin.** Real data for `/admin/dashboard`, `/admin/users` (search, filter, suspend/unsuspend, verify), `/admin/gigs` (approval queue), `/admin/payments`, `/admin/disputes`, `/admin/analytics` and `/admin/logs`. Remove `/admin/settings` from the sidebar unless you build it.
 - [ ] **3.9 Phase‑3 gate.** `grep` the client for hardcoded people and companies (`Alex Developer`, `TechCorp`, `Sarah Manager`, `pravatar`, `unsplash`, `INITIAL_GIGS`). Only the landing page may keep marketing copy. Click through every sidebar link for each role; none may redirect home.
 
 ---

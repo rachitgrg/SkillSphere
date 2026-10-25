@@ -1,0 +1,59 @@
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { adminApi } from '../../api/adminApi';
+import { disputeApi } from '../../api/disputeApi';
+import type { AnalyticsPeriod, DisputeStatus, PaymentStatus, ResolveDisputeInput, UserRole } from '../../types';
+import { keys } from './keys';
+
+export const useAdminStats = () => useQuery({ queryKey: keys.admin.stats, queryFn: adminApi.getStats });
+
+export const useAdminAnalytics = (period: AnalyticsPeriod) =>
+  useQuery({ queryKey: keys.admin.analytics(period), queryFn: () => adminApi.getAnalytics(period) });
+
+export const useAdminUsers = (params: { search?: string; role?: UserRole; status?: 'active' | 'suspended' | 'inactive'; page?: number }) =>
+  useQuery({ queryKey: keys.admin.users(params), queryFn: () => adminApi.getUsers({ ...params, limit: 15 }), placeholderData: keepPreviousData });
+
+export const useAdminUser = (id: string | null) =>
+  useQuery({ queryKey: keys.admin.user(id ?? ''), queryFn: () => adminApi.getUser(id!), enabled: Boolean(id) });
+
+export const usePendingGigs = (page: number) =>
+  useQuery({ queryKey: keys.admin.pendingGigs({ page }), queryFn: () => adminApi.getPendingGigs({ page, limit: 10 }), placeholderData: keepPreviousData });
+
+export const useAdminPayments = (params: { status?: PaymentStatus; page?: number }) =>
+  useQuery({ queryKey: keys.admin.payments(params), queryFn: () => adminApi.getPayments({ ...params, limit: 15 }), placeholderData: keepPreviousData });
+
+export const useFraudReport = () => useQuery({ queryKey: keys.admin.fraud, queryFn: adminApi.getFraudReport });
+
+export const useAdminLogs = (params: { action?: string; page?: number }) =>
+  useQuery({ queryKey: keys.admin.logs(params), queryFn: () => adminApi.getLogs({ ...params, limit: 20 }), placeholderData: keepPreviousData });
+
+export const useDisputes = (params: { status?: DisputeStatus; page?: number }) =>
+  useQuery({ queryKey: keys.disputes.list(params), queryFn: () => disputeApi.list({ ...params, limit: 15 }), placeholderData: keepPreviousData });
+
+export const useDispute = (id: string | undefined) =>
+  useQuery({ queryKey: keys.disputes.detail(id ?? ''), queryFn: () => disputeApi.get(id!), enabled: Boolean(id) });
+
+/** Every admin mutation refreshes all admin views (and gigs/disputes they touch). */
+const useAdminMutation = <TVars, TResult>(fn: (vars: TVars) => Promise<TResult>) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.admin.all }),
+        queryClient.invalidateQueries({ queryKey: keys.gigs.all }),
+        queryClient.invalidateQueries({ queryKey: keys.disputes.all }),
+      ]),
+  });
+};
+
+export const useSuspendUser = () =>
+  useAdminMutation(({ id, reason, durationDays }: { id: string; reason: string; durationDays?: number }) =>
+    adminApi.suspendUser(id, { reason, durationDays })
+  );
+export const useUnsuspendUser = () => useAdminMutation((id: string) => adminApi.unsuspendUser(id));
+export const useApproveGig = () => useAdminMutation((id: string) => adminApi.approveGig(id));
+export const useRejectGig = () => useAdminMutation(({ id, reason }: { id: string; reason: string }) => adminApi.rejectGig(id, reason));
+export const useSetReviewVisibility = () =>
+  useAdminMutation(({ id, isVisible }: { id: string; isVisible: boolean }) => adminApi.setReviewVisibility(id, isVisible));
+export const useResolveDispute = () =>
+  useAdminMutation(({ id, input }: { id: string; input: ResolveDisputeInput }) => disputeApi.resolve(id, input));
