@@ -117,6 +117,20 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
         proficiency: { type: String, required: true },
       },
     ],
+    // Fixed-price packages shown next to the hourly rate.
+    milestonePricing: [
+      {
+        title: { type: String, required: true, trim: true },
+        description: String,
+        price: { type: Number, required: true, min: 0 },
+        deliveryDays: { type: Number, required: true, min: 1 },
+      },
+    ],
+    // GeoJSON point [lng, lat] used for nearby search and proximity scoring.
+    location: {
+      type: { type: String, enum: ['Point'] },
+      coordinates: { type: [Number] },
+    },
     socialLinks: {
       github: String,
       linkedin: String,
@@ -133,6 +147,7 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
 
 // Indexes
 freelancerProfileSchema.index({ 'skills.name': 1 });
+freelancerProfileSchema.index({ location: '2dsphere' });
 // Powers $text search on /search/freelancers?q=
 freelancerProfileSchema.index(
   { title: 'text', headline: 'text', 'skills.name': 'text' },

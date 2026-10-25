@@ -245,6 +245,8 @@ export interface IFreelancerProfile extends Document {
   averageRating: number;
   totalReviews: number;
   responseTime: number; // in hours
+  milestonePricing: { title: string; description?: string; price: number; deliveryDays: number }[];
+  location?: IGeoLocation;
   languages: { language: string; proficiency: string }[];
   socialLinks: {
     github?: string;

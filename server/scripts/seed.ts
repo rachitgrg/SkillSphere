@@ -157,14 +157,14 @@ const upsertGig = async (client: IUser, gig: (typeof GIGS)[number], extra: Recor
   const { owner: _owner, ...fields } = gig;
   const doc =
     (await Gig.findOne({ client: client._id, title: gig.title })) ?? new Gig({ client: client._id, title: gig.title });
+  // Content is refreshed on every run; workflow state (status, hire, milestones) only on first insert,
+  // so progress made in the app survives a re-seed.
   doc.set({
     ...fields,
-    status: GigStatus.OPEN,
-    visibility: 'public',
     tags: ['seed'],
     ...(gig.locationType === 'remote' ? {} : { location: point(city) }),
-    ...extra,
   });
+  if (doc.isNew) doc.set({ status: GigStatus.OPEN, visibility: 'public', ...extra });
   await doc.save();
   return doc;
 };
@@ -176,7 +176,7 @@ const upsertProposal = async (
 ) => {
   const proposal = await Proposal.findOneAndUpdate(
     { gig: gigId, freelancer: freelancerId },
-    { $set: data },
+    { $set: { coverLetter: data.coverLetter, estimatedDuration: data.estimatedDuration }, $setOnInsert: { proposedAmount: data.proposedAmount, status: data.status } },
     { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
   await Gig.updateOne({ _id: gigId }, { $addToSet: { proposals: proposal._id } });
@@ -184,8 +184,9 @@ const upsertProposal = async (
 };
 
 const upsertPayment = async (key: string, data: Record<string, unknown>) => {
-  const payment = (await Payment.findOne({ razorpayOrderId: key })) ?? new Payment({ razorpayOrderId: key });
-  payment.set(data);
+  const existing = await Payment.findOne({ razorpayOrderId: key });
+  if (existing) return existing; // never rewrite money state on a re-seed
+  const payment = new Payment({ razorpayOrderId: key, ...data });
   await payment.save();
   return payment;
 };
@@ -254,6 +255,7 @@ async function main() {
           title: f.title,
           headline: f.headline,
           hourlyRate: f.hourlyRate,
+          location: point(f.city),
           skills: f.skills.map(([name, proficiency, yearsOfExperience]) => ({ name, proficiency, yearsOfExperience })),
           languages: [{ language: 'English', proficiency: 'fluent' }, { language: 'Hindi', proficiency: 'fluent' }],
           availabilitySlots: [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startTime: '10:00', endTime: '18:00' })),

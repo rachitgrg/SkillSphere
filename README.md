@@ -14,7 +14,8 @@ that validate requests, so the docs cannot drift; a test fails if a route is und
 ## Seed data and demo accounts
 
 `npm run seed` (in `server/`) creates demo data **without deleting anything** (it upserts by email,
-gig title, …). It refuses to run unless `MONGO_URI` points at localhost, unless you pass `--force`.
+gig title, …). Re-running refreshes demo content but keeps workflow state (hires, payments, statuses) made in the app.
+On an existing database, run `npm run db:sync-indexes` once to apply index changes. It refuses to run unless `MONGO_URI` points at localhost, unless you pass `--force`.
 
 ```bash
 cd server

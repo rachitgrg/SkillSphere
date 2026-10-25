@@ -237,3 +237,14 @@ describe('search extras', () => {
     expect(res.body.data).toEqual({ titles: ['React dashboard'], skills: ['React'] });
   });
 });
+
+describe('GET /gigs/mine for freelancers', () => {
+  it('returns gigs the freelancer was hired on', async () => {
+    const client = await createUser(UserRole.CLIENT);
+    const freelancer = await createUser(UserRole.FREELANCER);
+    await createGig(client.user._id, { status: GigStatus.IN_PROGRESS, selectedFreelancer: freelancer.user._id, title: 'Hired gig' });
+    await createGig(client.user._id, { title: 'Other gig' });
+    const res = await request(app).get('/api/v1/gigs/mine').set(freelancer.auth);
+    expect(res.body.data.map((g: { title: string }) => g.title)).toEqual(['Hired gig']);
+  });
+});

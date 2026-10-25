@@ -54,18 +54,23 @@ export const createGig = async (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
-/** GET /gigs/mine — the client's own gigs in every status, optionally filtered by status. */
+/**
+ * GET /gigs/mine — clients: gigs they posted (every status); freelancers: gigs they were hired on.
+ * Optionally filtered by status.
+ */
 export const getMyGigs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const query = req.query as Record<string, unknown>;
     const { page, limit } = parsePaginationParams(query);
-    const filter: Record<string, unknown> = { client: req.user!._id };
+    const isFreelancer = req.user!.role === UserRole.FREELANCER;
+    const filter: Record<string, unknown> = isFreelancer ? { selectedFreelancer: req.user!._id } : { client: req.user!._id };
     const statuses = toStringList(query.status).filter((s) => (Object.values(GigStatus) as string[]).includes(s));
     if (statuses.length) filter.status = { $in: statuses };
 
     const [gigs, total] = await Promise.all([
       Gig.find(filter)
         .populate('selectedFreelancer', 'firstName lastName avatar')
+        .populate('client', 'firstName lastName avatar')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)

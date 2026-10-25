@@ -1,45 +1,96 @@
-import React from 'react';
+import { Link } from 'react-router';
+import { CheckCircle2, FileText, IndianRupee, Lock, Sparkles } from 'lucide-react';
 import { StatCard } from '../../components/dashboard/StatCard';
-import { RecentActivity } from '../../components/dashboard/RecentActivity';
-import { IndianRupee, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
+import { PageHeader } from '../../components/common/PageHeader';
+import { QueryState } from '../../components/common/QueryState';
 import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
 import { ResumeMatcher } from '../../components/freelancer/ResumeMatcher';
+import { useFreelancerAnalytics, useMyGigs, useRecommendations } from '../../hooks/queries/useDashboard';
+import { useAppSelector } from '../../hooks/useRedux';
+import type { UserSummary } from '../../types';
+import { formatBudget, formatCurrency, fullName, populated } from '../../utils/helpers';
 
-export const FreelancerDashboard: React.FC = () => {
+export function FreelancerDashboard() {
+  const user = useAppSelector((s) => s.auth.user);
+  const analytics = useFreelancerAnalytics('12m');
+  const projects = useMyGigs({ status: ['in_progress'], limit: 3 });
+  const recommendations = useRecommendations();
+  const a = analytics.data;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Freelancer Dashboard</h1>
-        <div className="flex gap-2">
-          <button className="btn-secondary px-4 py-2 rounded-lg text-sm bg-slate-800 hover:bg-slate-700 text-white">Find Work</button>
-        </div>
-      </div>
+      <PageHeader
+        title={`Hi, ${user?.firstName ?? ''}`}
+        description="Your work, earnings and matches."
+        actions={
+          <Link to="/gigs" className="btn-primary px-4 py-2 text-sm">
+            <span>Find work</span>
+          </Link>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Earnings" value="₹24,500" icon={<IndianRupee className="w-6 h-6" />} color="emerald" trend={{ value: 8, isPositive: true }} />
-        <StatCard title="Active Projects" value="4" icon={<Clock className="w-6 h-6" />} color="indigo" />
-        <StatCard title="Jobs Completed" value="32" icon={<CheckCircle2 className="w-6 h-6" />} color="cyan" />
-        <StatCard title="Profile Views" value="1,204" icon={<TrendingUp className="w-6 h-6" />} color="violet" trend={{ value: 24, isPositive: true }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Earned" value={a ? formatCurrency(a.earnings.released) : '—'} icon={<IndianRupee className="w-6 h-6" />} color="emerald" />
+        <StatCard title="In escrow" value={a ? formatCurrency(a.earnings.pending) : '—'} icon={<Lock className="w-6 h-6" />} color="cyan" />
+        <StatCard title="Proposals sent" value={a?.proposals.sent ?? '—'} icon={<FileText className="w-6 h-6" />} color="indigo" />
+        <StatCard title="Acceptance rate" value={a ? `${a.proposals.acceptanceRate}%` : '—'} icon={<CheckCircle2 className="w-6 h-6" />} color="violet" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          <section className="glass-card p-6 rounded-2xl border border-slate-800">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-white">Active projects</h2>
+              <Link to="/freelancer/projects" className="text-xs text-indigo-400 hover:text-indigo-300">View all</Link>
+            </div>
+            <QueryState
+              isLoading={projects.isLoading}
+              isError={projects.isError}
+              error={projects.error}
+              isEmpty={!projects.data?.items.length}
+              empty={{ title: 'No active projects', description: 'When a client hires you, the project and its milestones show up here.' }}
+            >
+              <div className="space-y-6">
+                {projects.data?.items.map((gig) => (
+                  <div key={gig._id}>
+                    <div className="flex justify-between items-baseline mb-3 gap-3">
+                      <Link to={`/projects/${gig._id}`} className="font-medium text-white hover:text-indigo-400">{gig.title}</Link>
+                      <span className="text-xs text-slate-500 shrink-0">for {fullName(populated<UserSummary>(gig.client as UserSummary))}</span>
+                    </div>
+                    {gig.milestones.length ? <MilestoneTimeline milestones={gig.milestones} /> : <p className="text-sm text-slate-500">No milestones defined.</p>}
+                  </div>
+                ))}
+              </div>
+            </QueryState>
+          </section>
+
           <ResumeMatcher />
-          
-          <div className="glass-card p-6 rounded-2xl border border-slate-800">
-            <h3 className="font-semibold text-white mb-4">Current Milestones</h3>
-            <MilestoneTimeline milestones={[]} />
-          </div>
         </div>
-        
-        <div className="lg:col-span-1">
-          <RecentActivity activities={[
-            { content: 'New message from TechCorp', time: '1 hour ago' },
-            { content: 'Proposal viewed by StartupInc', time: '3 hours ago' },
-            { content: 'Earned Top Rated Badge', time: '1 day ago' }
-          ]} />
-        </div>
+
+        <section className="glass-card p-6 rounded-2xl border border-slate-800 h-fit">
+          <h2 className="font-semibold text-white mb-1 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-400" /> Recommended for you
+          </h2>
+          <p className="text-xs text-slate-500 mb-4">Open gigs ranked by how well they match your skills.</p>
+          <QueryState
+            isLoading={recommendations.isLoading}
+            isError={recommendations.isError}
+            error={recommendations.error}
+            isEmpty={!recommendations.data?.length}
+            empty={{ title: 'No matches yet', description: 'Add skills to your profile to get recommendations.' }}
+          >
+            <ul className="space-y-4">
+              {recommendations.data?.map(({ gig, score, matchedSkills }) => (
+                <li key={gig._id} className="border-b border-slate-800 last:border-0 pb-4 last:pb-0">
+                  <Link to={`/gigs/${gig._id}`} className="font-medium text-white hover:text-indigo-400 text-sm">{gig.title}</Link>
+                  <p className="text-xs text-slate-400 mt-1">{formatBudget(gig)}</p>
+                  <p className="text-xs text-indigo-300 mt-1">{score}% match · {matchedSkills.join(', ')}</p>
+                </li>
+              ))}
+            </ul>
+          </QueryState>
+        </section>
       </div>
     </div>
   );
-};
+}

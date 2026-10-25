@@ -48,7 +48,7 @@ export const ROUTES: RouteDoc[] = [
     method: 'get', path: '/gigs/', tag: 'Gigs', summary: 'Marketplace: open, public gigs', access: 'public',
     query: { q: 'Text search', category: 'Category', skills: 'Comma list or repeated param', budgetMin: 'Overlap lower bound (INR)', budgetMax: 'Overlap upper bound (INR)', budgetType: 'fixed | hourly', experienceLevel: 'entry | intermediate | expert', locationType: 'remote | onsite | hybrid', sort: 'newest | oldest | budget_high | budget_low | popular', ...pageQuery },
   },
-  { method: 'get', path: '/gigs/mine', tag: 'Gigs', summary: "The client's own gigs (all statuses)", access: 'client', query: { status: 'Comma list of statuses', ...pageQuery } },
+  { method: 'get', path: '/gigs/mine', tag: 'Gigs', summary: 'Clients: gigs I posted; freelancers: gigs I was hired on', access: 'client|freelancer', query: { status: 'Comma list of statuses', ...pageQuery } },
   { method: 'get', path: '/gigs/:id', tag: 'Gigs', summary: 'Gig details (non-public gigs only for their parties)', access: 'public' },
   { method: 'post', path: '/gigs/', tag: 'Gigs', summary: 'Create a gig (goes to the admin approval queue)', access: 'client', body: bodyOf(v.createGigSchema) },
   { method: 'put', path: '/gigs/:id', tag: 'Gigs', summary: 'Edit a gig before work starts', access: 'client', body: bodyOf(v.updateGigSchema) },

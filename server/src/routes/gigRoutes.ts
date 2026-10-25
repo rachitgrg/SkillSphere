@@ -9,7 +9,7 @@ import { UserRole } from '../types';
 const router = Router();
 
 router.get('/', optionalAuth, getGigs);
-router.get('/mine', protect, authorize(UserRole.CLIENT), getMyGigs);
+router.get('/mine', protect, authorize(UserRole.CLIENT, UserRole.FREELANCER), getMyGigs);
 router.get('/:id', optionalAuth, getGigById);
 router.post('/', protect, authorize(UserRole.CLIENT), validate(createGigSchema), createGig);
 router.put('/:id', protect, authorize(UserRole.CLIENT), validate(updateGigSchema), updateGig);

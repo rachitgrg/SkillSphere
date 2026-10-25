@@ -277,7 +277,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - `CreateGigPage`: add a milestones editor (title, description, amount, due date, and the sum must fit the budget), attachments upload, location (browser geolocation + city text) with `locationType`, and an invite‑freelancers picker. On success, navigate to the new gig.
   - `/client/payments`: transaction history.
   - `/client/profile`: real data + edit.
-- [ ] **3.5 Freelancer area.**
+- [x] **3.5 Freelancer area.**
   - `/freelancer/dashboard`: real stats, active projects with `MilestoneTimeline`, AI "Recommended gigs for you" (`/ai/recommendations`), and the `ResumeMatcher`.
   - `/freelancer/projects`: active and completed.
   - `/freelancer/profile`: real data.
