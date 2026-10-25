@@ -32,7 +32,7 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
     const user = await User.findByIdAndUpdate(
       userId,
       { $set: pick(req.body, USER_EDITABLE) },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     ).select('-password');
 
     res.status(200).json({ success: true, message: 'Profile updated', data: user });
@@ -63,7 +63,7 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
     const profile = await FreelancerProfile.findOneAndUpdate(
       { user: req.user._id },
       { $set: pick(req.body, FREELANCER_EDITABLE) },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
   } catch (error) {
@@ -93,7 +93,7 @@ export const updateClientProfile = async (req: AuthRequest, res: Response, next:
     const profile = await ClientProfile.findOneAndUpdate(
       { user: req.user._id },
       { $set: pick(req.body, CLIENT_EDITABLE) },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
   } catch (error) {

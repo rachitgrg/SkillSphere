@@ -90,17 +90,17 @@ export const analyzeCareer = async (req: AuthRequest, res: Response, next: NextF
 
 export const getGigById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const gig = await Gig.findById(req.params.id)
-      .populate('client', 'firstName lastName avatar')
-      .populate('selectedFreelancer', 'firstName lastName avatar');
-      
-    if (!gig) {
+    // Atomic increment: never re-validates (or rewrites) the whole document.
+    const { matchedCount } = await Gig.updateOne({ _id: req.params.id }, { $inc: { views: 1 } });
+    if (!matchedCount) {
       res.status(404).json({ success: false, message: 'Gig not found' });
       return;
     }
 
-    gig.views += 1;
-    await gig.save();
+    const gig = await Gig.findById(req.params.id)
+      .populate('client', 'firstName lastName avatar')
+      .populate('selectedFreelancer', 'firstName lastName avatar')
+      .lean();
 
     res.status(200).json({ success: true, message: 'Gig retrieved', data: gig });
   } catch (error) {
