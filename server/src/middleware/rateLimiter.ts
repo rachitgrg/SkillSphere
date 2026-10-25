@@ -1,4 +1,8 @@
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env';
+
+// Rate limits are disabled under test so suites can make many requests.
+const skip = () => env.NODE_ENV === 'test';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -9,6 +13,7 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
 });
 
 export const authLimiter = rateLimit({
@@ -20,6 +25,7 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
 });
 
 export const apiLimiter = rateLimit({
@@ -31,6 +37,7 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
 });
 
 export const uploadLimiter = rateLimit({
@@ -42,4 +49,5 @@ export const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip,
 });

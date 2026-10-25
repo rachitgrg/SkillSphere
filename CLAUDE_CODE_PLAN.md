@@ -113,7 +113,7 @@
 
 ## Phase 1 — Fix bugs (security and correctness)
 
-- [ ] **1.0 Test harness (do this first).**
+- [x] **1.0 Test harness (do this first).**
   - Add `jest`, `ts-jest`, `supertest`, `@types/jest`, `@types/supertest` and `mongodb-memory-server` to `server/` devDeps.
   - Add `jest.config.ts` and `server/tests/setup.ts` (start an in‑memory Mongo, connect mongoose, clear collections between tests).
   - Export `app` without listening (already the case in `app.ts`).
