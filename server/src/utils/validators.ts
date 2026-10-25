@@ -1,5 +1,24 @@
 import { z } from 'zod';
 
+// ───────────────────────── Shared pieces ─────────────────────────
+
+/** GeoJSON point: [longitude, latitude]. */
+export const geoPointSchema = z.object({
+  type: z.literal('Point'),
+  coordinates: z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)]),
+});
+
+const optionalUrl = z.string().url().optional().or(z.literal(''));
+/** Optional date; empty strings from HTML inputs count as unset. */
+const optionalDate = z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.date().optional());
+const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
+const milestoneInput = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().min(1).max(2000),
+  amount: z.number().min(0),
+  dueDate: z.coerce.date(),
+});
+
 // ───────────────────────── Auth Schemas ─────────────────────────
 
 export const registerSchema = z.object({
@@ -64,10 +83,7 @@ export const updateProfileSchema = z.object({
       country: z.string().optional(),
       zipCode: z.string().optional(),
     }).optional(),
-    location: z.object({
-      type: z.literal('Point'),
-      coordinates: z.tuple([z.number(), z.number()]),
-    }).optional(),
+    location: geoPointSchema.optional(),
   }),
 });
 
@@ -98,10 +114,40 @@ export const updateFreelancerProfileSchema = z.object({
       year: z.number().min(1900).max(2100),
     })).optional(),
     availabilitySlots: z.array(z.object({
-      dayOfWeek: z.number().min(0).max(6),
-      startTime: z.string(),
-      endTime: z.string(),
-    })).optional(),
+      dayOfWeek: z.number().int().min(0).max(6),
+      startTime: z.string().regex(HH_MM, 'Use HH:mm'),
+      endTime: z.string().regex(HH_MM, 'Use HH:mm'),
+    })).max(50).optional(),
+    portfolio: z.array(z.object({
+      title: z.string().trim().min(1).max(200),
+      description: z.string().trim().min(1).max(2000),
+      url: optionalUrl,
+      images: z.array(z.string().url()).max(10).optional(),
+      technologies: z.array(z.string().max(50)).max(20).optional(),
+      completedAt: optionalDate,
+    })).max(30).optional(),
+    certifications: z.array(z.object({
+      name: z.string().trim().min(1).max(200),
+      issuer: z.string().trim().min(1).max(200),
+      issueDate: z.coerce.date(),
+      expiryDate: optionalDate,
+      credentialUrl: optionalUrl,
+    })).max(30).optional(),
+    workExperience: z.array(z.object({
+      title: z.string().trim().min(1).max(200),
+      company: z.string().trim().min(1).max(200),
+      startDate: z.coerce.date(),
+      endDate: optionalDate,
+      current: z.boolean().optional(),
+      description: z.string().trim().min(1).max(2000),
+    })).max(30).optional(),
+    milestonePricing: z.array(z.object({
+      title: z.string().trim().min(1).max(200),
+      description: z.string().max(1000).optional(),
+      price: z.number().min(0),
+      deliveryDays: z.number().int().min(1).max(365),
+    })).max(10).optional(),
+    location: geoPointSchema.optional(),
   }),
 });
 
@@ -129,20 +175,13 @@ export const createGigSchema = z.object({
     budgetMax: z.number().min(0),
     duration: z.string().min(1),
     experienceLevel: z.enum(['entry', 'intermediate', 'expert']),
-    milestones: z.array(z.object({
-      title: z.string().min(1),
-      description: z.string().min(1),
-      amount: z.number().min(0),
-      dueDate: z.string(),
-    })).optional(),
+    milestones: z.array(milestoneInput).max(20).optional(),
+    attachments: z.array(z.string().url()).max(10).optional(),
     locationType: z.enum(['remote', 'onsite', 'hybrid']).optional(),
     visibility: z.enum(['public', 'private', 'invite_only']).optional(),
-    tags: z.array(z.string()).optional(),
-    deadline: z.string().optional(),
-    location: z.object({
-      type: z.literal('Point'),
-      coordinates: z.tuple([z.number(), z.number()]),
-    }).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
+    deadline: optionalDate,
+    location: geoPointSchema.optional(),
   }),
 });
 
@@ -158,17 +197,14 @@ export const updateGigSchema = z.object({
     budgetMax: z.number().min(0).optional(),
     duration: z.string().optional(),
     experienceLevel: z.enum(['entry', 'intermediate', 'expert']).optional(),
-    milestones: z.array(z.object({
-      title: z.string().min(1),
-      description: z.string().min(1),
-      amount: z.number().min(0),
-      dueDate: z.string(),
-    })).optional(),
+    milestones: z.array(milestoneInput).max(20).optional(),
+    attachments: z.array(z.string().url()).max(10).optional(),
     locationType: z.enum(['remote', 'onsite', 'hybrid']).optional(),
     visibility: z.enum(['public', 'private', 'invite_only']).optional(),
-    tags: z.array(z.string()).optional(),
-    deadline: z.string().optional(),
-    status: z.enum(['draft', 'open', 'in_progress', 'completed', 'cancelled']).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
+    deadline: optionalDate,
+    location: geoPointSchema.optional(),
+    // status, views, client and selectedFreelancer are server-controlled.
   }),
 });
 

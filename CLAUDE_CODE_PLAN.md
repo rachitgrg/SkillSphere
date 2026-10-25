@@ -148,7 +148,7 @@
   - `send_message`: payload `{conversationId, content, type?, fileUrl?, fileName?}`. Verify membership, **persist** via `Message.create`, update `conversation.lastMessage/lastMessageAt`, emit the saved, populated message to `conv:<id>`, and notify other participants on `user:<id>`.
   - Validate payloads with zod.
   - Test with `socket.io-client`: a non‑participant cannot join or receive.
-- [ ] **1.8 Mass assignment (C8).** Add a `pick(obj, allowedKeys)` helper (check `server/src/utils/helpers.ts` first).
+- [x] **1.8 Mass assignment (C8).** Add a `pick(obj, allowedKeys)` helper (check `server/src/utils/helpers.ts` first).
   - `updateFreelancerProfile`: allow only `title, headline, skills, portfolio, certifications, workExperience, education, hourlyRate, availability, availabilitySlots, languages, socialLinks, location, milestonePricing` (new field, Phase 4).
   - `updateClientProfile`: allow only `companyName, companyWebsite, companySize, industry, description`.
   - `createGig` / `updateGig`: allow only `title, description, category, subCategory, skills, budgetType, budgetMin, budgetMax, duration, experienceLevel, milestones, attachments, location, locationType, visibility, tags, deadline`. `updateGig` is allowed only while status is `draft|pending_approval|open`.

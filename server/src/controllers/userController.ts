@@ -3,6 +3,15 @@ import User from '../models/User';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
 import { AuthRequest, UserRole } from '../types';
+import { pick } from '../utils/helpers';
+
+/** Fields users may edit; ratings, earnings and counters are server-controlled. */
+export const FREELANCER_EDITABLE = [
+  'title', 'headline', 'skills', 'portfolio', 'certifications', 'workExperience', 'education',
+  'hourlyRate', 'availability', 'availabilitySlots', 'languages', 'socialLinks', 'location', 'milestonePricing',
+] as const;
+export const CLIENT_EDITABLE = ['companyName', 'companyWebsite', 'companySize', 'industry', 'description'] as const;
+const USER_EDITABLE = ['firstName', 'lastName', 'phone', 'bio', 'location', 'address'] as const;
 
 export const getUserById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -20,11 +29,9 @@ export const getUserById = async (req: AuthRequest, res: Response, next: NextFun
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user?._id;
-    const { firstName, lastName, phone, bio, location, address } = req.body;
-
     const user = await User.findByIdAndUpdate(
       userId,
-      { firstName, lastName, phone, bio, location, address },
+      { $set: pick(req.body, USER_EDITABLE) },
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -55,7 +62,7 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
     }
     const profile = await FreelancerProfile.findOneAndUpdate(
       { user: req.user._id },
-      { $set: req.body },
+      { $set: pick(req.body, FREELANCER_EDITABLE) },
       { new: true, runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
@@ -85,7 +92,7 @@ export const updateClientProfile = async (req: AuthRequest, res: Response, next:
     }
     const profile = await ClientProfile.findOneAndUpdate(
       { user: req.user._id },
-      { $set: req.body },
+      { $set: pick(req.body, CLIENT_EDITABLE) },
       { new: true, runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });

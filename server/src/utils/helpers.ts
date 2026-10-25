@@ -100,3 +100,16 @@ export const getDateRange = (
 export const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+/** Copies only `keys` that are present on `obj` (undefined values are skipped). Guards against mass assignment. */
+export const pick = <K extends string>(
+  obj: Record<string, unknown> | null | undefined,
+  keys: readonly K[]
+): Partial<Record<K, unknown>> => {
+  const out: Partial<Record<K, unknown>> = {};
+  if (!obj) return out;
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] !== undefined) out[key] = obj[key];
+  }
+  return out;
+};

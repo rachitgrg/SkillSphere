@@ -3,6 +3,16 @@ import Gig from '../models/Gig';
 import aiMatchingService from '../services/aiMatchingService';
 import { QueryFilter } from 'mongoose';
 import { AuthRequest, UserRole, GigStatus, IGig } from '../types';
+import { pick } from '../utils/helpers';
+
+/** Fields a client may set on a gig; status, views, proposals and the hired freelancer are server-controlled. */
+export const GIG_EDITABLE = [
+  'title', 'description', 'category', 'subCategory', 'skills', 'budgetType', 'budgetMin', 'budgetMax',
+  'duration', 'experienceLevel', 'milestones', 'attachments', 'location', 'locationType', 'visibility', 'tags', 'deadline',
+] as const;
+
+/** A gig can only be edited before work starts. */
+const EDITABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
 
 export const createGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -12,7 +22,7 @@ export const createGig = async (req: AuthRequest, res: Response, next: NextFunct
     }
 
     const gig = new Gig({
-      ...req.body,
+      ...pick(req.body, GIG_EDITABLE),
       client: req.user._id,
       status: GigStatus.OPEN,
       totalProposals: 0,
@@ -111,8 +121,15 @@ export const updateGig = async (req: AuthRequest, res: Response, next: NextFunct
       return;
     }
 
-    const updatedGig = await Gig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    res.status(200).json({ success: true, message: 'Gig updated', data: updatedGig });
+    if (!EDITABLE_STATUSES.includes(gig.status)) {
+      res.status(409).json({ success: false, message: `A gig cannot be edited once it is ${gig.status}` });
+      return;
+    }
+
+    // Saving the document (not findByIdAndUpdate) runs the budget pre-validate hook.
+    gig.set(pick(req.body, GIG_EDITABLE));
+    await gig.save();
+    res.status(200).json({ success: true, message: 'Gig updated', data: gig });
   } catch (error) {
     next(error);
   }

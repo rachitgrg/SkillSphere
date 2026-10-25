@@ -11,6 +11,8 @@ export enum UserRole {
 
 export enum GigStatus {
   DRAFT = 'draft',
+  PENDING_APPROVAL = 'pending_approval',
+  REJECTED = 'rejected',
   OPEN = 'open',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
