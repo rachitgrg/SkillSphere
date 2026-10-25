@@ -100,7 +100,7 @@
   - Run `npm audit fix` (non‑breaking) in both packages.
   - Upgrade `multer` to `^2` and `nodemailer` to the patched major, adapting the code.
   - Re‑run `npm audit --omit=dev` and record the remaining issues in the README.
-- [ ] **0.7 Env loading and validation (fixes audit C4).**
+- [x] **0.7 Env loading and validation (fixes audit C4).**
   - Create `server/src/config/env.ts`. It loads `dotenv` from `path.resolve(__dirname, '../../../.env')`, validates with zod (required: `MONGO_URI`, `JWT_SECRET` ≥ 32 chars, `JWT_REFRESH_SECRET`, `CLIENT_URL`; the rest optional), and exports a typed `env` object.
   - Import it as the **very first line** of `server/src/server.ts`.
   - Replace scattered `process.env.X || 'fallback'` reads in security code with `env.X`. Remove the `'secret'` / `'refresh-secret'` fallbacks in `middleware/auth.ts`, `utils/generateToken.ts`, `sockets/*`, `config/socket.ts`.

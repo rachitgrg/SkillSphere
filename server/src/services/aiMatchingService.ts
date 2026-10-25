@@ -2,6 +2,7 @@ import { InferenceClient } from '@huggingface/inference';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { IGig, IFreelancerProfile, MatchScore, AvailabilityStatus } from '../types';
 import { Types } from 'mongoose';
+import { env } from '../config/env';
 
 export interface CareerReport {
   targetRoles: string[];
@@ -15,7 +16,7 @@ class AIMatchingService {
 
   private getClient(): InferenceClient {
     if (!this.client) {
-      this.client = new InferenceClient(process.env.HF_ACCESS_TOKEN || '');
+      this.client = new InferenceClient(env.HF_ACCESS_TOKEN || '');
     }
     return this.client;
   }

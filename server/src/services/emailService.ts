@@ -1,5 +1,6 @@
 import { sendEmail } from '../utils/sendEmail';
 import User from '../models/User';
+import { env } from '../config/env';
 
 class EmailService {
   async sendProposalNotification(
@@ -19,7 +20,7 @@ class EmailService {
             <h2 style="color: #2563eb;">New Proposal Received!</h2>
             <p><strong>${freelancerName}</strong> has submitted a proposal for your gig:</p>
             <h3>${gigTitle}</h3>
-            <a href="${process.env.CLIENT_URL}/gigs" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/gigs" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               View Proposal
             </a>
           </div>
@@ -53,7 +54,7 @@ class EmailService {
             <h2 style="color: #2563eb;">Proposal Update</h2>
             <p>${statusMessages[status] || `Your proposal status has been updated to: ${status}`}</p>
             <h3>${gigTitle}</h3>
-            <a href="${process.env.CLIENT_URL}/proposals" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/proposals" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               View Details
             </a>
           </div>
@@ -88,7 +89,7 @@ class EmailService {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2563eb;">Payment Update</h2>
             <p>${typeMessages[type]}</p>
-            <a href="${process.env.CLIENT_URL}/payments" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/payments" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               View Payments
             </a>
           </div>
@@ -116,7 +117,7 @@ class EmailService {
             <h2 style="color: #dc2626;">Dispute Notification</h2>
             <h3>${disputeTitle}</h3>
             <p>${message}</p>
-            <a href="${process.env.CLIENT_URL}/disputes" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/disputes" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               View Dispute
             </a>
           </div>
@@ -144,7 +145,7 @@ class EmailService {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #2563eb;">New Review</h2>
             <p><strong>${reviewerName}</strong> left a ${rating}-star review for "${gigTitle}".</p>
-            <a href="${process.env.CLIENT_URL}/reviews" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/reviews" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               View Review
             </a>
           </div>
@@ -170,7 +171,7 @@ class EmailService {
               <li>Browse available gigs</li>
               <li>Connect with talented professionals</li>
             </ul>
-            <a href="${process.env.CLIENT_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            <a href="${env.CLIENT_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
               Get Started
             </a>
           </div>

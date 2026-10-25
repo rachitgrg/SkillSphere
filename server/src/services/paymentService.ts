@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import razorpayInstance from '../config/razorpay';
+import { getRazorpay } from '../config/razorpay';
+import { env } from '../config/env';
 import Payment from '../models/Payment';
 import { Types } from 'mongoose';
 import { PaymentStatus } from '../types';
@@ -20,6 +21,7 @@ class PaymentService {
       receipt: receipt || `receipt_${Date.now()}`,
     };
 
+    const razorpayInstance = getRazorpay();
     if (!razorpayInstance) {
       throw new Error('Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env');
     }
@@ -39,7 +41,7 @@ class PaymentService {
   ): boolean {
     const body = `${orderId}|${paymentId}`;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
+      .createHmac('sha256', env.RAZORPAY_KEY_SECRET || '')
       .update(body)
       .digest('hex');
 
@@ -88,6 +90,7 @@ class PaymentService {
     // Process refund through Razorpay if payment was captured
     if (payment.razorpayPaymentId) {
       try {
+        const razorpayInstance = getRazorpay();
         if (!razorpayInstance) {
           throw new Error('Razorpay is not configured');
         }

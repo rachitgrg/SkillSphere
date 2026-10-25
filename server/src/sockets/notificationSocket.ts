@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { JwtPayload } from '../types';
+import { env } from '../config/env';
 
 export const notificationSocket = (io: Server) => {
   io.use(async (socket: Socket, next) => {
@@ -9,7 +10,7 @@ export const notificationSocket = (io: Server) => {
       const token = socket.handshake.auth.token;
       if (!token) return next(new Error('Authentication error'));
       
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+      const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
       const user = await User.findById(decoded.id);
       if (!user) return next(new Error('User not found'));
       

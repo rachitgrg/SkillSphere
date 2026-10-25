@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
 import User from '../models/User';
 import { UserRole } from '../types';
+import { env } from './env';
 
 const configurePassport = (): void => {
   passport.serializeUser((user: Express.User, done) => {
@@ -20,9 +21,9 @@ const configurePassport = (): void => {
   passport.use(
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        clientID: env.GOOGLE_CLIENT_ID || '',
+        clientSecret: env.GOOGLE_CLIENT_SECRET || '',
+        callbackURL: env.GOOGLE_CALLBACK_URL,
       },
       async (
         _accessToken: string,

@@ -23,13 +23,14 @@ import adminRoutes from './routes/adminRoutes';
 import disputeRoutes from './routes/disputeRoutes';
 import searchRoutes from './routes/searchRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import { env } from './config/env';
 
 const app: Application = express();
 
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: env.CLIENT_URL,
   credentials: true
 }));
 app.use(mongoSanitize());
@@ -40,7 +41,7 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use(compression());
 
-if (process.env.NODE_ENV === 'development') {
+if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 

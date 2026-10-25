@@ -2,13 +2,14 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
+import { env } from './env';
 
 let io: Server;
 
 export const initializeSocket = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: env.CLIENT_URL,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -25,7 +26,7 @@ export const initializeSocket = (httpServer: HttpServer): Server => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as JwtPayload;
+      const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
       socket.data.userId = decoded.id;
       socket.data.userRole = decoded.role;
       next();

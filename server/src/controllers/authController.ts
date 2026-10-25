@@ -5,6 +5,7 @@ import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { AuthRequest, UserRole, RefreshTokenPayload } from '../types';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken';
+import { env } from '../config/env';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -150,7 +151,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as RefreshTokenPayload;
+    const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenPayload;
     const user = await User.findById(decoded.id);
 
     if (!user || user.refreshToken !== token) {

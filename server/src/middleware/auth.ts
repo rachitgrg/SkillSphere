@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { AuthRequest, JwtPayload } from '../types';
+import { env } from '../config/env';
 
 export const protect = async (
   req: AuthRequest,
@@ -27,7 +28,7 @@ export const protect = async (
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'secret'
+      env.JWT_SECRET
     ) as JwtPayload;
 
     const user = await User.findById(decoded.id).select('-password');
@@ -99,7 +100,7 @@ export const optionalAuth = async (
     if (token) {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || 'secret'
+        env.JWT_SECRET
       ) as JwtPayload;
 
       const user = await User.findById(decoded.id).select('-password');

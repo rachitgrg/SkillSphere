@@ -1,14 +1,16 @@
+// Must be the first import: loads and validates the root .env before anything reads it.
+import { env, logMissingIntegrations } from './config/env';
 import http from 'http';
-import path from 'path';
+import mongoose from 'mongoose';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 import app from './app';
 import connectDB from './config/db';
+import { configureCloudinary } from './config/cloudinary';
 import { chatSocket } from './sockets/chatSocket';
 import { notificationSocket } from './sockets/notificationSocket';
 
-// Load environment variables from root .env
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+logMissingIntegrations();
+configureCloudinary();
 
 // Initialize server
 const server = http.createServer(app);
@@ -16,7 +18,7 @@ const server = http.createServer(app);
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: env.CLIENT_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
@@ -27,13 +29,13 @@ chatSocket(io);
 notificationSocket(io);
 
 // Connect to Database and start server
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 
 const startServer = async () => {
   try {
     await connectDB();
     server.listen(PORT, () => {
-      console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -43,13 +45,19 @@ const startServer = async () => {
 
 startServer();
 
+const shutdown = (code: number) => {
+  server.close(() => {
+    mongoose.disconnect().finally(() => process.exit(code));
+  });
+  // Force exit if connections don't drain in time.
+  setTimeout(() => process.exit(code), 10_000).unref();
+};
+
 // Handle unhandled rejections
 process.on('unhandledRejection', (err: Error) => {
   console.log('UNHANDLED REJECTION! 💥 Shutting down...');
   console.log(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
+  shutdown(1);
 });
 
 process.on('uncaughtException', (err: Error) => {
@@ -57,3 +65,6 @@ process.on('uncaughtException', (err: Error) => {
   console.log(err.name, err.message);
   process.exit(1);
 });
+
+process.on('SIGTERM', () => shutdown(0));
+process.on('SIGINT', () => shutdown(0));

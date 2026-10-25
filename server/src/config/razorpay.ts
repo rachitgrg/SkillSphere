@@ -1,25 +1,16 @@
 import Razorpay from 'razorpay';
+import { env, features } from './env';
+
+let instance: Razorpay | null = null;
 
 /**
- * Returns a Razorpay instance only when real credentials are configured.
- * During development without Razorpay keys the server still starts normally;
- * payment routes will simply return a 503 if called.
+ * Returns a Razorpay client, or null when keys are not configured.
+ * Payment routes must answer 503 "Payments not configured" when this is null.
  */
-const getRazorpayInstance = (): Razorpay | null => {
-  const key_id = process.env.RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET;
-
-  if (
-    !key_id || key_id === 'your_razorpay_key_id' ||
-    !key_secret || key_secret === 'your_razorpay_key_secret'
-  ) {
-    console.warn('⚠️  Razorpay credentials not configured – payment features disabled.');
-    return null;
+export const getRazorpay = (): Razorpay | null => {
+  if (!features.razorpay) return null;
+  if (!instance) {
+    instance = new Razorpay({ key_id: env.RAZORPAY_KEY_ID!, key_secret: env.RAZORPAY_KEY_SECRET! });
   }
-
-  return new Razorpay({ key_id, key_secret });
+  return instance;
 };
-
-const razorpayInstance = getRazorpayInstance();
-
-export default razorpayInstance;

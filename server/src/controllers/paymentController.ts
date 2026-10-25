@@ -2,13 +2,15 @@ import { Response, NextFunction } from 'express';
 import Payment from '../models/Payment';
 import Gig from '../models/Gig';
 import { AuthRequest, PaymentStatus } from '../types';
-import razorpay from '../config/razorpay';
+import { getRazorpay } from '../config/razorpay';
+import { env } from '../config/env';
 import crypto from 'crypto';
 
 export const createPaymentIntent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, milestoneId, freelancerId, amount, description } = req.body;
 
+    const razorpay = getRazorpay();
     if (!razorpay) {
       res.status(503).json({ success: false, message: 'Payments not configured' });
       return;
@@ -20,7 +22,7 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response, next:
       return;
     }
 
-    const platformFeePercentage = Number(process.env.PLATFORM_FEE_PERCENTAGE || 10);
+    const platformFeePercentage = env.PLATFORM_FEE_PERCENTAGE;
     const platformFee = (amount * platformFeePercentage) / 100;
     const freelancerAmount = amount - platformFee;
 
@@ -60,7 +62,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response, next: NextF
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
+      .createHmac("sha256", env.RAZORPAY_KEY_SECRET || '')
       .update(sign.toString())
       .digest("hex");
 
