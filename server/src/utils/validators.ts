@@ -311,10 +311,18 @@ export const createDisputeSchema = z.object({
 });
 
 export const resolveDisputeSchema = z.object({
-  body: z.object({
-    resolution: z.string().min(1, 'Resolution is required'),
-    adminNotes: z.string().optional(),
-  }),
+  body: z
+    .object({
+      resolution: z.string().trim().min(1, 'Resolution is required').max(2000),
+      adminNotes: z.string().max(2000).optional(),
+      paymentAction: z.enum(['refund', 'release', 'split']).optional(),
+      // Amount refunded to the client when paymentAction is 'split'; the rest is released.
+      refundAmount: z.number().positive().optional(),
+    })
+    .refine((b) => b.paymentAction !== 'split' || b.refundAmount !== undefined, {
+      message: 'refundAmount is required for a split',
+      path: ['refundAmount'],
+    }),
 });
 
 // ───────────────────────── Search Schemas ─────────────────────────

@@ -54,6 +54,8 @@ const paymentSchema = new Schema<IPayment>(
     releasedAt: Date,
     refundedAt: Date,
     refundReason: String,
+    // Portion refunded to the client in a split dispute resolution (amount is reduced by it).
+    refundedAmount: { type: Number, min: 0 },
     description: String,
   },
   {

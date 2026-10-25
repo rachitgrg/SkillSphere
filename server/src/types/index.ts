@@ -91,6 +91,11 @@ export enum AdminAction {
   USER_UNBAN = 'user_unban',
   GIG_REMOVE = 'gig_remove',
   DISPUTE_RESOLVE = 'dispute_resolve',
+  GIG_APPROVE = 'gig_approve',
+  GIG_REJECT = 'gig_reject',
+  FREELANCER_VERIFY = 'freelancer_verify',
+  FREELANCER_REJECT_VERIFICATION = 'freelancer_reject_verification',
+  REVIEW_VISIBILITY = 'review_visibility',
   PAYMENT_REFUND = 'payment_refund',
   REVIEW_REMOVE = 'review_remove',
   SETTINGS_UPDATE = 'settings_update',
@@ -362,6 +367,7 @@ export interface IPayment extends Document {
   releasedAt?: Date;
   refundedAt?: Date;
   refundReason?: string;
+  refundedAmount?: number;
   description?: string;
   createdAt: Date;
   updatedAt: Date;

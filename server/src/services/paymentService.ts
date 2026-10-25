@@ -170,11 +170,15 @@ class PaymentService {
     return payment;
   }
 
-  /** Moves an escrowed payment to released. Caller-level authorization happens in the controller. */
-  async releasePayment(paymentId: string): Promise<IPayment> {
+  /**
+   * Moves an escrowed payment to released. Caller-level authorization happens in the controller;
+   * `allowDisputed` is for admin dispute resolution only.
+   */
+  async releasePayment(paymentId: string, options: { allowDisputed?: boolean } = {}): Promise<IPayment> {
     const payment = await Payment.findById(paymentId);
     if (!payment) throw new HttpError(404, 'Payment not found');
-    if (payment.status !== PaymentStatus.ESCROW) {
+    const releasable = options.allowDisputed ? [PaymentStatus.ESCROW, PaymentStatus.DISPUTED] : [PaymentStatus.ESCROW];
+    if (!releasable.includes(payment.status)) {
       throw new HttpError(400, 'Payment must be in escrow to be released');
     }
 
@@ -209,6 +213,43 @@ class PaymentService {
     payment.status = PaymentStatus.REFUNDED;
     payment.refundedAt = new Date();
     payment.refundReason = reason;
+    await payment.save();
+    return payment;
+  }
+
+  /**
+   * Dispute split: refunds `refundAmount` to the client (partial Razorpay refund) and releases
+   * the remainder to the freelancer. The payment amount shrinks so fees are recomputed on what was paid out.
+   */
+  async splitPayment(paymentId: string, refundAmount: number, reason: string): Promise<IPayment> {
+    const payment = await Payment.findById(paymentId);
+    if (!payment) throw new HttpError(404, 'Payment not found');
+    if (![PaymentStatus.ESCROW, PaymentStatus.DISPUTED].includes(payment.status)) {
+      throw new HttpError(400, 'Only escrowed or disputed payments can be split');
+    }
+    if (refundAmount <= 0 || refundAmount >= payment.amount) {
+      throw new HttpError(400, 'Refund amount must be between 0 and the payment amount');
+    }
+
+    if (payment.razorpayPaymentId) {
+      const { razorpay } = this.assertConfigured();
+      try {
+        await razorpay.payments.refund(payment.razorpayPaymentId, {
+          amount: Math.round(refundAmount * 100),
+          notes: { reason },
+        });
+      } catch (error) {
+        console.error('Razorpay partial refund failed:', error);
+        throw new HttpError(502, 'Failed to process refund through payment gateway');
+      }
+    }
+
+    payment.amount = Math.round((payment.amount - refundAmount) * 100) / 100;
+    payment.refundedAmount = refundAmount;
+    payment.refundedAt = new Date();
+    payment.refundReason = reason;
+    payment.status = PaymentStatus.RELEASED;
+    payment.releasedAt = new Date();
     await payment.save();
     return payment;
   }

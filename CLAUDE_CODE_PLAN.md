@@ -182,7 +182,7 @@
   - Run `reputationService.detectFraudulentReview` before saving. If it is suspicious, save with `isFlagged=true, isVisible=false` and log it for admin.
   - After saving, call `reputationService.updateUserReputation(revieweeId)` instead of the ad‑hoc average in `reviewController.ts:45-60`.
   - Fix the reply endpoint field name (`response`).
-- [ ] **1.14 Dispute rules.**
+- [x] **1.14 Dispute rules.**
   - The creator must be the gig client or the selected freelancer; `against` is derived as the other party, not taken from the body.
   - `paymentId` must belong to that gig.
   - Admin `GET /disputes` returns all, with filters.
