@@ -161,4 +161,24 @@ describe('Socket.IO security (C7)', () => {
 
     expect(await typing).toEqual([{ conversationId, userId: client.user.id }]);
   });
+
+  it('read receipts mark the other party’s messages and notify the room', async () => {
+    const { client, freelancer, outsider, conversationId } = await setup();
+    await Message.create({ conversation: conversationId, sender: freelancer.user._id, content: 'hi' });
+
+    const sender = await connect(freelancer.token);
+    await emitAck(sender, 'join_conversation', { conversationId });
+    const receipts = collect<{ userId: string }>(sender, 'messages_read');
+
+    const reader = await connect(client.token);
+    await emitAck(reader, 'join_conversation', { conversationId });
+    const res = await emitAck(reader, 'messages_read', { conversationId });
+    expect(res.ok).toBe(true);
+    expect((await receipts)[0].userId).toBe(client.user.id);
+    const stored = await Message.findOne({ conversation: conversationId });
+    expect(stored!.readBy.map((r) => r.user.toString())).toContain(client.user.id);
+
+    const attacker = await connect(outsider.token);
+    expect((await emitAck(attacker, 'messages_read', { conversationId })).ok).toBe(false);
+  });
 });

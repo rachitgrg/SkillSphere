@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { z } from 'zod';
 import chatService, { conversationRoom } from '../services/chatService';
 import { MessageType } from '../types';
+import Message from '../models/Message';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
@@ -60,6 +61,22 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     } catch (error) {
       fail(ack, error instanceof Error ? error.message : 'Failed to send message');
     }
+  });
+
+  // Read receipts: marks the other participants' messages as read and tells the room.
+  socket.on('messages_read', async (raw: unknown, ack?: Ack) => {
+    const parsed = normalizeConversation(raw);
+    if (!parsed.success) return fail(ack, 'Invalid conversation id');
+    const { conversationId } = parsed.data;
+    if (!(await chatService.isParticipant(conversationId, userId))) return fail(ack, 'Not a participant of this conversation');
+
+    const readAt = new Date();
+    const { modifiedCount } = await Message.updateMany(
+      { conversation: conversationId, sender: { $ne: userId }, 'readBy.user': { $ne: userId } },
+      { $push: { readBy: { user: userId, readAt } } }
+    );
+    if (modifiedCount) socket.to(conversationRoom(conversationId)).emit('messages_read', { conversationId, userId, readAt });
+    if (typeof ack === 'function') ack({ ok: true, updated: modifiedCount });
   });
 
   // Typing indicators only reach rooms the socket has legitimately joined.

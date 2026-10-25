@@ -1,73 +1,75 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useAppSelector } from '../hooks/useRedux';
+import { store } from '../store/store';
+import { keys } from '../hooks/queries/keys';
+import type { Notification } from '../types';
 
 interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
-  onlineUsers: string[];
+  onlineUsers: Set<string>;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
-  onlineUsers: [],
+  onlineUsers: new Set(),
 });
 
 // eslint-disable-next-line react-refresh/only-export-components -- hook is colocated with its provider
 export const useSocket = () => useContext(SocketContext);
 
+/**
+ * One Socket.IO connection per signed-in user. The access token is read at handshake time
+ * (including reconnects), so refreshing it doesn't require a new connection.
+ */
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
+  const userId = useAppSelector((state) => state.auth.user?._id);
+  const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const { token, isAuthenticated } = useAppSelector((state) => state.auth);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
-  const connectSocket = useCallback(() => {
-    if (!token || !isAuthenticated) return;
+  useEffect(() => {
+    if (!userId) return;
 
-    const newSocket = io(window.location.origin, {
-      auth: { token },
+    const s = io(window.location.origin, {
+      auth: (cb) => cb({ token: store.getState().auth.token }),
       transports: ['websocket', 'polling'],
     });
 
-    newSocket.on('connect', () => {
-      setIsConnected(true);
+    s.on('connect', () => setIsConnected(true));
+    s.on('disconnect', () => setIsConnected(false));
+    s.on('presence:list', ({ online }: { online: string[] }) => setOnlineUsers(new Set(online)));
+    s.on('presence', ({ userId: id, online }: { userId: string; online: boolean }) =>
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        if (online) next.add(id);
+        else next.delete(id);
+        return next;
+      })
+    );
+
+    // A message arrived in one of my conversations (possibly not the open one).
+    s.on('conversation:updated', () => queryClient.invalidateQueries({ queryKey: keys.chat.conversations }));
+
+    // Real-time notifications: refresh lists/counters and show a toast.
+    s.on('notification', ({ notification }: { notification: Notification }) => {
+      queryClient.invalidateQueries({ queryKey: keys.notifications.all });
+      toast(notification.title, { icon: '🔔' });
     });
 
-    newSocket.on('disconnect', () => {
+    setSocket(s);
+    return () => {
+      s.close();
+      setSocket(null);
       setIsConnected(false);
-    });
-
-    newSocket.on('onlineUsers', (users: string[]) => {
-      setOnlineUsers(users);
-    });
-
-    newSocket.on('userOnline', (userId: string) => {
-      setOnlineUsers((prev) => [...new Set([...prev, userId])]);
-    });
-
-    newSocket.on('userOffline', (userId: string) => {
-      setOnlineUsers((prev) => prev.filter((id) => id !== userId));
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
+      setOnlineUsers(new Set());
     };
-  }, [token, isAuthenticated]);
+  }, [userId, queryClient]);
 
-  useEffect(() => {
-    const cleanup = connectSocket();
-    return () => {
-      cleanup?.();
-    };
-  }, [connectSocket]);
-
-  return (
-    <SocketContext.Provider value={{ socket, isConnected, onlineUsers }}>
-      {children}
-    </SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={{ socket, isConnected, onlineUsers }}>{children}</SocketContext.Provider>;
 };

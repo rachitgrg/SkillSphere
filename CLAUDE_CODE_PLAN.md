@@ -283,7 +283,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - `/freelancer/profile`: real data.
   - `/freelancer/profile/edit`: full form for all profile sections (skills + proficiency, portfolio gallery uploads, resume upload, certifications, work experience, education, hourly rate and milestone pricing, languages, socials, location).
   - Public profile `/freelancers/:id`.
-- [ ] **3.6 Chat.**
+- [x] **3.6 Chat.**
   - `ChatPage`: conversations from the API.
   - Messages paginate upward.
   - Send via socket `send_message`; receive `message:new`.
