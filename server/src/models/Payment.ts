@@ -71,13 +71,12 @@ paymentSchema.index({ razorpayOrderId: 1 });
 paymentSchema.index({ createdAt: -1 });
 
 // Pre-save: Calculate platform fee and freelancer amount
-paymentSchema.pre('save', function (next) {
+paymentSchema.pre('save', function () {
   if (this.isModified('amount')) {
     const feePercentage = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || '10');
     this.platformFee = Math.round(this.amount * (feePercentage / 100) * 100) / 100;
     this.freelancerAmount = Math.round((this.amount - this.platformFee) * 100) / 100;
   }
-  next();
 });
 
 const Payment = mongoose.model<IPayment>('Payment', paymentSchema);

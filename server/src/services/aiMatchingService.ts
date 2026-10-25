@@ -1,7 +1,7 @@
 import { InferenceClient } from '@huggingface/inference';
 import FreelancerProfile from '../models/FreelancerProfile';
 import Gig from '../models/Gig';
-import { IGig, IFreelancerProfile, MatchScore, GigStatus } from '../types';
+import { IGig, IFreelancerProfile, MatchScore, GigStatus, AvailabilityStatus } from '../types';
 import { Types } from 'mongoose';
 
 class AIMatchingService {
@@ -19,7 +19,7 @@ class AIMatchingService {
       // Step 1: Find freelancers with matching skills (database-level filtering)
       const matchingProfiles = await FreelancerProfile.find({
         'skills.name': { $in: gig.skills.map((s) => new RegExp(s, 'i')) },
-        availability: { $ne: 'unavailable' },
+        availability: { $ne: AvailabilityStatus.UNAVAILABLE },
       })
         .populate('user', 'firstName lastName email avatar isActive isBanned')
         .limit(50)

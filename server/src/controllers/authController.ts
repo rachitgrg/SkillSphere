@@ -160,7 +160,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const newToken = generateToken(user._id.toString(), user.role);
+    const newToken = generateAccessToken({ id: user._id.toString(), role: user.role });
     res.status(200).json({ success: true, message: 'Token refreshed', data: { token: newToken } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Invalid refresh token' });

@@ -9,6 +9,11 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response): Prom
   try {
     const { gigId, milestoneId, freelancerId, amount, description } = req.body;
 
+    if (!razorpay) {
+      res.status(503).json({ success: false, message: 'Payments not configured' });
+      return;
+    }
+
     const gig = await Gig.findById(gigId);
     if (!gig) {
       res.status(404).json({ success: false, message: 'Gig not found' });

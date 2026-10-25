@@ -4,14 +4,14 @@ import Gig from '../models/Gig';
 import Payment from '../models/Payment';
 import Dispute from '../models/Dispute';
 import AdminLog from '../models/AdminLog';
-import { AuthRequest, UserRole, AdminAction } from '../types';
+import { AuthRequest, UserRole, AdminAction, PaymentStatus, DisputeStatus } from '../types';
 
 export const getDashboardStats = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const totalUsers = await User.countDocuments();
     const totalGigs = await Gig.countDocuments();
-    const totalPayments = await Payment.countDocuments({ status: 'released' });
-    const activeDisputes = await Dispute.countDocuments({ status: { $in: ['open', 'under_review'] } });
+    const totalPayments = await Payment.countDocuments({ status: PaymentStatus.RELEASED });
+    const activeDisputes = await Dispute.countDocuments({ status: { $in: [DisputeStatus.OPEN, DisputeStatus.UNDER_REVIEW] } });
 
     res.status(200).json({
       success: true,

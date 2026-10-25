@@ -61,7 +61,7 @@ reviewSchema.index({ createdAt: -1 });
 reviewSchema.index({ gig: 1, reviewer: 1 }, { unique: true });
 
 // Pre-save: calculate weighted average rating
-reviewSchema.pre('save', function (next) {
+reviewSchema.pre('save', function () {
   if (this.isModified('categories')) {
     const { communication, quality, timeliness, professionalism, value } = this.categories;
     // Weighted: quality 30%, communication 20%, timeliness 20%, professionalism 15%, value 15%
@@ -74,7 +74,6 @@ reviewSchema.pre('save', function (next) {
         100
     ) / 100;
   }
-  next();
 });
 
 const Review = mongoose.model<IReview>('Review', reviewSchema);

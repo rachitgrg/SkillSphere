@@ -76,12 +76,12 @@
 
 ## Phase 0 — Build health and tooling
 
-- [ ] **0.1 Fix `server/package.json`.**
+- [x] **0.1 Fix `server/package.json`.**
   - Remove the duplicate keys: `morgan`, `express-mongo-sanitize` and `compression` in dependencies; `@types/morgan`, `@types/compression` and `@types/express-mongo-sanitize` in devDependencies.
   - Move `@types/cookie-parser` to devDependencies.
   - Replace `@types/express@^5` with `@types/express@^4.17.21` (runtime is Express 4).
   - Reinstall.
-- [ ] **0.2 Fix the server type errors (63).**
+- [x] **0.2 Fix the server type errors (63).**
   - Root cause: `AuthRequest` handlers are not assignable to Express `RequestHandler`.
   - Preferred fix: augment Express globally in `server/src/types/express.d.ts` with `declare global { namespace Express { interface Request { user?: IUser } } }`, and make `AuthRequest` an alias of `Request` (or replace its usages).
   - Fix `adminController.ts:13-14` to use the `PaymentStatus` / `DisputeStatus` enums instead of string literals.

@@ -1,15 +1,15 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 
 export const generateAccessToken = (payload: { id: string; role: string }): string => {
   return jwt.sign(payload, process.env.JWT_SECRET || 'secret', {
-    expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as string,
+    expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as SignOptions['expiresIn'],
   });
 };
 
 export const generateRefreshToken = (payload: { id: string }): string => {
   return jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'refresh-secret', {
-    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as string,
+    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as SignOptions['expiresIn'],
   });
 };
 

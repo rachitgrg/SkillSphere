@@ -428,9 +428,8 @@ export interface IAdminLog extends Document {
 
 // ───────────────────────── Request Extensions ─────────────────────────
 
-export interface AuthRequest extends Request {
-  user?: IUser;
-}
+// `req.user` is declared globally in ./express.d.ts; kept as an alias for existing handlers.
+export type AuthRequest = Request;
 
 // ───────────────────────── API Response ─────────────────────────
 

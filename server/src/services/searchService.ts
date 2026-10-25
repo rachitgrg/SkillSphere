@@ -1,7 +1,7 @@
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import User from '../models/User';
-import { SearchFilters, PaginationOptions } from '../types';
+import { SearchFilters, PaginationOptions, GigStatus } from '../types';
 import { buildPaginationResponse } from '../utils/helpers';
 
 class SearchService {
@@ -161,7 +161,7 @@ class SearchService {
 
     const gigs = await Gig.find({
       title: new RegExp(query, 'i'),
-      status: 'open',
+      status: GigStatus.OPEN,
     })
       .select('title')
       .limit(10)
