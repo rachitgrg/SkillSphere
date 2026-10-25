@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,11 +9,13 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon, rightIcon, helperText, className = '', ...props }, ref) => {
+  ({ label, error, icon, rightIcon, helperText, className = '', id, ...props }, ref) => {
+    const autoId = useId();
+    const inputId = id ?? autoId;
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-dark-300 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-dark-300 mb-1.5">
             {label}
           </label>
         )}
@@ -25,6 +27,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
+            id={inputId}
+            aria-invalid={Boolean(error) || undefined}
             className={`
               glass-input w-full px-4 py-3 text-sm
               ${icon ? 'pl-10' : ''}

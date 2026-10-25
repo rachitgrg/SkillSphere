@@ -262,7 +262,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - Footer links: route `/terms`, `/privacy`, `/contact` to simple static pages, and remove links you won't build.
   - Add an `/oauth/callback` route and a 404 page instead of redirecting to `/`.
   - Lazy‑load route chunks with `React.lazy`.
-- [ ] **3.2 Marketplace.**
+- [x] **3.2 Marketplace.**
   - `GigListPage`: fetch `/gigs` with server‑side filters, pagination and sort. **Delete `INITIAL_GIGS`.**
   - `GigFilters`: get options from the API (categories and trending skills).
   - `GigDetailPage`: fetch by id, show real client info, milestones and attachments. Show "Apply" only to freelancers, "View proposals" to the owner, and "Already applied" when applicable.

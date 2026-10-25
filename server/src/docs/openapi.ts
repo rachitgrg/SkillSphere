@@ -98,6 +98,7 @@ export const ROUTES: RouteDoc[] = [
     query: { q: 'Text search over title/headline/skills', skills: 'Comma list', minRate: 'INR/hour', maxRate: 'INR/hour', minRating: '0-5', experience: 'entry | intermediate | expert | min years', sort: 'rating | rate_low | rate_high | experience | newest', ...pageQuery },
   },
   { method: 'get', path: '/search/trending-skills', tag: 'Search', summary: 'Skills trending in new gigs (cached 1h)', access: 'public', query: { days: 'Window in days (default 30)', limit: 'Default 15' } },
+  { method: 'get', path: '/search/categories', tag: 'Search', summary: 'Categories of open gigs with counts', access: 'public' },
   { method: 'get', path: '/search/suggestions', tag: 'Search', summary: 'Title and skill suggestions', access: 'public', query: { q: 'At least 2 characters' } },
 
   // AI

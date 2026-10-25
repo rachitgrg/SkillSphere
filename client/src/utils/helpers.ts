@@ -92,3 +92,35 @@ export const getErrorMessage = (error: unknown, fallback = 'Something went wrong
   }
   return fallback;
 };
+
+/** Narrows a populated reference (`{ _id, ... }`) vs a bare id. */
+export const populated = <T extends { _id: string }>(ref: T | string | undefined | null): T | undefined =>
+  ref && typeof ref === 'object' ? ref : undefined;
+
+/** Id of a populated reference or a bare id. */
+export const refId = (ref: { _id: string } | string | undefined | null): string | undefined =>
+  typeof ref === 'string' ? ref : ref?._id;
+
+export const fullName = (user?: { firstName?: string; lastName?: string } | null) =>
+  user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'User' : 'User';
+
+/** "₹5,000 – ₹10,000" for fixed budgets, "₹1,500 – ₹2,800/hr" for hourly. */
+export const formatBudget = (gig: { budgetMin: number; budgetMax: number; budgetType: 'fixed' | 'hourly' }) => {
+  const range =
+    gig.budgetMin === gig.budgetMax
+      ? formatCurrency(gig.budgetMax)
+      : `${formatCurrency(gig.budgetMin)} – ${formatCurrency(gig.budgetMax)}`;
+  return gig.budgetType === 'hourly' ? `${range}/hr` : range;
+};
+
+export const LOCATION_TYPE_LABELS: Record<'remote' | 'onsite' | 'hybrid', string> = {
+  remote: 'Remote',
+  onsite: 'On-site',
+  hybrid: 'Hybrid',
+};
+
+export const EXPERIENCE_LABELS: Record<'entry' | 'intermediate' | 'expert', string> = {
+  entry: 'Entry level',
+  intermediate: 'Intermediate',
+  expert: 'Expert',
+};

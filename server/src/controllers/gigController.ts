@@ -120,7 +120,7 @@ export const getGigById = async (req: AuthRequest, res: Response, next: NextFunc
     await Gig.updateOne({ _id: req.params.id }, { $inc: { views: 1 } });
 
     const gig = await Gig.findById(req.params.id)
-      .populate('client', 'firstName lastName avatar')
+      .populate('client', 'firstName lastName avatar address')
       .populate('selectedFreelancer', 'firstName lastName avatar')
       .lean();
 

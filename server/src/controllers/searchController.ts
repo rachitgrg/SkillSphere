@@ -58,6 +58,14 @@ export const getTrendingSkills = async (req: Request, res: Response, next: NextF
   }
 };
 
+export const getCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    res.status(200).json({ success: true, message: 'Categories', data: await searchService.getCategories() });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getSuggestions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const q = typeof req.query.q === 'string' ? req.query.q : '';

@@ -153,6 +153,16 @@ class SearchService {
     return data.slice(0, limit);
   }
 
+  /** Categories of open public gigs with counts, for marketplace filters. */
+  async getCategories(): Promise<{ category: string; count: number }[]> {
+    return Gig.aggregate([
+      { $match: { status: GigStatus.OPEN, visibility: 'public' } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1, _id: 1 } },
+      { $project: { _id: 0, category: '$_id', count: 1 } },
+    ]);
+  }
+
   /** Test helper. */
   clearCache(): void {
     trendingCache = null;

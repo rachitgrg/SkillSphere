@@ -93,6 +93,7 @@ const CASES: Record<string, Case> = {
   'GET /api/v1/search/gigs': { role: 'public' },
   'GET /api/v1/search/freelancers': { role: 'public', path: () => '/api/v1/search/freelancers?q=react&minRate=1' },
   'GET /api/v1/search/trending-skills': { role: 'public' },
+  'GET /api/v1/search/categories': { role: 'public' },
   'GET /api/v1/search/suggestions': { role: 'public', path: () => '/api/v1/search/suggestions?q=re' },
 
   // AI

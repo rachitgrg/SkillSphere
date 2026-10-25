@@ -28,11 +28,7 @@ export const FreelancerDashboard: React.FC = () => {
           
           <div className="glass-card p-6 rounded-2xl border border-slate-800">
             <h3 className="font-semibold text-white mb-4">Current Milestones</h3>
-            <MilestoneTimeline milestones={[
-              { id: '1', title: 'Frontend Setup', amount: 500, status: 'completed', dueDate: 'Oct 20, 2023' },
-              { id: '2', title: 'API Integration', amount: 1200, status: 'in_progress', dueDate: 'Nov 5, 2023' },
-              { id: '3', title: 'Final Testing & Launch', amount: 800, status: 'pending', dueDate: 'Nov 15, 2023' }
-            ]} />
+            <MilestoneTimeline milestones={[]} />
           </div>
         </div>
         

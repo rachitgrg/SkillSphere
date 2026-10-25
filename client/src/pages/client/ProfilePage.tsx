@@ -2,7 +2,6 @@ import React from 'react';
 import { Avatar } from '../../components/common/Avatar';
 import { MapPin, Globe, Star } from 'lucide-react';
 import { ReviewCard } from '../../components/reviews/ReviewCard';
-import { GigCard } from '../../components/gigs/GigCard';
 
 export const ProfilePage: React.FC = () => {
   return (
@@ -24,8 +23,6 @@ export const ProfilePage: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <h3 className="text-xl font-bold text-white">Open Roles</h3>
           <div className="grid sm:grid-cols-2 gap-4">
-            <GigCard gig={{ id: 1, title: 'React Native App Development', budget: 8000, description: '', skills: [], client: { name: 'TechCorp Inc.' } }} />
-            <GigCard gig={{ id: 2, title: 'UI/UX Design for SaaS', budget: 3500, description: '', skills: [], client: { name: 'TechCorp Inc.' } }} />
           </div>
         </div>
         

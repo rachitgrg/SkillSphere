@@ -10,7 +10,8 @@
     "lint": "eslint src tests scripts",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
-    "seed": "ts-node --transpile-only scripts/seed.ts"
+    "seed": "ts-node --transpile-only scripts/seed.ts",
+    "db:sync-indexes": "ts-node --transpile-only scripts/syncIndexes.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^3.13.2",

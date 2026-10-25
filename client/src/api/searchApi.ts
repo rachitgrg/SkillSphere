@@ -22,6 +22,8 @@ export const searchApi = {
   getTrendingSkills: (params?: { days?: number; limit?: number }) =>
     data(axiosInstance.get<ApiResponse<TrendingSkill[]>>('/search/trending-skills', { params: toParams(params) })),
 
+  getCategories: () => data(axiosInstance.get<ApiResponse<{ category: string; count: number }[]>>('/search/categories')),
+
   getSuggestions: (q: string) =>
     data(axiosInstance.get<ApiResponse<SearchSuggestions>>('/search/suggestions', { params: { q } })),
 };

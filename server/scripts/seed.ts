@@ -22,6 +22,7 @@ import Dispute from '../src/models/Dispute';
 import Conversation from '../src/models/Conversation';
 import Message from '../src/models/Message';
 import reputationService from '../src/services/reputationService';
+import { syncSchemaIndexes } from './lib/indexes';
 import {
   DisputeStatus,
   GigStatus,
@@ -213,7 +214,8 @@ async function main() {
   }
 
   await mongoose.connect(env.MONGO_URI);
-  await Promise.all(Object.values(mongoose.models).map((m) => m.init()));
+  // Also migrates indexes whose definition changed (e.g. googleId became unique).
+  for (const model of Object.values(mongoose.models)) await syncSchemaIndexes(model);
   console.log(`Seeding ${mongoose.connection.host}/${mongoose.connection.name} …`);
 
   // Users ------------------------------------------------------------------
