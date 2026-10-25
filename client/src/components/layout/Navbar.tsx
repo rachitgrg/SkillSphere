@@ -80,7 +80,7 @@ export function Navbar() {
           <div className="flex items-center gap-2.5">
             {/* Search toggle */}
             <button
-              onClick={() => navigate('/gigs')}
+              onClick={() => navigate('/search')}
               aria-label="Search SkillSphere"
               className="focus-ring rounded-lg p-2 text-dark-400 transition-all duration-300 ease-out hover:-translate-y-px hover:bg-dark-700/50 hover:text-white"
             >
