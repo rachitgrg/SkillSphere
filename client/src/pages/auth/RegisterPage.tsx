@@ -24,8 +24,12 @@ export const RegisterPage: React.FC = () => {
     event.preventDefault();
     if (!role) return;
 
-    const result = await dispatch(registerUser({ firstName, lastName, email, password, role })).unwrap();
-    navigate(getDashboardPath(result.user.role), { replace: true });
+    try {
+      const result = await dispatch(registerUser({ firstName, lastName, email, password, role })).unwrap();
+      navigate(getDashboardPath(result.user.role), { replace: true });
+    } catch {
+      // The error message is stored in the auth slice and rendered by the form.
+    }
   };
 
   const clearRegistrationError = () => {

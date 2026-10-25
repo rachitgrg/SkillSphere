@@ -22,8 +22,12 @@ export const LoginPage: React.FC = () => {
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    const result = await dispatch(loginUser({ email, password })).unwrap();
-    navigate(getDashboardPath(result.user.role), { replace: true });
+    try {
+      const result = await dispatch(loginUser({ email, password })).unwrap();
+      navigate(getDashboardPath(result.user.role), { replace: true });
+    } catch {
+      // The error message is stored in the auth slice and rendered by the form.
+    }
   };
 
   const clearLoginError = () => {

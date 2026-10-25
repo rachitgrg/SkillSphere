@@ -1,12 +1,13 @@
 import { Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
 import aiMatchingService from '../services/aiMatchingService';
-import { QueryFilter, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import Payment from '../models/Payment';
 import Proposal from '../models/Proposal';
 import notificationService from '../services/notificationService';
 import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
-import { pick } from '../utils/helpers';
+import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
+import { buildPublicGigFilter, gigSort } from '../services/gigQuery';
 
 /** Fields a client may set on a gig; status, views, proposals and the hired freelancer are server-controlled. */
 export const GIG_EDITABLE = [
@@ -16,6 +17,20 @@ export const GIG_EDITABLE = [
 
 /** A gig can only be edited before work starts. */
 const EDITABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
+
+/**
+ * Open public gigs are visible to everyone; anything else only to its owner, the hired
+ * freelancer and admins (invitees are added with invitations in plan 4.4).
+ */
+const canViewGig = (
+  gig: Pick<IGig, 'client' | 'selectedFreelancer' | 'status' | 'visibility'>,
+  user?: { _id: Types.ObjectId; role: string }
+): boolean => {
+  if (gig.status === GigStatus.OPEN && (gig.visibility ?? 'public') === 'public') return true;
+  if (!user) return false;
+  const id = user._id.toString();
+  return user.role === UserRole.ADMIN || gig.client.toString() === id || gig.selectedFreelancer?.toString() === id;
+};
 
 /** A gig can only be deleted before anyone is hired; afterwards it must be cancelled. */
 const DELETABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.REJECTED, GigStatus.OPEN];
@@ -47,31 +62,28 @@ export const createGig = async (req: AuthRequest, res: Response, next: NextFunct
   }
 };
 
+/** Public marketplace: open, public gigs only, with server-side filters, sort and pagination. */
 export const getGigs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { page = 1, limit = 10, category, status } = req.query;
-    const query: QueryFilter<IGig> = {};
-    if (category) query.category = String(category);
-    if (status) query.status = String(status) as GigStatus;
+    const query = req.query as Record<string, unknown>;
+    const { page, limit } = parsePaginationParams(query);
+    const filter = buildPublicGigFilter(query);
 
-    const gigs = await Gig.find(query)
-      .populate('client', 'firstName lastName avatar')
-      .skip((+page - 1) * +limit)
-      .limit(+limit)
-      .sort({ createdAt: -1 });
-
-    const total = await Gig.countDocuments(query);
+    const [gigs, total] = await Promise.all([
+      Gig.find(filter)
+        .populate('client', 'firstName lastName avatar address')
+        .sort(gigSort(query))
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Gig.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
       message: 'Gigs retrieved',
       data: gigs,
-      pagination: {
-        page: +page,
-        limit: +limit,
-        total,
-        pages: Math.ceil(total / +limit)
-      }
+      pagination: buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
     next(error);
@@ -100,12 +112,15 @@ export const analyzeCareer = async (req: AuthRequest, res: Response, next: NextF
 
 export const getGigById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Atomic increment: never re-validates (or rewrites) the whole document.
-    const { matchedCount } = await Gig.updateOne({ _id: req.params.id }, { $inc: { views: 1 } });
-    if (!matchedCount) {
+    const existing = await Gig.findById(req.params.id).select('client selectedFreelancer status visibility').lean();
+    if (!existing || !canViewGig(existing, req.user)) {
+      // 404 (not 403) so private gigs don't reveal that they exist.
       res.status(404).json({ success: false, message: 'Gig not found' });
       return;
     }
+
+    // Atomic increment: never re-validates (or rewrites) the whole document.
+    await Gig.updateOne({ _id: req.params.id }, { $inc: { views: 1 } });
 
     const gig = await Gig.findById(req.params.id)
       .populate('client', 'firstName lastName avatar')

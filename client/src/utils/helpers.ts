@@ -11,8 +11,9 @@ export const formatTimeAgo = (date: string) => {
   return formatDistanceToNow(parseISO(date), { addSuffix: true });
 };
 
-export const formatCurrency = (amount: number, currency = 'USD') => {
-  return new Intl.NumberFormat('en-US', {
+/** Formats money in Indian rupees by default (e.g. ₹1,42,500). */
+export const formatCurrency = (amount: number, currency = 'INR') => {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,

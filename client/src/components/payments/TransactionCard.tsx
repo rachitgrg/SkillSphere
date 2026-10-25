@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '../../utils/helpers';
 import { ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
 
 export interface TransactionItem {
@@ -34,7 +35,7 @@ export const TransactionCard: React.FC<{ transaction: TransactionItem }> = ({ tr
       
       <div className="text-right">
         <div className={`font-semibold ${isCredit ? 'text-emerald-400' : 'text-white'}`}>
-          {isCredit ? '+' : '-'}${transaction.amount || '1,500.00'}
+          {isCredit ? '+' : '-'}{formatCurrency(Number(transaction.amount ?? 0))}
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${
           transaction.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :

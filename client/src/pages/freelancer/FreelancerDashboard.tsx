@@ -1,7 +1,7 @@
 import React from 'react';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { RecentActivity } from '../../components/dashboard/RecentActivity';
-import { DollarSign, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
+import { IndianRupee, Clock, CheckCircle2, TrendingUp } from 'lucide-react';
 import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
 import { ResumeMatcher } from '../../components/freelancer/ResumeMatcher';
 
@@ -16,7 +16,7 @@ export const FreelancerDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Earnings" value="$24,500" icon={<DollarSign className="w-6 h-6" />} color="emerald" trend={{ value: 8, isPositive: true }} />
+        <StatCard title="Total Earnings" value="₹24,500" icon={<IndianRupee className="w-6 h-6" />} color="emerald" trend={{ value: 8, isPositive: true }} />
         <StatCard title="Active Projects" value="4" icon={<Clock className="w-6 h-6" />} color="indigo" />
         <StatCard title="Jobs Completed" value="32" icon={<CheckCircle2 className="w-6 h-6" />} color="cyan" />
         <StatCard title="Profile Views" value="1,204" icon={<TrendingUp className="w-6 h-6" />} color="violet" trend={{ value: 24, isPositive: true }} />

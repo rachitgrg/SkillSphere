@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router';
-import { Clock, DollarSign, Star } from 'lucide-react';
+import { Clock, IndianRupee, Star } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { Avatar } from '../common/Avatar';
 
@@ -30,7 +30,7 @@ export const GigCard: React.FC<GigCardProps> = ({ gig }) => {
   const [isSaved, setIsSaved] = useState(false);
 
   const formattedBudget = typeof gig.budget === 'number' 
-    ? gig.budget.toLocaleString() 
+    ? gig.budget.toLocaleString('en-IN') 
     : gig.budget;
 
   const isHourly = gig.budgetType === 'hourly';
@@ -79,8 +79,8 @@ export const GigCard: React.FC<GigCardProps> = ({ gig }) => {
       <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-slate-800/60">
         <div className="flex justify-between items-center text-sm">
           <div className="flex items-center text-slate-300">
-            <DollarSign className="w-4 h-4 mr-0.5 text-emerald-400" />
-            <span className="font-bold text-white text-base">${formattedBudget}</span>
+            <IndianRupee className="w-4 h-4 mr-0.5 text-emerald-400" />
+            <span className="font-bold text-white text-base">₹{formattedBudget}</span>
             <span className="text-xs text-slate-400 ml-1">
               {isHourly ? '/hr' : 'Fixed'}
             </span>

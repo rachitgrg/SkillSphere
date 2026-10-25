@@ -2,7 +2,7 @@ import React from 'react';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { RecentActivity } from '../../components/dashboard/RecentActivity';
 import { GigCard } from '../../components/gigs/GigCard';
-import { Briefcase, DollarSign, Clock, Users } from 'lucide-react';
+import { Briefcase, IndianRupee, Clock, Users } from 'lucide-react';
 
 export const ClientDashboard: React.FC = () => {
   return (
@@ -14,7 +14,7 @@ export const ClientDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Active Gigs" value="3" icon={<Briefcase className="w-6 h-6" />} color="indigo" />
-        <StatCard title="Total Spent" value="$12,450" icon={<DollarSign className="w-6 h-6" />} color="emerald" trend={{ value: 12, isPositive: true }} />
+        <StatCard title="Total Spent" value="₹12,450" icon={<IndianRupee className="w-6 h-6" />} color="emerald" trend={{ value: 12, isPositive: true }} />
         <StatCard title="Hours Logged" value="142h" icon={<Clock className="w-6 h-6" />} color="cyan" />
         <StatCard title="Freelancers Hired" value="8" icon={<Users className="w-6 h-6" />} color="violet" />
       </div>

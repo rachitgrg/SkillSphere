@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatCard } from '../../components/dashboard/StatCard';
-import { Users, DollarSign, Activity, AlertCircle } from 'lucide-react';
+import { Users, IndianRupee, Activity, AlertCircle } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   return (
@@ -10,7 +10,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value="$142,500" icon={<DollarSign className="w-6 h-6" />} color="emerald" trend={{ value: 12, isPositive: true }} />
+        <StatCard title="Total Revenue" value="₹1,42,500" icon={<IndianRupee className="w-6 h-6" />} color="emerald" trend={{ value: 12, isPositive: true }} />
         <StatCard title="Active Users" value="12,450" icon={<Users className="w-6 h-6" />} color="indigo" trend={{ value: 5, isPositive: true }} />
         <StatCard title="Active Gigs" value="842" icon={<Activity className="w-6 h-6" />} color="cyan" />
         <StatCard title="Open Disputes" value="14" icon={<AlertCircle className="w-6 h-6" />} color="violet" trend={{ value: 2, isPositive: false }} />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '../../utils/helpers';
 import { Avatar } from '../common/Avatar';
 
 export interface ProposalCardData {
@@ -21,7 +22,7 @@ export const ProposalCard: React.FC<{ proposal: ProposalCardData }> = ({ proposa
         <div className="w-full grid grid-cols-2 gap-2 text-sm border-t border-slate-800 pt-3">
           <div>
             <div className="text-slate-500 text-xs">Bid</div>
-            <div className="text-emerald-400 font-semibold">${proposal.bidAmount || 4500}</div>
+            <div className="text-emerald-400 font-semibold">{formatCurrency(proposal.bidAmount ?? 0)}</div>
           </div>
           <div>
             <div className="text-slate-500 text-xs">Time</div>

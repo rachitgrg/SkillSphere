@@ -180,7 +180,7 @@ function DashboardPreview() {
               {[
                 ['Active Projects', '12', 'text-primary-300'],
                 ['Pending Proposals', '8', 'text-pink-300'],
-                ['Total Spent', '$4,890', 'text-emerald-300'],
+                ['Total Spent', '₹4,890', 'text-emerald-300'],
                 ['Unread Messages', '5', 'text-amber-300'],
               ].map(([label, value, color], index) => (
                 <motion.div
@@ -251,7 +251,7 @@ function DashboardPreview() {
               transition={{ duration: 0.42, delay: 1.04 }}
               className="mt-2 flex items-center justify-between rounded-md border border-slate-700/55 bg-[#0c1a2c] p-2"
             >
-              <div><p className="font-medium text-slate-200">E-commerce Website Redesign</p><p className="text-[7px] text-slate-500">Budget: $2,500 – $4,000</p></div>
+              <div><p className="font-medium text-slate-200">E-commerce Website Redesign</p><p className="text-[7px] text-slate-500">Budget: ₹25,000 – ₹40,000</p></div>
               <div className="flex -space-x-1"><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-violet-400" /><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-amber-300" /><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-cyan-400" /></div>
             </motion.div>
           </div>

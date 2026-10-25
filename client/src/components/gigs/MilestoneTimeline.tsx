@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '../../utils/helpers';
 import { CheckCircle2, Circle } from 'lucide-react';
 
 interface Milestone {
@@ -40,7 +41,7 @@ export const MilestoneTimeline: React.FC<{ milestones: Milestone[] }> = ({ miles
                 <p className="text-xs text-slate-400 mt-1">Due: {milestone.dueDate}</p>
               </div>
               <div className="text-right">
-                <span className="font-semibold text-emerald-400">${milestone.amount}</span>
+                <span className="font-semibold text-emerald-400">{formatCurrency(milestone.amount)}</span>
                 <div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${
                     milestone.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :

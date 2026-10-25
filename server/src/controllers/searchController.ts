@@ -3,36 +3,32 @@ import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import aiMatchingService from '../services/aiMatchingService';
 import { QueryFilter } from 'mongoose';
-import { GigStatus, IGig, IFreelancerProfile } from '../types';
+import { IFreelancerProfile } from '../types';
+import { buildPublicGigFilter, gigSort, toStringList } from '../services/gigQuery';
+import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
 
 export const searchGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { q, category, skills, minBudget, maxBudget } = req.query;
-    
-    const query: QueryFilter<IGig> = { status: GigStatus.OPEN };
+    const query = req.query as Record<string, unknown>;
+    const { page, limit } = parsePaginationParams(query);
+    const filter = buildPublicGigFilter(query);
 
-    if (q) {
-      query.$text = { $search: q as string };
-    }
-    if (category) {
-      query.category = String(category);
-    }
-    if (skills) {
-      const skillsArray = (skills as string).split(',').map(s => s.trim());
-      query.skills = { $in: skillsArray };
-    }
-    if (minBudget || maxBudget) {
-      query.budgetMin = {};
-      if (minBudget) query.budgetMin.$gte = Number(minBudget);
-      if (maxBudget) query.budgetMin.$lte = Number(maxBudget);
-    }
+    const [gigs, total] = await Promise.all([
+      Gig.find(filter)
+        .populate('client', 'firstName lastName avatar')
+        .sort(gigSort(query))
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Gig.countDocuments(filter),
+    ]);
 
-    const gigs = await Gig.find(query)
-      .populate('client', 'firstName lastName')
-      .sort(q ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
-      .limit(50);
-
-    res.status(200).json({ success: true, message: 'Gigs found', data: gigs });
+    res.status(200).json({
+      success: true,
+      message: 'Gigs found',
+      data: gigs,
+      pagination: buildPaginationResponse(total, page, limit),
+    });
   } catch (error) {
     next(error);
   }
@@ -47,8 +43,7 @@ export const searchFreelancers = async (req: Request, res: Response, next: NextF
       query.$text = { $search: q as string };
     }
     if (skills) {
-      const skillsArray = (skills as string).split(',').map(s => s.trim());
-      query['skills.name'] = { $in: skillsArray };
+      query['skills.name'] = { $in: toStringList(skills) };
     }
     if (minRate || maxRate) {
       query.hourlyRate = {};

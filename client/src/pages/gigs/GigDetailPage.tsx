@@ -4,7 +4,7 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { Avatar } from '../../components/common/Avatar';
 import { Badge } from '../../components/common/Badge';
-import { Clock, DollarSign, Calendar, MapPin, Share2, Heart, ShieldCheck } from 'lucide-react';
+import { Clock, IndianRupee, Calendar, MapPin, Share2, Heart, ShieldCheck } from 'lucide-react';
 import { ApplyModal } from './ApplyModal';
 
 
@@ -61,8 +61,8 @@ export const GigDetailPage: React.FC = () => {
             <div className="glass-card p-6 rounded-2xl border border-slate-800">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <div className="text-slate-400 text-xs flex items-center mb-1"><DollarSign className="w-3 h-3 mr-1" /> Budget</div>
-                  <div className="text-2xl font-bold text-white">$5,000</div>
+                  <div className="text-slate-400 text-xs flex items-center mb-1"><IndianRupee className="w-3 h-3 mr-1" /> Budget</div>
+                  <div className="text-2xl font-bold text-white">₹5,000</div>
                   <div className="text-xs text-slate-500">Fixed Price</div>
                 </div>
                 <div>
@@ -92,7 +92,7 @@ export const GigDetailPage: React.FC = () => {
               <div className="space-y-2 text-sm text-slate-300">
                 <div className="flex justify-between"><span>Jobs Posted</span><span className="font-medium text-white">12</span></div>
                 <div className="flex justify-between"><span>Hire Rate</span><span className="font-medium text-white">85%</span></div>
-                <div className="flex justify-between"><span>Total Spent</span><span className="font-medium text-white">$45k+</span></div>
+                <div className="flex justify-between"><span>Total Spent</span><span className="font-medium text-white">₹4.5L+</span></div>
               </div>
             </div>
           </div>

@@ -14,7 +14,7 @@ export const parsePaginationParams = (
   query: Record<string, unknown>
 ): PaginationOptions => {
   const page = Math.max(1, parseInt(query.page as string, 10) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit as string, 10) || 10));
+  const limit = Math.min(50, Math.max(1, parseInt(query.limit as string, 10) || 10));
 
   let sort: Record<string, 1 | -1> = { createdAt: -1 };
   if (query.sortBy) {

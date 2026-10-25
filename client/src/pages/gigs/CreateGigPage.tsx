@@ -32,7 +32,7 @@ export const CreateGigPage: React.FC = () => {
     budgetType: 'fixed',
     budgetMin: 0,
     budgetMax: 0,
-    currency: 'USD',
+    currency: 'INR',
     estimatedDuration: 1,
     durationUnit: 'months',
     experienceLevel: 'intermediate',
@@ -165,7 +165,7 @@ export const CreateGigPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <Input 
-              label={formData.budgetType === 'fixed' ? 'Budget ($)' : 'Min Hourly Rate ($)'} 
+              label={formData.budgetType === 'fixed' ? 'Budget (₹)' : 'Min Hourly Rate (₹)'} 
               type="number" 
               placeholder="e.g. 500" 
               required 

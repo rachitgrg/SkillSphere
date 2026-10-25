@@ -189,7 +189,7 @@
   - Resolve with `paymentAction: 'refund' | 'release' | 'split'`, calling `paymentService.refundPayment` / `releasePayment` (real Razorpay refund in test mode).
   - Write an `AdminLog` entry and notify both parties.
 - [x] **1.15 Gig deletion.** Only `draft|open` gigs with no escrowed payments can be deleted. Cascade‑delete their proposals; otherwise return 409 and suggest cancelling. Add a `PUT /gigs/:id/cancel` endpoint.
-- [ ] **1.16 Misc.**
+- [x] **1.16 Misc.**
   - Apply `authLimiter` to login, register, forgot‑password, reset and 2FA.
   - Login rejects `isActive=false`.
   - Raise `express.json` limit to `1mb`.
