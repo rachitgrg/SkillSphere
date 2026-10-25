@@ -2,6 +2,19 @@ import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { IUser, UserRole } from '../types';
 
+/** Never serialised to API responses or socket payloads. */
+const SENSITIVE_FIELDS = [
+  'password',
+  'refreshToken',
+  'twoFactorSecret',
+  'twoFactorBackupCodes',
+  'passwordResetToken',
+  'passwordResetExpires',
+  'emailVerificationToken',
+  'emailVerificationExpires',
+  '__v',
+] as const;
+
 const userSchema = new Schema<IUser>(
   {
     firstName: {
@@ -112,7 +125,13 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON: {
+      virtuals: true,
+      transform: (_doc, ret: Record<string, unknown>) => {
+        for (const key of SENSITIVE_FIELDS) delete ret[key];
+        return ret;
+      },
+    },
     toObject: { virtuals: true },
   }
 );

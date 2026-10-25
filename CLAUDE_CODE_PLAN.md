@@ -122,7 +122,7 @@
 
 - [x] **1.1 Block admin self‑registration (C1).** Wire `validate(registerSchema)` from `utils/validators.ts` onto `POST /auth/register`. The schema already restricts `role` to `freelancer|client`. Also wire `loginSchema`. Wire the other schemas in `validators.ts` onto their routes as those routes are touched.
   - Test: `role:'admin'` → 400; weak password → 400.
-- [ ] **1.2 Never return secrets (C2).** In `models/User.ts`, add a `toJSON` transform that deletes `password`, `refreshToken`, `twoFactorSecret`, `passwordResetToken`, `passwordResetExpires`, `emailVerificationToken`, `emailVerificationExpires` and `__v`.
+- [x] **1.2 Never return secrets (C2).** In `models/User.ts`, add a `toJSON` transform that deletes `password`, `refreshToken`, `twoFactorSecret`, `passwordResetToken`, `passwordResetExpires`, `emailVerificationToken`, `emailVerificationExpires` and `__v`.
   - Test: register/login responses contain none of these keys.
 - [ ] **1.3 Mongoose 9 hooks (C3).** In `models/Payment.ts:74-81` and `models/Review.ts:64-78`, drop the `next` parameter and the `next()` call. In `Review.ts`, also make `rating` not `required` (the hook computes it) and compute it in `pre('validate')` so validation passes.
   - Test: create a Payment and a Review → saved; review rating equals the weighted formula.
