@@ -1,65 +1,71 @@
 import { Response, NextFunction } from 'express';
 import Review from '../models/Review';
 import Gig from '../models/Gig';
-import FreelancerProfile from '../models/FreelancerProfile';
-import ClientProfile from '../models/ClientProfile';
-import { AuthRequest } from '../types';
+import reputationService from '../services/reputationService';
+import notificationService from '../services/notificationService';
+import { AuthRequest, GigStatus } from '../types';
 
+/**
+ * Only the two parties of a completed gig can review each other; the reviewee is derived
+ * (never taken from the body). Suspicious reviews are stored hidden and flagged for admins.
+ */
 export const createReview = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { gigId, revieweeId, categories, comment } = req.body;
-    
+    const { gigId, categories, comment } = req.body;
+    const reviewerId = req.user!._id.toString();
+
     const gig = await Gig.findById(gigId);
     if (!gig) {
       res.status(404).json({ success: false, message: 'Gig not found' });
       return;
     }
 
-    if (gig.status !== 'completed') {
-      res.status(400).json({ success: false, message: 'Gig must be completed before leaving a review' });
+    const clientId = gig.client.toString();
+    const freelancerId = gig.selectedFreelancer?.toString();
+    if (reviewerId !== clientId && reviewerId !== freelancerId) {
+      res.status(403).json({ success: false, message: 'Only the client and the hired freelancer can review this gig' });
+      return;
+    }
+    if (gig.status !== GigStatus.COMPLETED || !freelancerId) {
+      res.status(409).json({ success: false, message: 'Gig must be completed before leaving a review' });
       return;
     }
 
-    const existingReview = await Review.findOne({ gig: gigId, reviewer: req.user?._id });
-    if (existingReview) {
-      res.status(400).json({ success: false, message: 'You have already reviewed this gig' });
-      return;
-    }
+    const revieweeId = reviewerId === clientId ? freelancerId : clientId;
+    const fraud = await reputationService.detectFraudulentReview(reviewerId, revieweeId, gig._id.toString());
 
-    // Calculate average rating
-    const rating = (categories.communication + categories.quality + categories.timeliness + categories.professionalism + categories.value) / 5;
-
-    const review = new Review({
-      gig: gigId,
-      reviewer: req.user?._id,
-      reviewee: revieweeId,
-      rating,
-      categories,
-      comment,
-      isFlagged: false,
-      isVisible: true
-    });
-
-    await review.save();
-
-    // Update profiles with new ratings (simplified logic)
-    const fProfile = await FreelancerProfile.findOne({ user: revieweeId });
-    if (fProfile) {
-      const newTotal = fProfile.totalReviews + 1;
-      fProfile.averageRating = ((fProfile.averageRating * fProfile.totalReviews) + rating) / newTotal;
-      fProfile.totalReviews = newTotal;
-      await fProfile.save();
-    } else {
-      const cProfile = await ClientProfile.findOne({ user: revieweeId });
-      if (cProfile) {
-        const newTotal = cProfile.totalReviews + 1;
-        cProfile.averageRating = ((cProfile.averageRating * cProfile.totalReviews) + rating) / newTotal;
-        cProfile.totalReviews = newTotal;
-        await cProfile.save();
+    let review;
+    try {
+      review = await Review.create({
+        gig: gig._id,
+        reviewer: reviewerId,
+        reviewee: revieweeId,
+        categories,
+        comment,
+        isFlagged: fraud.isSuspicious,
+        flagReason: fraud.isSuspicious ? fraud.reasons.join('; ') : undefined,
+        isVisible: !fraud.isSuspicious,
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        res.status(409).json({ success: false, message: 'You have already reviewed this gig' });
+        return;
       }
+      throw error;
     }
 
-    res.status(201).json({ success: true, message: 'Review submitted', data: review });
+    if (fraud.isSuspicious) {
+      console.warn(`[fraud] review ${review._id} hidden for admin review: ${review.flagReason}`);
+    } else {
+      await reputationService.updateUserReputation(revieweeId);
+      await notificationService.notifyReviewReceived(revieweeId, reviewerId, review.rating, gig.title, gig._id.toString());
+    }
+
+    res.status(201).json({
+      success: true,
+      message: fraud.isSuspicious ? 'Review submitted and held for moderation' : 'Review submitted',
+      data: review,
+    });
   } catch (error) {
     next(error);
   }

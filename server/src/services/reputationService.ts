@@ -22,10 +22,9 @@ class ReputationService {
       isVisible: true,
     });
 
-    if (reviews.length === 0) return;
-
+    // With no visible reviews the rating resets to 0 instead of keeping a stale value.
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = Math.round((totalRating / reviews.length) * 100) / 100;
+    const averageRating = reviews.length ? Math.round((totalRating / reviews.length) * 100) / 100 : 0;
 
     await FreelancerProfile.findOneAndUpdate(
       { user: userId },
@@ -42,10 +41,9 @@ class ReputationService {
       isVisible: true,
     });
 
-    if (reviews.length === 0) return;
-
+    // With no visible reviews the rating resets to 0 instead of keeping a stale value.
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const averageRating = Math.round((totalRating / reviews.length) * 100) / 100;
+    const averageRating = reviews.length ? Math.round((totalRating / reviews.length) * 100) / 100 : 0;
 
     await ClientProfile.findOneAndUpdate(
       { user: userId },

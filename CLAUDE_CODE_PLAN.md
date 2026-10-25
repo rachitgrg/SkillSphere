@@ -175,7 +175,7 @@
   - Validate `status ∈ {accepted, rejected, negotiating}`.
   - On accept, use a transaction or guarded update: only if `gig.selectedFreelancer` is empty. Set the gig `in_progress`, set `selectedFreelancer`, copy proposal milestones into the gig if the gig has none, auto‑reject the other pending proposals, and fire notifications.
   - Allow admin where the route allows admin, or remove admin from the route.
-- [ ] **1.13 Review rules.**
+- [x] **1.13 Review rules.**
   - Reviewer must be the gig's `client` or `selectedFreelancer`.
   - Reviewee must be the *other* party; no self‑review.
   - The gig must be `completed`.

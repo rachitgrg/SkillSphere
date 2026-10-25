@@ -280,18 +280,16 @@ export const verifyPaymentSchema = z.object({
 
 export const createReviewSchema = z.object({
   body: z.object({
-    rating: z.number().min(1).max(5),
+    gigId: z.string().min(1, 'Gig is required'),
+    // The overall rating is computed from these (see models/Review.ts); the reviewee is derived from the gig.
     categories: z.object({
-      communication: z.number().min(1).max(5),
-      quality: z.number().min(1).max(5),
-      timeliness: z.number().min(1).max(5),
-      professionalism: z.number().min(1).max(5),
-      value: z.number().min(1).max(5),
+      communication: z.number().int().min(1).max(5),
+      quality: z.number().int().min(1).max(5),
+      timeliness: z.number().int().min(1).max(5),
+      professionalism: z.number().int().min(1).max(5),
+      value: z.number().int().min(1).max(5),
     }),
-    comment: z.string().min(1, 'Comment is required').max(2000),
-  }),
-  params: z.object({
-    gigId: z.string().min(1),
+    comment: z.string().trim().min(1, 'Comment is required').max(2000),
   }),
 });
 
