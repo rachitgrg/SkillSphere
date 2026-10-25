@@ -124,3 +124,14 @@ export const EXPERIENCE_LABELS: Record<'entry' | 'intermediate' | 'expert', stri
   intermediate: 'Intermediate',
   expert: 'Expert',
 };
+
+export const PROPOSAL_STATUS_VARIANT: Record<
+  'pending' | 'negotiating' | 'accepted' | 'rejected' | 'withdrawn',
+  'primary' | 'success' | 'warning' | 'error' | 'secondary'
+> = {
+  pending: 'primary',
+  negotiating: 'warning',
+  accepted: 'success',
+  rejected: 'error',
+  withdrawn: 'secondary',
+};

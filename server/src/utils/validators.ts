@@ -230,8 +230,8 @@ export const updateProposalStatusSchema = z.object({
 
 export const negotiateProposalSchema = z.object({
   body: z.object({
-    amount: z.number().min(0),
-    message: z.string().min(1, 'Message is required'),
+    amount: z.number().positive('Amount must be positive'),
+    message: z.string().trim().min(1, 'Message is required').max(1000),
   }),
 });
 

@@ -1,10 +1,11 @@
 import { Response, NextFunction } from 'express';
 import Proposal from '../models/Proposal';
 import Gig from '../models/Gig';
+import FreelancerProfile from '../models/FreelancerProfile';
 import notificationService from '../services/notificationService';
 import { toStringList } from '../services/gigQuery';
 import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
-import { AuthRequest, UserRole, ProposalStatus, IGig, GigStatus, MilestoneStatus } from '../types';
+import { AuthRequest, UserRole, ProposalStatus, IGig, GigStatus, MilestoneStatus, NotificationType } from '../types';
 
 export const createProposal = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -72,10 +73,17 @@ export const getProposalsForGig = async (req: AuthRequest, res: Response, next: 
     }
 
     const proposals = await Proposal.find({ gig: req.params.gigId })
-      .populate('freelancer', 'firstName lastName avatar')
+      .populate('freelancer', 'firstName lastName avatar address')
       .sort({ submittedAt: -1 });
 
-    res.status(200).json({ success: true, message: 'Proposals retrieved', data: proposals });
+    // Attach each freelancer's headline stats so the client can compare applicants.
+    const profiles = await FreelancerProfile.find({ user: { $in: proposals.map((p) => p.freelancer._id) } })
+      .select('user title averageRating totalReviews completedGigs hourlyRate skills')
+      .lean();
+    const byUser = new Map(profiles.map((p) => [p.user.toString(), p]));
+    const data = proposals.map((p) => ({ ...p.toJSON(), freelancerProfile: byUser.get(p.freelancer._id.toString()) ?? null }));
+
+    res.status(200).json({ success: true, message: 'Proposals retrieved', data });
   } catch (error) {
     next(error);
   }
@@ -232,6 +240,53 @@ export const withdrawProposal = async (req: AuthRequest, res: Response, next: Ne
     }
     await Gig.updateOne({ _id: proposal.gig }, { $inc: { totalProposals: -1 } });
     res.status(200).json({ success: true, message: 'Proposal withdrawn', data: proposal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /proposals/:id/negotiate { amount, message } — either the gig client or the proposal's
+ * freelancer counters. The latest offer becomes `finalAmount`, which accepting the proposal hires at.
+ */
+export const negotiateProposal = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { amount, message } = req.body as { amount: number; message: string };
+    const proposal = await Proposal.findById(req.params.id);
+    if (!proposal) {
+      res.status(404).json({ success: false, message: 'Proposal not found' });
+      return;
+    }
+    const gig = await Gig.findById(proposal.gig).select('client title status');
+    const me = req.user!._id.toString();
+    const isClient = gig?.client.toString() === me;
+    const isFreelancer = proposal.freelancer.toString() === me;
+    if (!gig || (!isClient && !isFreelancer)) {
+      res.status(403).json({ success: false, message: 'Only the client and the freelancer can negotiate' });
+      return;
+    }
+    if (!OPEN_PROPOSAL_STATUSES.includes(proposal.status) || gig.status !== GigStatus.OPEN) {
+      res.status(409).json({ success: false, message: 'This proposal can no longer be negotiated' });
+      return;
+    }
+
+    proposal.negotiationHistory.push({ proposedBy: req.user!._id, amount, message, createdAt: new Date() });
+    proposal.finalAmount = amount;
+    proposal.status = ProposalStatus.NEGOTIATING;
+    await proposal.save();
+
+    const recipient = isClient ? proposal.freelancer.toString() : gig.client.toString();
+    await notificationService.create({
+      recipient,
+      sender: me,
+      type: NotificationType.PROPOSAL_COUNTERED,
+      title: 'New counter-offer',
+      message: `${isClient ? 'The client' : 'The freelancer'} proposed ${amount.toLocaleString('en-IN')} INR for "${gig.title}"`,
+      data: { proposalId: proposal._id.toString(), gigId: gig._id.toString(), amount },
+      link: isClient ? '/freelancer/proposals' : `/client/gigs/${gig._id}/proposals`,
+    });
+
+    res.status(200).json({ success: true, message: 'Offer sent', data: proposal });
   } catch (error) {
     next(error);
   }

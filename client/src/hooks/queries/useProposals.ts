@@ -29,6 +29,14 @@ export const useWithdrawProposal = () => {
   return useMutation({ mutationFn: (id: string) => proposalApi.withdraw(id), onSuccess: invalidate });
 };
 
+export const useNegotiateProposal = () => {
+  const invalidate = useInvalidateProposals();
+  return useMutation({
+    mutationFn: ({ id, amount, message }: { id: string; amount: number; message: string }) => proposalApi.negotiate(id, amount, message),
+    onSuccess: invalidate,
+  });
+};
+
 export const useUpdateProposalStatus = () => {
   const invalidate = useInvalidateProposals();
   return useMutation({

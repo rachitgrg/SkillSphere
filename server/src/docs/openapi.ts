@@ -60,6 +60,7 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/proposals/mine', tag: 'Proposals', summary: "The freelancer's proposals", access: 'freelancer', query: { status: 'Comma list of statuses', ...pageQuery } },
   { method: 'get', path: '/proposals/gig/:gigId', tag: 'Proposals', summary: 'Proposals for a gig (owner or admin)', access: 'auth' },
   { method: 'get', path: '/proposals/:id', tag: 'Proposals', summary: 'One proposal (gig owner or author)', access: 'auth' },
+  { method: 'post', path: '/proposals/:id/negotiate', tag: 'Proposals', summary: 'Counter-offer (either party); last amount becomes finalAmount', access: 'client|freelancer', body: bodyOf(v.negotiateProposalSchema) },
   { method: 'put', path: '/proposals/:id/withdraw', tag: 'Proposals', summary: 'Withdraw a pending/negotiating proposal', access: 'freelancer' },
   { method: 'put', path: '/proposals/:id/status', tag: 'Proposals', summary: 'Accept (hire), reject or mark negotiating', access: 'client', body: bodyOf(v.updateProposalStatusSchema) },
 

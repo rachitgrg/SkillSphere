@@ -210,7 +210,7 @@ export const GigDetailPage: React.FC = () => {
                 <span className="flex items-center"><Clock className="w-4 h-4 mr-1.5 text-indigo-400" /> Posted {formatTimeAgo(gig.createdAt)}</span>
                 <span className="flex items-center"><MapPin className="w-4 h-4 mr-1.5 text-cyan-400" /> {location}</span>
                 <span className="flex items-center"><Eye className="w-4 h-4 mr-1.5 text-slate-400" /> {gig.views} {gig.views === 1 ? 'view' : 'views'}</span>
-                <span className="flex items-center"><Users className="w-4 h-4 mr-1.5 text-slate-400" /> {gig.totalProposals} proposals</span>
+                <span className="flex items-center"><Users className="w-4 h-4 mr-1.5 text-slate-400" /> {gig.totalProposals} {gig.totalProposals === 1 ? 'proposal' : 'proposals'}</span>
               </div>
 
               <section className="border-t border-slate-800 py-6">

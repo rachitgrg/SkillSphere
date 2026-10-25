@@ -308,6 +308,12 @@ export interface Proposal {
   updatedAt: string;
 }
 
+/** GET /proposals/gig/:gigId rows: proposal + the applicant's headline stats. */
+export type GigProposal = Proposal & {
+  freelancer: UserSummary;
+  freelancerProfile: Pick<FreelancerProfile, 'title' | 'averageRating' | 'totalReviews' | 'completedGigs' | 'hourlyRate' | 'skills'> | null;
+};
+
 /** POST /proposals */
 export interface ProposalInput {
   gigId: ID;
@@ -449,6 +455,7 @@ export type NotificationType =
   | 'gig_awarded'
   | 'gig_approved'
   | 'gig_rejected'
+  | 'proposal_countered'
   | 'payment_received'
   | 'payment_released'
   | 'payment_escrow'

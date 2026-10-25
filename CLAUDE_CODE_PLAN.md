@@ -267,7 +267,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - `GigFilters`: get options from the API (categories and trending skills).
   - `GigDetailPage`: fetch by id, show real client info, milestones and attachments. Show "Apply" only to freelancers, "View proposals" to the owner, and "Already applied" when applicable.
   - `GigCard`: use real fields and `_id`.
-- [ ] **3.3 Apply / proposals.**
+- [x] **3.3 Apply / proposals.**
   - `ApplyModal` calls `POST /proposals` (cover letter, bid, duration, optional milestones). **Remove the `setTimeout` fake.**
   - New page `/freelancer/proposals`: My proposals with status tabs, withdraw, respond to counter‑offers.
   - New page `/client/gigs/:id/proposals`: list with `ProposalCard`, accept / reject / counter‑offer modal, and links to freelancer profiles and AI match score.

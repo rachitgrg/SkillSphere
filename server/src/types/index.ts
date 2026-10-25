@@ -58,6 +58,7 @@ export enum NotificationType {
   MILESTONE_COMPLETED = 'milestone_completed',
   GIG_APPROVED = 'gig_approved',
   GIG_REJECTED = 'gig_rejected',
+  PROPOSAL_COUNTERED = 'proposal_countered',
   SYSTEM = 'system',
 }
 
