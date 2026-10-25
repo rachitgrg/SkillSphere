@@ -120,7 +120,7 @@
   - Add `npm test`.
   - **Every fix below gets a regression test.**
 
-- [ ] **1.1 Block admin self‑registration (C1).** Wire `validate(registerSchema)` from `utils/validators.ts` onto `POST /auth/register`. The schema already restricts `role` to `freelancer|client`. Also wire `loginSchema`. Wire the other schemas in `validators.ts` onto their routes as those routes are touched.
+- [x] **1.1 Block admin self‑registration (C1).** Wire `validate(registerSchema)` from `utils/validators.ts` onto `POST /auth/register`. The schema already restricts `role` to `freelancer|client`. Also wire `loginSchema`. Wire the other schemas in `validators.ts` onto their routes as those routes are touched.
   - Test: `role:'admin'` → 400; weak password → 400.
 - [ ] **1.2 Never return secrets (C2).** In `models/User.ts`, add a `toJSON` transform that deletes `password`, `refreshToken`, `twoFactorSecret`, `passwordResetToken`, `passwordResetExpires`, `emailVerificationToken`, `emailVerificationExpires` and `__v`.
   - Test: register/login responses contain none of these keys.

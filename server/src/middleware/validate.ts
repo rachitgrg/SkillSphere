@@ -4,11 +4,13 @@ import { ZodType, ZodError } from 'zod';
 export const validate = (schema: ZodType) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
-      schema.parse({
+      const parsed = schema.parse({
         body: req.body,
         query: req.query,
         params: req.params,
-      });
+      }) as { body?: unknown };
+      // Controllers only ever see validated, stripped body fields.
+      if (parsed.body !== undefined) req.body = parsed.body;
       next();
     } catch (error) {
       if (error instanceof ZodError) {

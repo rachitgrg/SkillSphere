@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
     await user.save();
 
-    if (role === UserRole.CLIENT) {
+    if (user.role === UserRole.CLIENT) {
       const clientProfile = new ClientProfile({
         user: user._id,
         totalSpent: 0,
@@ -43,7 +43,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         paymentVerified: false
       });
       await clientProfile.save();
-    } else if (role === UserRole.FREELANCER) {
+    } else if (user.role === UserRole.FREELANCER) {
       const freelancerProfile = new FreelancerProfile({
         user: user._id,
         title: 'New Freelancer',
