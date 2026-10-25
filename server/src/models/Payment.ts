@@ -71,9 +71,9 @@ paymentSchema.index({ status: 1 });
 paymentSchema.index({ razorpayOrderId: 1 });
 paymentSchema.index({ createdAt: -1 });
 
-// Pre-save: Calculate platform fee and freelancer amount
-paymentSchema.pre('save', function () {
-  if (this.isModified('amount')) {
+// Platform fee + freelancer share, computed before validation (both fields are required).
+paymentSchema.pre('validate', function () {
+  if (typeof this.amount === 'number' && (this.isNew || this.isModified('amount'))) {
     const feePercentage = env.PLATFORM_FEE_PERCENTAGE;
     this.platformFee = Math.round(this.amount * (feePercentage / 100) * 100) / 100;
     this.freelancerAmount = Math.round((this.amount - this.platformFee) * 100) / 100;

@@ -124,7 +124,7 @@
   - Test: `role:'admin'` → 400; weak password → 400.
 - [x] **1.2 Never return secrets (C2).** In `models/User.ts`, add a `toJSON` transform that deletes `password`, `refreshToken`, `twoFactorSecret`, `passwordResetToken`, `passwordResetExpires`, `emailVerificationToken`, `emailVerificationExpires` and `__v`.
   - Test: register/login responses contain none of these keys.
-- [ ] **1.3 Mongoose 9 hooks (C3).** In `models/Payment.ts:74-81` and `models/Review.ts:64-78`, drop the `next` parameter and the `next()` call. In `Review.ts`, also make `rating` not `required` (the hook computes it) and compute it in `pre('validate')` so validation passes.
+- [x] **1.3 Mongoose 9 hooks (C3).** In `models/Payment.ts:74-81` and `models/Review.ts:64-78`, drop the `next` parameter and the `next()` call. In `Review.ts`, also make `rating` not `required` (the hook computes it) and compute it in `pre('validate')` so validation passes.
   - Test: create a Payment and a Review → saved; review rating equals the weighted formula.
 - [ ] **1.4 Razorpay module.**
   - Make `config/razorpay.ts` lazy: a `getRazorpay()` that reads `env` at call time and returns `null` if not configured.

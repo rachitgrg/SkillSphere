@@ -18,9 +18,9 @@ const reviewSchema = new Schema<IReview>(
       ref: 'User',
       required: true,
     },
+    // Computed from categories in pre('validate'); clients never send it.
     rating: {
       type: Number,
-      required: [true, 'Rating is required'],
       min: [1, 'Rating must be at least 1'],
       max: [5, 'Rating cannot exceed 5'],
     },
@@ -60,10 +60,12 @@ reviewSchema.index({ rating: -1 });
 reviewSchema.index({ createdAt: -1 });
 reviewSchema.index({ gig: 1, reviewer: 1 }, { unique: true });
 
-// Pre-save: calculate weighted average rating
-reviewSchema.pre('save', function () {
-  if (this.isModified('categories')) {
-    const { communication, quality, timeliness, professionalism, value } = this.categories;
+// Weighted rating, computed before validation so required/min/max checks see it.
+reviewSchema.pre('validate', function () {
+  if (this.isNew || this.isModified('categories')) {
+    const { communication, quality, timeliness, professionalism, value } = this.categories ?? {};
+    // Missing categories are reported by their own required validators.
+    if ([communication, quality, timeliness, professionalism, value].some((n) => typeof n !== 'number')) return;
     // Weighted: quality 30%, communication 20%, timeliness 20%, professionalism 15%, value 15%
     this.rating = Math.round(
       (quality * 0.3 +
