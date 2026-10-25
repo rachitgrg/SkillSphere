@@ -96,7 +96,7 @@
   - Add ESLint + `typescript-eslint` to `server/` with a flat config, and change its `lint` script to `eslint src`.
   - Fix or justify the warnings.
 - [x] **0.5 Delete scratch files.** Delete `fix-imports.js`, `fix-ts-errors.js` and `fix-ts-errors-2.js` from the repo root.
-- [ ] **0.6 Dependencies.**
+- [x] **0.6 Dependencies.**
   - Run `npm audit fix` (non‑breaking) in both packages.
   - Upgrade `multer` to `^2` and `nodemailer` to the patched major, adapting the code.
   - Re‑run `npm audit --omit=dev` and record the remaining issues in the README.
