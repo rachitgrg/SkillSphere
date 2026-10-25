@@ -5,13 +5,8 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, loginUser } from '../../store/slices/authSlice';
-import type { UserRole } from '../../types';
+import { getDashboardPath } from '../../utils/routes';
 
-const getDashboardPath = (role: UserRole) => {
-  if (role === 'admin') return '/admin/dashboard';
-  if (role === 'freelancer') return '/freelancer/dashboard';
-  return '/client/dashboard';
-};
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();

@@ -256,7 +256,7 @@ Make the server expose exactly this API (paths relative to `/api/v1`), then rewr
 
 Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`) for all server data, keeping Redux for auth and UI only. Create hooks in `client/src/hooks/queries/` (e.g. `useGigs`, `useGig`, `useMyProposals`). Every page needs **loading** (Spinner/skeleton), **empty** (EmptyState) and **error** (toast + retry) states.
 
-- [ ] **3.1 Routing.** Rewrite `client/src/App.tsx`.
+- [x] **3.1 Routing.** Rewrite `client/src/App.tsx`.
   - Route every existing page and every sidebar link in `client/src/components/layout/Sidebar.tsx`. Fix "Post a Gig" → `/client/gigs/new`.
   - Add the missing pages listed below.
   - Footer links: route `/terms`, `/privacy`, `/contact` to simple static pages, and remove links you won't build.

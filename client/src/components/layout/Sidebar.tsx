@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Briefcase, FileText, MessageSquare, CreditCard,
-  Star, BarChart3, Users, Shield, AlertTriangle, Settings,
+  Star, BarChart3, Users, Shield, AlertTriangle, ScrollText,
   ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
@@ -30,9 +30,9 @@ const freelancerLinks: SidebarLink[] = [
 
 const clientLinks: SidebarLink[] = [
   { label: 'Dashboard', href: '/client/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { label: 'Post a Gig', href: '/gigs/create', icon: <Zap className="w-5 h-5" /> },
+  { label: 'Post a Gig', href: '/client/gigs/new', icon: <Zap className="w-5 h-5" /> },
   { label: 'My Gigs', href: '/client/gigs', icon: <Briefcase className="w-5 h-5" /> },
-  { label: 'Proposals', href: '/client/proposals', icon: <FileText className="w-5 h-5" /> },
+  { label: 'Find Freelancers', href: '/search?tab=freelancers', icon: <Search className="w-5 h-5" /> },
   { label: 'Messages', href: '/chat', icon: <MessageSquare className="w-5 h-5" /> },
   { label: 'Payments', href: '/client/payments', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Reviews', href: '/client/reviews', icon: <Star className="w-5 h-5" /> },
@@ -46,8 +46,8 @@ const adminLinks: SidebarLink[] = [
   { label: 'Payments', href: '/admin/payments', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Disputes', href: '/admin/disputes', icon: <AlertTriangle className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+  { label: 'Audit Logs', href: '/admin/logs', icon: <ScrollText className="w-5 h-5" /> },
   { label: 'Notifications', href: '/notifications', icon: <Bell className="w-5 h-5" /> },
-  { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 export function Sidebar() {
@@ -67,7 +67,7 @@ export function Sidebar() {
       <div className="flex-1 py-4 px-3 overflow-y-auto">
         <div className="space-y-1">
           {links.map((link) => {
-            const isActive = location.pathname === link.href;
+            const isActive = location.pathname === link.href.split('?')[0];
             return (
               <Link key={link.href} to={link.href} className="block relative">
                 {isActive && (

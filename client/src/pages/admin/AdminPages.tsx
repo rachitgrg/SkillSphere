@@ -43,3 +43,10 @@ export const AnalyticsPage: React.FC = () => {
     </div>
   );
 };
+
+// Built out in plan 3.8.
+export const AdminLogsPage: React.FC = () => (
+  <div className="space-y-6">
+    <h1 className="text-2xl font-bold text-white">Admin logs</h1>
+  </div>
+);

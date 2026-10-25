@@ -6,9 +6,8 @@ import { Button } from '../../components/common/Button';
 import { Briefcase, User } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, registerUser } from '../../store/slices/authSlice';
-import type { UserRole } from '../../types';
+import { getDashboardPath } from '../../utils/routes';
 
-const getDashboardPath = (role: UserRole) => role === 'freelancer' ? '/freelancer/dashboard' : '/client/dashboard';
 
 export const RegisterPage: React.FC = () => {
   const [role, setRole] = useState<'freelancer' | 'client' | null>(null);
