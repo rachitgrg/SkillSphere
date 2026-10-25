@@ -1,8 +1,11 @@
 import { Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
 import aiMatchingService from '../services/aiMatchingService';
-import { QueryFilter } from 'mongoose';
-import { AuthRequest, UserRole, GigStatus, IGig } from '../types';
+import { QueryFilter, Types } from 'mongoose';
+import Payment from '../models/Payment';
+import Proposal from '../models/Proposal';
+import notificationService from '../services/notificationService';
+import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
 import { pick } from '../utils/helpers';
 
 /** Fields a client may set on a gig; status, views, proposals and the hired freelancer are server-controlled. */
@@ -13,6 +16,13 @@ export const GIG_EDITABLE = [
 
 /** A gig can only be edited before work starts. */
 const EDITABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
+
+/** A gig can only be deleted before anyone is hired; afterwards it must be cancelled. */
+const DELETABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.REJECTED, GigStatus.OPEN];
+
+/** True when the gig has money in escrow or frozen by a dispute. */
+const hasHeldMoney = async (gigId: Types.ObjectId): Promise<boolean> =>
+  Boolean(await Payment.exists({ gig: gigId, status: { $in: [PaymentStatus.ESCROW, PaymentStatus.DISPUTED] } }));
 
 export const createGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -148,8 +158,64 @@ export const deleteGig = async (req: AuthRequest, res: Response, next: NextFunct
       return;
     }
 
-    await Gig.findByIdAndDelete(req.params.id);
+    if (!DELETABLE_STATUSES.includes(gig.status) || (await hasHeldMoney(gig._id))) {
+      res.status(409).json({
+        success: false,
+        message: 'Only gigs that have not started and hold no escrowed payments can be deleted. Cancel this gig instead.',
+      });
+      return;
+    }
+
+    await Proposal.deleteMany({ gig: gig._id });
+    await Gig.deleteOne({ _id: gig._id });
     res.status(200).json({ success: true, message: 'Gig deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Cancels a gig that hasn't finished. Money held in escrow must be refunded (or disputed) first;
+ * open proposals are rejected and their freelancers notified.
+ */
+export const cancelGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const gig = await Gig.findById(req.params.id);
+    if (!gig) {
+      res.status(404).json({ success: false, message: 'Gig not found' });
+      return;
+    }
+    if (gig.client.toString() !== req.user!._id.toString()) {
+      res.status(403).json({ success: false, message: 'Not authorized to cancel this gig' });
+      return;
+    }
+    if ([GigStatus.COMPLETED, GigStatus.CANCELLED].includes(gig.status)) {
+      res.status(409).json({ success: false, message: `Gig is already ${gig.status}` });
+      return;
+    }
+    if (await hasHeldMoney(gig._id)) {
+      res.status(409).json({
+        success: false,
+        message: 'Refund or release the escrowed payments (or open a dispute) before cancelling',
+      });
+      return;
+    }
+
+    gig.status = GigStatus.CANCELLED;
+    await gig.save();
+
+    const open = await Proposal.find({ gig: gig._id, status: { $in: [ProposalStatus.PENDING, ProposalStatus.NEGOTIATING] } });
+    await Proposal.updateMany(
+      { _id: { $in: open.map((p) => p._id) } },
+      { $set: { status: ProposalStatus.REJECTED, respondedAt: new Date() } }
+    );
+    await Promise.all(
+      open.map((p) =>
+        notificationService.notifyProposalRejected(p.freelancer.toString(), gig.client.toString(), gig.title, gig._id.toString())
+      )
+    );
+
+    res.status(200).json({ success: true, message: 'Gig cancelled', data: gig });
   } catch (error) {
     next(error);
   }
