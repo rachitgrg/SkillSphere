@@ -197,7 +197,7 @@
   - Make `searchGigs` accept `skills` as an array or a comma string, and apply `budgetMin ≤ max && budgetMax ≥ min` overlap logic.
   - Wrap `LoginPage.tsx:25` / `RegisterPage.tsx:125` `.unwrap()` in try/catch.
   - Make currency **INR (₹)** everywhere in the UI. The gig form default `currency: 'USD'` and the `$` labels are wrong.
-- [ ] **1.17 Phase‑1 gate.** `npm test` green; tests exist for C1–C11 + 1.12–1.15. Commit.
+- [x] **1.17 Phase‑1 gate.** `npm test` green; tests exist for C1–C11 + 1.12–1.15. Commit.
 
 ---
 
@@ -552,3 +552,4 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 *(Claude Code: append one line per working session: date, what was completed, what's next, blockers such as missing keys.)*
 
 - 2026‑10‑25 — Plan created from the audit. Nothing implemented yet.
+- 2026‑10‑25 (session 1) — Phase 0 and Phase 1 done: both apps build, lint clean, 108 server tests (Jest + Supertest + mongodb-memory-server) cover C1–C11 and 1.12–1.15. Seed: `MONGO_URI=mongodb://127.0.0.1:27017/skillsphere_dev npm run seed`. New local JWT secrets written to the root .env. Next: Phase 2 (canonical API contract). Blockers: none yet; Razorpay test keys, Cloudinary, SMTP and Google OAuth secret are still placeholders (features degrade to 503 / Ethereal).
