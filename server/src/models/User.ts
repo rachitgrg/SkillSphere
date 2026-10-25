@@ -89,6 +89,8 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
     banReason: String,
+    // Temporary suspensions lift automatically after this date (see utils/suspension.ts).
+    suspendedUntil: Date,
     googleId: {
       type: String,
       unique: true,

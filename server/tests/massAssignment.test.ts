@@ -23,7 +23,7 @@ describe('mass assignment (C8)', () => {
   it('freelancers cannot set their own rating, reviews or earnings', async () => {
     const freelancer = await createUser(UserRole.FREELANCER);
     const res = await request(app)
-      .put('/api/v1/users/freelancer')
+      .put('/api/v1/users/freelancers/me')
       .set(freelancer.auth)
       .send({
         title: 'Senior React Developer',
@@ -48,7 +48,7 @@ describe('mass assignment (C8)', () => {
   it('freelancers can update the allowed profile sections', async () => {
     const freelancer = await createUser(UserRole.FREELANCER);
     const res = await request(app)
-      .put('/api/v1/users/freelancer')
+      .put('/api/v1/users/freelancers/me')
       .set(freelancer.auth)
       .send({
         skills: [{ name: 'React', proficiency: 'expert', yearsOfExperience: 4 }],
@@ -63,7 +63,7 @@ describe('mass assignment (C8)', () => {
   it('clients cannot set totalSpent or paymentVerified', async () => {
     const client = await createUser(UserRole.CLIENT);
     const res = await request(app)
-      .put('/api/v1/users/client')
+      .put('/api/v1/users/clients/me')
       .set(client.auth)
       .send({ companyName: 'Acme', totalSpent: 1e9, paymentVerified: true, averageRating: 5 });
     expect(res.status).toBe(200);
@@ -76,7 +76,7 @@ describe('mass assignment (C8)', () => {
   it('users cannot change their role or verification via profile update', async () => {
     const freelancer = await createUser(UserRole.FREELANCER, { isVerified: false });
     const res = await request(app)
-      .put('/api/v1/users/profile')
+      .put('/api/v1/users/me')
       .set(freelancer.auth)
       .send({ bio: 'Hi', role: 'admin', isVerified: true, isBanned: false });
     expect(res.status).toBe(200);
@@ -89,13 +89,13 @@ describe('mass assignment (C8)', () => {
   it('profile location must be a valid GeoJSON point', async () => {
     const freelancer = await createUser(UserRole.FREELANCER);
     const bad = await request(app)
-      .put('/api/v1/users/profile')
+      .put('/api/v1/users/me')
       .set(freelancer.auth)
       .send({ location: { type: 'Point', coordinates: [500, 12] } });
     expect(bad.status).toBe(400);
 
     const good = await request(app)
-      .put('/api/v1/users/profile')
+      .put('/api/v1/users/me')
       .set(freelancer.auth)
       .send({ location: { type: 'Point', coordinates: [77.59, 12.97] } });
     expect(good.status).toBe(200);

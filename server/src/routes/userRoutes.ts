@@ -1,22 +1,28 @@
 import { Router } from 'express';
-import { getUserById, updateProfile, getFreelancerProfile, updateFreelancerProfile, getClientProfile, updateClientProfile } from '../controllers/userController';
-import { protect } from '../middleware/auth';
+import {
+  getMe,
+  updateMe,
+  getFreelancerProfile,
+  updateFreelancerProfile,
+  getClientProfile,
+  updateClientProfile,
+} from '../controllers/userController';
+import { protect, optionalAuth } from '../middleware/auth';
 import { authorize } from '../middleware/rbac';
-import { UserRole } from '../types';
 import { validate } from '../middleware/validate';
 import { updateProfileSchema, updateFreelancerProfileSchema, updateClientProfileSchema } from '../utils/validators';
+import { UserRole } from '../types';
 
 const router = Router();
 
-router.use(protect);
+router.get('/me', protect, getMe);
+router.put('/me', protect, validate(updateProfileSchema), updateMe);
 
-router.get('/:id', getUserById);
-router.put('/profile', validate(updateProfileSchema), updateProfile);
+// `me` routes are declared before `:userId` so they are never captured as an id.
+router.put('/freelancers/me', protect, authorize(UserRole.FREELANCER), validate(updateFreelancerProfileSchema), updateFreelancerProfile);
+router.get('/freelancers/:userId', optionalAuth, getFreelancerProfile);
 
-router.get('/freelancer/:userId', getFreelancerProfile);
-router.put('/freelancer', authorize(UserRole.FREELANCER), validate(updateFreelancerProfileSchema), updateFreelancerProfile);
-
-router.get('/client/:userId', getClientProfile);
-router.put('/client', authorize(UserRole.CLIENT), validate(updateClientProfileSchema), updateClientProfile);
+router.put('/clients/me', protect, authorize(UserRole.CLIENT), validate(updateClientProfileSchema), updateClientProfile);
+router.get('/clients/:userId', optionalAuth, getClientProfile);
 
 export default router;

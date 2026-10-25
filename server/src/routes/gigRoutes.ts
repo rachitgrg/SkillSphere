@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import { createGig, getGigs, getGigById, updateGig, deleteGig, cancelGig, analyzeCareer } from '../controllers/gigController';
+import { createGig, getGigs, getMyGigs, getGigById, updateGig, deleteGig, cancelGig } from '../controllers/gigController';
 import { protect, optionalAuth } from '../middleware/auth';
 import { authorize } from '../middleware/rbac';
-import { UserRole } from '../types';
 import { validate } from '../middleware/validate';
 import { createGigSchema, updateGigSchema } from '../utils/validators';
+import { UserRole } from '../types';
 
 const router = Router();
 
 router.get('/', optionalAuth, getGigs);
-router.post('/analyze-career', protect, authorize(UserRole.FREELANCER, UserRole.ADMIN), analyzeCareer);
+router.get('/mine', protect, authorize(UserRole.CLIENT), getMyGigs);
 router.get('/:id', optionalAuth, getGigById);
 router.post('/', protect, authorize(UserRole.CLIENT), validate(createGigSchema), createGig);
 router.put('/:id', protect, authorize(UserRole.CLIENT), validate(updateGigSchema), updateGig);

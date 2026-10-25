@@ -44,6 +44,14 @@ const reviewSchema = new Schema<IReview>(
     isFlagged: { type: Boolean, default: false },
     flagReason: String,
     isVisible: { type: Boolean, default: true },
+    // User reports; any report flags the review for admin moderation.
+    reports: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        reason: { type: String, required: true, maxlength: 500 },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

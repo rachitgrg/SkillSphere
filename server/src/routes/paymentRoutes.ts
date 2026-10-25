@@ -1,9 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createOrder, verifyPayment, releasePayment, getPayments } from '../controllers/paymentController';
+import {
+  createOrder,
+  verifyPayment,
+  releasePayment,
+  refundPayment,
+  getPayments,
+  getPaymentSummary,
+  getPaymentConfig,
+} from '../controllers/paymentController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/rbac';
 import { validate } from '../middleware/validate';
-import { createPaymentSchema, verifyPaymentSchema } from '../utils/validators';
+import { createPaymentSchema, verifyPaymentSchema, refundPaymentSchema } from '../utils/validators';
 import paymentService from '../services/paymentService';
 import { UserRole } from '../types';
 
@@ -20,9 +28,12 @@ const requirePayments = (_req: Request, res: Response, next: NextFunction): void
 
 router.use(protect);
 
+router.get('/', getPayments);
+router.get('/summary', getPaymentSummary);
+router.get('/config', getPaymentConfig);
 router.post('/orders', requirePayments, authorize(UserRole.CLIENT), validate(createPaymentSchema), createOrder);
 router.post('/verify', requirePayments, authorize(UserRole.CLIENT), validate(verifyPaymentSchema), verifyPayment);
-router.post('/:id/release', requirePayments, authorize(UserRole.CLIENT), releasePayment);
-router.get('/', getPayments);
+router.post('/:id/release', authorize(UserRole.CLIENT), releasePayment);
+router.post('/:id/refund', requirePayments, authorize(UserRole.CLIENT), validate(refundPaymentSchema), refundPayment);
 
 export default router;

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { AuthRequest, JwtPayload } from '../types';
 import { env } from '../config/env';
+import { isSuspended } from '../utils/suspension';
 
 export const protect = async (
   req: AuthRequest,
@@ -41,10 +42,10 @@ export const protect = async (
       return;
     }
 
-    if (user.isBanned) {
+    if (await isSuspended(user)) {
       res.status(403).json({
         success: false,
-        message: 'Your account has been banned',
+        message: 'Your account has been suspended',
       });
       return;
     }
@@ -104,7 +105,7 @@ export const optionalAuth = async (
       ) as JwtPayload;
 
       const user = await User.findById(decoded.id).select('-password');
-      if (user && !user.isBanned && user.isActive) {
+      if (user && user.isActive && !(await isSuspended(user))) {
         req.user = user;
       }
     }

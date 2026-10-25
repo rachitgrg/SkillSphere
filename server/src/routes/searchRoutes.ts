@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { searchGigs, searchFreelancers, getMatchesForGig } from '../controllers/searchController';
-import { protect } from '../middleware/auth';
-import { authorize } from '../middleware/rbac';
-import { UserRole } from '../types';
+import { searchGigs, searchFreelancers, getTrendingSkills, getSuggestions } from '../controllers/searchController';
 
 const router = Router();
 
+// All search endpoints are public.
 router.get('/gigs', searchGigs);
 router.get('/freelancers', searchFreelancers);
-router.get('/matches/:gigId', protect, authorize(UserRole.CLIENT), getMatchesForGig);
+router.get('/trending-skills', getTrendingSkills);
+router.get('/suggestions', getSuggestions);
 
 export default router;

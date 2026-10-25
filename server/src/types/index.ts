@@ -56,6 +56,8 @@ export enum NotificationType {
   DISPUTE_RESOLVED = 'dispute_resolved',
   GIG_COMPLETED = 'gig_completed',
   MILESTONE_COMPLETED = 'milestone_completed',
+  GIG_APPROVED = 'gig_approved',
+  GIG_REJECTED = 'gig_rejected',
   SYSTEM = 'system',
 }
 
@@ -204,6 +206,7 @@ export interface IUser extends Document {
   isActive: boolean;
   isBanned: boolean;
   banReason?: string;
+  suspendedUntil?: Date;
   googleId?: string;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string;
@@ -297,6 +300,8 @@ export interface IGig extends Document {
   tags: string[];
   deadline?: Date;
   completedAt?: Date;
+  rejectionReason?: string;
+  approvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -386,6 +391,7 @@ export interface IReview extends Document {
   isFlagged: boolean;
   flagReason?: string;
   isVisible: boolean;
+  reports: { user: Types.ObjectId; reason: string; createdAt: Date }[];
   createdAt: Date;
   updatedAt: Date;
 }

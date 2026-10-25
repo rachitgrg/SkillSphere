@@ -3,6 +3,7 @@ import User from '../models/User';
 import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { AuthRequest, IUser, UserRole } from '../types';
+import { isSuspended } from '../utils/suspension';
 import {
   REFRESH_COOKIE,
   clearRefreshCookie,
@@ -101,8 +102,8 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     }
 
     // Checked after the password so account state isn't revealed to guessers.
-    if (user.isBanned) {
-      res.status(403).json({ success: false, message: 'Account is banned' });
+    if (await isSuspended(user)) {
+      res.status(403).json({ success: false, message: 'Account is suspended' });
       return;
     }
     if (!user.isActive) {
@@ -187,7 +188,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    if (user.isBanned || !user.isActive) {
+    if (!user.isActive || (await isSuspended(user))) {
       clearRefreshCookie(res);
       res.status(403).json({ success: false, message: 'Account is not active' });
       return;
@@ -207,4 +208,22 @@ const startSession = async (res: Response, user: IUser): Promise<string> => {
   await user.save();
   setRefreshCookie(res, refresh);
   return generateAccessToken({ id: user._id.toString(), role: user.role });
+};
+
+/** PUT /auth/change-password — verifies the current password and starts a fresh session (other sessions are revoked). */
+export const changePassword = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user!._id).select('+password');
+    if (!user || !(await user.comparePassword(currentPassword))) {
+      res.status(400).json({ success: false, message: 'Current password is incorrect' });
+      return;
+    }
+
+    user.password = newPassword;
+    const token = await startSession(res, user);
+    res.status(200).json({ success: true, message: 'Password changed', data: { token } });
+  } catch (error) {
+    next(error);
+  }
 };

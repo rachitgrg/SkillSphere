@@ -2,6 +2,8 @@ import { Response, NextFunction } from 'express';
 import Proposal from '../models/Proposal';
 import Gig from '../models/Gig';
 import notificationService from '../services/notificationService';
+import { toStringList } from '../services/gigQuery';
+import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
 import { AuthRequest, UserRole, ProposalStatus, IGig, GigStatus, MilestoneStatus } from '../types';
 
 export const createProposal = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -183,6 +185,53 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
     await proposal.save();
 
     res.status(200).json({ success: true, message: 'Proposal status updated', data: proposal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** GET /proposals/mine — the freelancer's proposals with their gigs, optionally filtered by status. */
+export const getMyProposals = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const query = req.query as Record<string, unknown>;
+    const { page, limit } = parsePaginationParams(query);
+    const filter: Record<string, unknown> = { freelancer: req.user!._id };
+    const statuses = toStringList(query.status).filter((s) => (Object.values(ProposalStatus) as string[]).includes(s));
+    if (statuses.length) filter.status = { $in: statuses };
+
+    const [proposals, total] = await Promise.all([
+      Proposal.find(filter)
+        .populate({ path: 'gig', select: 'title status budgetType budgetMin budgetMax client', populate: { path: 'client', select: 'firstName lastName avatar' } })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Proposal.countDocuments(filter),
+    ]);
+
+    res.status(200).json({ success: true, message: 'Proposals retrieved', data: proposals, pagination: buildPaginationResponse(total, page, limit) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** PUT /proposals/:id/withdraw — the freelancer withdraws a proposal that is still pending or negotiating. */
+export const withdrawProposal = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const proposal = await Proposal.findOneAndUpdate(
+      { _id: req.params.id, freelancer: req.user!._id, status: { $in: OPEN_PROPOSAL_STATUSES } },
+      { $set: { status: ProposalStatus.WITHDRAWN } },
+      { returnDocument: 'after' }
+    );
+    if (!proposal) {
+      const exists = await Proposal.exists({ _id: req.params.id, freelancer: req.user!._id });
+      res.status(exists ? 409 : 404).json({
+        success: false,
+        message: exists ? 'Only pending or negotiating proposals can be withdrawn' : 'Proposal not found',
+      });
+      return;
+    }
+    await Gig.updateOne({ _id: proposal.gig }, { $inc: { totalProposals: -1 } });
+    res.status(200).json({ success: true, message: 'Proposal withdrawn', data: proposal });
   } catch (error) {
     next(error);
   }

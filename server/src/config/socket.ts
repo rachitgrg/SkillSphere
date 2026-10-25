@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import User from '../models/User';
 import { env } from './env';
 import { verifyAccessToken } from '../utils/generateToken';
+import { isSuspended } from '../utils/suspension';
 
 let io: Server | null = null;
 
@@ -36,9 +37,9 @@ export const initializeSocket = (
       if (typeof token !== 'string' || !token) return next(new Error('Authentication required'));
 
       const decoded = verifyAccessToken(token);
-      const user = await User.findById(decoded.id).select('firstName lastName avatar role isActive isBanned');
+      const user = await User.findById(decoded.id);
       if (!user) return next(new Error('User not found'));
-      if (user.isBanned || !user.isActive) return next(new Error('Account is not active'));
+      if (!user.isActive || (await isSuspended(user))) return next(new Error('Account is not active'));
 
       socket.data.userId = user._id.toString();
       socket.data.role = user.role;

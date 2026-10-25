@@ -37,7 +37,7 @@ describe('AI matching with special-character skills (C9)', () => {
       status: GigStatus.OPEN,
     });
 
-    const res = await request(app).get(`/api/v1/search/matches/${gig.id}`).set(client.auth);
+    const res = await request(app).get(`/api/v1/ai/gigs/${gig.id}/matches`).set(client.auth);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
   });

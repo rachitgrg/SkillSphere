@@ -59,7 +59,7 @@ describe('public marketplace (1.16)', () => {
   it('accepts a 500 KB JSON body (1 MB limit)', async () => {
     const freelancer = await createUser(UserRole.FREELANCER);
     const res = await request(app)
-      .put('/api/v1/users/profile')
+      .put('/api/v1/users/me')
       .set(freelancer.auth)
       .send({ bio: 'x', padding: 'y'.repeat(500_000) });
     expect(res.status).not.toBe(413);

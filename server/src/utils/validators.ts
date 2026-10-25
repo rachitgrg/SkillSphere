@@ -346,17 +346,48 @@ export const searchSchema = z.object({
 
 // ───────────────────────── Admin Schemas ─────────────────────────
 
-export const banUserSchema = z.object({
+export const suspendUserSchema = z.object({
   body: z.object({
-    reason: z.string().min(1, 'Ban reason is required'),
+    reason: z.string().trim().min(3, 'A reason is required').max(500),
+    // Omit for an indefinite suspension.
+    durationDays: z.number().int().min(1).max(3650).optional(),
   }),
-  params: z.object({
-    userId: z.string().min(1),
+});
+
+export const rejectGigSchema = z.object({
+  body: z.object({
+    reason: z.string().trim().min(3, 'Tell the client why').max(1000),
+  }),
+});
+
+export const reviewVisibilitySchema = z.object({
+  body: z.object({
+    isVisible: z.boolean(),
   }),
 });
 
 export const idParamSchema = z.object({
   params: z.object({
     id: z.string().min(1),
+  }),
+});
+
+// ───────────────────────── AI Schemas ─────────────────────────
+
+export const careerAnalysisSchema = z.object({
+  body: z.object({
+    resumeText: z.string().trim().min(50, 'Paste at least a few lines of your resume').max(20000),
+  }),
+});
+
+export const refundPaymentSchema = z.object({
+  body: z.object({
+    reason: z.string().trim().max(500).optional(),
+  }),
+});
+
+export const reportReviewSchema = z.object({
+  body: z.object({
+    reason: z.string().trim().min(3, 'Tell us what is wrong with this review').max(500),
   }),
 });

@@ -112,3 +112,39 @@ export const replyToReview = async (req: AuthRequest, res: Response, next: NextF
     next(error);
   }
 };
+
+/** GET /reviews/user/:userId/breakdown — rating distribution and category averages (visible reviews). */
+export const getReviewBreakdown = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const breakdown = await reputationService.getReputationBreakdown(req.params.userId);
+    res.status(200).json({ success: true, message: 'Review breakdown', data: breakdown });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /reviews/:id/report — any signed-in user can report a review once; it is flagged for admins. */
+export const reportReview = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const me = req.user!._id;
+    const review = await Review.findOneAndUpdate(
+      { _id: req.params.id, 'reports.user': { $ne: me } },
+      {
+        $push: { reports: { user: me, reason: req.body.reason } },
+        $set: { isFlagged: true },
+      },
+      { returnDocument: 'after' }
+    );
+    if (!review) {
+      const exists = await Review.exists({ _id: req.params.id });
+      res.status(exists ? 409 : 404).json({
+        success: false,
+        message: exists ? 'You have already reported this review' : 'Review not found',
+      });
+      return;
+    }
+    res.status(200).json({ success: true, message: 'Review reported. Our team will take a look.' });
+  } catch (error) {
+    next(error);
+  }
+};

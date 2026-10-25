@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import User from '../models/User';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
@@ -13,55 +14,65 @@ export const FREELANCER_EDITABLE = [
 export const CLIENT_EDITABLE = ['companyName', 'companyWebsite', 'companySize', 'industry', 'description'] as const;
 const USER_EDITABLE = ['firstName', 'lastName', 'phone', 'bio', 'location', 'address'] as const;
 
-export const getUserById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+/** Public user fields shown alongside profiles. */
+const PUBLIC_USER_FIELDS = 'firstName lastName avatar bio address role isVerified createdAt lastLogin';
+
+const loadOwnProfile = (userId: Types.ObjectId, role: UserRole) => {
+  if (role === UserRole.FREELANCER) return FreelancerProfile.findOne({ user: userId });
+  if (role === UserRole.CLIENT) return ClientProfile.findOne({ user: userId });
+  return null;
+};
+
+/** GET /users/me — the signed-in user plus their role profile. */
+export const getMe = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
-    res.status(200).json({ success: true, message: 'User found', data: user });
+    const user = req.user!;
+    const profile = await loadOwnProfile(user._id, user.role);
+    res.status(200).json({ success: true, message: 'Profile retrieved', data: { user, profile } });
   } catch (error) {
     next(error);
   }
 };
 
-export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+/** PUT /users/me — basic account fields (name, phone, bio, address, GeoJSON location). */
+export const updateMe = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user?._id;
     const user = await User.findByIdAndUpdate(
-      userId,
+      req.user!._id,
       { $set: pick(req.body, USER_EDITABLE) },
       { returnDocument: 'after', runValidators: true }
-    ).select('-password');
-
+    );
     res.status(200).json({ success: true, message: 'Profile updated', data: user });
   } catch (error) {
     next(error);
   }
 };
 
+/** GET /users/freelancers/:userId — public freelancer profile (hidden for banned/inactive users). */
 export const getFreelancerProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const profile = await FreelancerProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName avatar email');
-    if (!profile) {
+    const user = await User.findOne({
+      _id: req.params.userId,
+      role: UserRole.FREELANCER,
+      isActive: true,
+      isBanned: false,
+    }).select(PUBLIC_USER_FIELDS);
+    const profile = user && (await FreelancerProfile.findOne({ user: user._id }));
+    if (!user || !profile) {
       res.status(404).json({ success: false, message: 'Profile not found' });
       return;
     }
-    res.status(200).json({ success: true, message: 'Profile found', data: profile });
+    res.status(200).json({ success: true, message: 'Profile found', data: { ...profile.toJSON(), user } });
   } catch (error) {
     next(error);
   }
 };
 
+/** PUT /users/freelancers/me */
 export const updateFreelancerProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (req.user?.role !== UserRole.FREELANCER) {
-      res.status(403).json({ success: false, message: 'Not authorized' });
-      return;
-    }
     const profile = await FreelancerProfile.findOneAndUpdate(
-      { user: req.user._id },
+      { user: req.user!._id },
       { $set: pick(req.body, FREELANCER_EDITABLE) },
       { returnDocument: 'after', runValidators: true }
     );
@@ -71,27 +82,31 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
   }
 };
 
+/** GET /users/clients/:userId — public client profile. */
 export const getClientProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const profile = await ClientProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName avatar email');
-    if (!profile) {
+    const user = await User.findOne({
+      _id: req.params.userId,
+      role: UserRole.CLIENT,
+      isActive: true,
+      isBanned: false,
+    }).select(PUBLIC_USER_FIELDS);
+    const profile = user && (await ClientProfile.findOne({ user: user._id }));
+    if (!user || !profile) {
       res.status(404).json({ success: false, message: 'Profile not found' });
       return;
     }
-    res.status(200).json({ success: true, message: 'Profile found', data: profile });
+    res.status(200).json({ success: true, message: 'Profile found', data: { ...profile.toJSON(), user } });
   } catch (error) {
     next(error);
   }
 };
 
+/** PUT /users/clients/me */
 export const updateClientProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (req.user?.role !== UserRole.CLIENT) {
-      res.status(403).json({ success: false, message: 'Not authorized' });
-      return;
-    }
     const profile = await ClientProfile.findOneAndUpdate(
-      { user: req.user._id },
+      { user: req.user!._id },
       { $set: pick(req.body, CLIENT_EDITABLE) },
       { returnDocument: 'after', runValidators: true }
     );

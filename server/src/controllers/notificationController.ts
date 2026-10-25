@@ -1,15 +1,37 @@
 import { Response, NextFunction } from 'express';
 import Notification from '../models/Notification';
 import { AuthRequest } from '../types';
+import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
 
+/** GET /notifications?page=&limit=&unread=true — newest first. */
 export const getNotifications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const limit = Number(req.query.limit) || 20;
-    const notifications = await Notification.find({ recipient: req.user?._id })
-      .sort({ createdAt: -1 })
-      .limit(limit);
+    const { page, limit } = parsePaginationParams(req.query as Record<string, unknown>);
+    const filter: Record<string, unknown> = { recipient: req.user!._id };
+    if (req.query.unread === 'true') filter.isRead = false;
 
-    res.status(200).json({ success: true, message: 'Notifications retrieved', data: notifications });
+    const [notifications, total, unreadCount] = await Promise.all([
+      Notification.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Notification.countDocuments(filter),
+      Notification.countDocuments({ recipient: req.user!._id, isRead: false }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Notifications retrieved',
+      data: { notifications, unreadCount },
+      pagination: buildPaginationResponse(total, page, limit),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** GET /notifications/unread-count */
+export const getUnreadCount = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const count = await Notification.countDocuments({ recipient: req.user!._id, isRead: false });
+    res.status(200).json({ success: true, message: 'Unread count', data: { count } });
   } catch (error) {
     next(error);
   }
@@ -48,7 +70,11 @@ export const markAllAsRead = async (req: AuthRequest, res: Response, next: NextF
 
 export const deleteNotification = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.user?._id });
+    const deleted = await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.user?._id });
+    if (!deleted) {
+      res.status(404).json({ success: false, message: 'Notification not found' });
+      return;
+    }
     res.status(200).json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     next(error);

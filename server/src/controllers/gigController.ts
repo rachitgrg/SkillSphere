@@ -1,13 +1,13 @@
 import { Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
-import aiMatchingService from '../services/aiMatchingService';
+import ClientProfile from '../models/ClientProfile';
 import { Types } from 'mongoose';
 import Payment from '../models/Payment';
 import Proposal from '../models/Proposal';
 import notificationService from '../services/notificationService';
 import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
-import { buildPublicGigFilter, gigSort } from '../services/gigQuery';
+import { buildPublicGigFilter, gigSort, toStringList } from '../services/gigQuery';
 
 /** Fields a client may set on a gig; status, views, proposals and the hired freelancer are server-controlled. */
 export const GIG_EDITABLE = [
@@ -39,24 +39,41 @@ const DELETABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPR
 const hasHeldMoney = async (gigId: Types.ObjectId): Promise<boolean> =>
   Boolean(await Payment.exists({ gig: gigId, status: { $in: [PaymentStatus.ESCROW, PaymentStatus.DISPUTED] } }));
 
+/** New gigs wait in the admin approval queue (pending_approval) before they are public. */
 export const createGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (req.user?.role !== UserRole.CLIENT) {
-      res.status(403).json({ success: false, message: 'Only clients can create gigs' });
-      return;
-    }
-
-    const gig = new Gig({
+    const gig = await new Gig({
       ...pick(req.body, GIG_EDITABLE),
-      client: req.user._id,
-      status: GigStatus.OPEN,
-      totalProposals: 0,
-      views: 0,
-      proposals: []
-    });
+      client: req.user!._id,
+      status: GigStatus.PENDING_APPROVAL,
+    }).save();
+    await ClientProfile.updateOne({ user: req.user!._id }, { $inc: { postedGigs: 1 } });
+    res.status(201).json({ success: true, message: 'Gig submitted for approval', data: gig });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    await gig.save();
-    res.status(201).json({ success: true, message: 'Gig created successfully', data: gig });
+/** GET /gigs/mine — the client's own gigs in every status, optionally filtered by status. */
+export const getMyGigs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const query = req.query as Record<string, unknown>;
+    const { page, limit } = parsePaginationParams(query);
+    const filter: Record<string, unknown> = { client: req.user!._id };
+    const statuses = toStringList(query.status).filter((s) => (Object.values(GigStatus) as string[]).includes(s));
+    if (statuses.length) filter.status = { $in: statuses };
+
+    const [gigs, total] = await Promise.all([
+      Gig.find(filter)
+        .populate('selectedFreelancer', 'firstName lastName avatar')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Gig.countDocuments(filter),
+    ]);
+
+    res.status(200).json({ success: true, message: 'Gigs retrieved', data: gigs, pagination: buildPaginationResponse(total, page, limit) });
   } catch (error) {
     next(error);
   }
@@ -84,26 +101,6 @@ export const getGigs = async (req: AuthRequest, res: Response, next: NextFunctio
       message: 'Gigs retrieved',
       data: gigs,
       pagination: buildPaginationResponse(total, page, limit),
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const analyzeCareer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { resumeText } = req.body;
-    if (!resumeText) {
-      res.status(400).json({ success: false, message: 'resumeText is required' });
-      return;
-    }
-
-    const report = await aiMatchingService.analyzeCareerFromResume(resumeText);
-
-    res.status(200).json({
-      success: true,
-      message: 'Career analysis complete',
-      data: report
     });
   } catch (error) {
     next(error);

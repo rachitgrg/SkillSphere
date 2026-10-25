@@ -117,6 +117,9 @@ const gigSchema = new Schema<IGig>(
     tags: [String],
     deadline: Date,
     completedAt: Date,
+    // Set by an admin when the gig is rejected from the approval queue.
+    rejectionReason: String,
+    approvedAt: Date,
   },
   {
     timestamps: true,
