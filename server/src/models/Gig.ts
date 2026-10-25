@@ -85,6 +85,8 @@ const gigSchema = new Schema<IGig>(
       },
       coordinates: {
         type: [Number],
+        // No empty [] default: an empty point breaks the 2dsphere index.
+        default: undefined,
       },
     },
     locationType: {

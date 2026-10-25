@@ -303,24 +303,24 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 ## Phase 4 — Missing spec features (module by module)
 
 ### 4.1 Auth (module 1)
-- [ ] **Email verification.**
+- [x] **Email verification.**
   - On register, generate a random token and store its **sha256 hash** plus a 24h expiry.
   - Email the link `CLIENT_URL/verify-email?token=…` using the existing `utils/sendEmail.ts` templates (`sendVerificationEmail`).
   - `GET /auth/verify-email/:token` sets `isVerified`.
   - Unverified users can log in, but posting gigs, applying and paying are blocked by a `requireVerified` middleware.
   - Add a "Resend" button.
   - Client `VerifyEmailPage` reads `?token`, calls the API, and shows the result.
-- [ ] **Password reset.**
+- [x] **Password reset.**
   - `forgot-password` always returns 200 (no user enumeration), stores a hashed token with a 1h expiry, and emails the link.
   - `reset-password/:token` sets the new password, clears the token, and invalidates the refresh token.
   - Wire the `ForgotPasswordPage` / `ResetPasswordPage` forms with react‑hook‑form + zod.
-- [ ] **Google OAuth.**
+- [x] **Google OAuth.**
   - Use the existing `config/passport.ts` with `session: false`.
   - The callback issues a refresh cookie and redirects to `CLIENT_URL/oauth/callback`. The client then calls `/auth/refresh` to get the access token.
   - New Google users must choose a role on first login: show a "choose role" screen if the role is unset. Add a `needsRoleSelection` flag; don't default them to freelancer silently.
   - The Login/Register Google buttons go to `/api/v1/auth/google`.
   - Show the button disabled if Google is not configured (expose `GET /auth/providers`).
-- [ ] **2FA (TOTP)** with `otplib` + `qrcode` (already installed).
+- [x] **2FA (TOTP)** with `otplib` + `qrcode` (already installed).
   - `setup` generates and stores an *encrypted or pending* secret and returns a QR data URL.
   - `enable` verifies the first code.
   - Login for 2FA users returns `{twoFactorRequired, tempToken (5 min, purpose: '2fa')}`; `POST /auth/2fa/verify {tempToken, code}` returns real tokens.

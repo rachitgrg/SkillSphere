@@ -55,6 +55,9 @@ const schema = z.object({
 
   HF_ACCESS_TOKEN: optionalString,
 
+  // Encrypts TOTP secrets at rest; derived from JWT_SECRET when unset.
+  TWO_FACTOR_ENCRYPTION_KEY: optionalString,
+
   REDIS_URL: optionalString,
   USE_ATLAS_SEARCH: booleanFlag,
 

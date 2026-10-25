@@ -111,6 +111,8 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
+        // A 2FA challenge is not a session; the page continues to /2fa with the temp token.
+        if ('twoFactorRequired' in action.payload) return;
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;

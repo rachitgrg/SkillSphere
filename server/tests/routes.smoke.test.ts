@@ -26,6 +26,18 @@ const CASES: Record<string, Case> = {
   'POST /api/v1/auth/refresh': { role: 'public' }, // 401 without a cookie
   'POST /api/v1/auth/logout': { role: 'public' },
   'GET /api/v1/auth/me': { role: 'client' },
+  'GET /api/v1/auth/verify-email/:token': { role: 'public', path: () => '/api/v1/auth/verify-email/not-a-real-token' },
+  'POST /api/v1/auth/resend-verification': { role: 'client' },
+  'POST /api/v1/auth/forgot-password': { role: 'public', body: (i) => ({ email: i.clientEmail }) },
+  'POST /api/v1/auth/reset-password/:token': { role: 'public', path: () => '/api/v1/auth/reset-password/bad-token', body: () => ({ password: 'N3wPassword!' }) },
+  'POST /api/v1/auth/2fa/setup': { role: 'freelancer' },
+  'POST /api/v1/auth/2fa/enable': { role: 'freelancer', body: () => ({ code: '000000' }) },
+  'POST /api/v1/auth/2fa/disable': { role: 'client', body: () => ({ password: 'x', code: '000000' }) },
+  'POST /api/v1/auth/2fa/verify': { role: 'public', body: () => ({ tempToken: 'bad', code: '000000' }) },
+  'GET /api/v1/auth/providers': { role: 'public' },
+  'GET /api/v1/auth/google': { role: 'public' },
+  'GET /api/v1/auth/google/callback': { role: 'public' },
+  'POST /api/v1/auth/choose-role': { role: 'client', body: () => ({ role: 'client' }) },
   'PUT /api/v1/auth/change-password': { role: 'client', body: () => ({ currentPassword: 'wrong', newPassword: 'N3wPassword!' }) },
 
   // Users

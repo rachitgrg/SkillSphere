@@ -7,6 +7,7 @@ import { Briefcase, User } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, registerUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
+import { GoogleButton } from '../../components/auth/GoogleButton';
 
 
 export const RegisterPage: React.FC = () => {
@@ -61,6 +62,11 @@ export const RegisterPage: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400"><Briefcase className="w-6 h-6" /></div>
               <div><h4 className="text-white font-semibold text-lg">I'm a Client</h4><p className="text-sm text-slate-400">Looking to hire top talent</p></div>
             </button>
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800" /></div>
+              <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900/80 text-slate-500">or</span></div>
+            </div>
+            <GoogleButton />
           </div>
         ) : (
           <form onSubmit={handleRegister} className="space-y-5">
@@ -74,7 +80,7 @@ export const RegisterPage: React.FC = () => {
               <Input label="Last Name" name="lastName" autoComplete="family-name" value={lastName} onChange={(event) => { setLastName(event.target.value); clearRegistrationError(); }} required />
             </div>
             <Input label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); clearRegistrationError(); }} required />
-            <Input label="Password" name="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => { setPassword(event.target.value); clearRegistrationError(); }} error={error || undefined} helperText="Use at least 8 characters." required />
+            <Input label="Password" name="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => { setPassword(event.target.value); clearRegistrationError(); }} error={error || undefined} helperText="At least 8 characters with an uppercase letter, a lowercase letter and a number." required />
 
             <Button type="submit" size="lg" fullWidth isLoading={isLoading}>Create Account</Button>
           </form>

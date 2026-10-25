@@ -2,9 +2,12 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
 import User from '../models/User';
 import { UserRole } from '../types';
-import { env } from './env';
+import { env, features } from './env';
 
+/** Registers the Google strategy (stateless, JWT sessions). No-op when Google isn't configured. */
 const configurePassport = (): void => {
+  if (!features.google) return;
+
   passport.serializeUser((user: Express.User, done) => {
     done(null, user._id);
   });
@@ -55,14 +58,19 @@ const configurePassport = (): void => {
             return done(null, user);
           }
 
+          const email = profile.emails?.[0]?.value;
+          if (!email) return done(new Error('Google account has no email'), undefined);
+
+          // Role is chosen on first login (POST /auth/choose-role); no profile until then.
           const newUser = await User.create({
             googleId: profile.id,
-            firstName: profile.name?.givenName || 'User',
-            lastName: profile.name?.familyName || '',
-            email: profile.emails?.[0]?.value,
+            firstName: profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User',
+            lastName: profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || 'Google',
+            email,
             avatar: profile.photos?.[0]?.value,
             isVerified: true,
             role: UserRole.FREELANCER,
+            needsRoleSelection: true,
             lastLogin: new Date(),
           });
 

@@ -9,7 +9,7 @@ import {
   getPaymentConfig,
 } from '../controllers/paymentController';
 import { protect } from '../middleware/auth';
-import { authorize } from '../middleware/rbac';
+import { authorize, requireVerified } from '../middleware/rbac';
 import { validate } from '../middleware/validate';
 import { createPaymentSchema, verifyPaymentSchema, refundPaymentSchema } from '../utils/validators';
 import paymentService from '../services/paymentService';
@@ -31,7 +31,7 @@ router.use(protect);
 router.get('/', getPayments);
 router.get('/summary', getPaymentSummary);
 router.get('/config', getPaymentConfig);
-router.post('/orders', requirePayments, authorize(UserRole.CLIENT), validate(createPaymentSchema), createOrder);
+router.post('/orders', requirePayments, authorize(UserRole.CLIENT), requireVerified, validate(createPaymentSchema), createOrder);
 router.post('/verify', requirePayments, authorize(UserRole.CLIENT), validate(verifyPaymentSchema), verifyPayment);
 router.post('/:id/release', authorize(UserRole.CLIENT), releasePayment);
 router.post('/:id/refund', requirePayments, authorize(UserRole.CLIENT), validate(refundPaymentSchema), refundPayment);

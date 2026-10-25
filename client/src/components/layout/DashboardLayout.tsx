@@ -1,9 +1,10 @@
 import { Outlet } from 'react-router';
-import { motion } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
+import { VerifyEmailBanner } from './VerifyEmailBanner';
 import { useAppSelector } from '../../hooks/useRedux';
 
+/** Navbar + sidebar chrome. The page renders exactly once; only the desktop margin follows the sidebar width. */
 export function DashboardLayout() {
   const { sidebarCollapsed } = useAppSelector((s) => s.ui);
 
@@ -11,18 +12,9 @@ export function DashboardLayout() {
     <div className="min-h-screen bg-dark-950">
       <Navbar />
       <Sidebar />
-      <motion.main
-        animate={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="pt-16 min-h-screen hidden lg:block"
-      >
-        <div className="p-6">
-          <Outlet />
-        </div>
-      </motion.main>
-      {/* Mobile: no sidebar margin */}
-      <main className="pt-16 min-h-screen lg:hidden">
-        <div className="p-4">
+      <main className={`pt-16 min-h-screen transition-[margin] duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
+        <div className="p-4 lg:p-6">
+          <VerifyEmailBanner />
           <Outlet />
         </div>
       </main>

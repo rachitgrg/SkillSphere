@@ -27,7 +27,7 @@ export function OAuthCallbackPage() {
     dispatch(bootstrapSession()).then(() => {
       const user = store.getState().auth.user;
       if (user) {
-        navigate(getDashboardPath(user.role), { replace: true });
+        navigate(user.needsRoleSelection ? '/choose-role' : getDashboardPath(user.role), { replace: true });
       } else {
         toast.error('Google sign-in failed. Please try again.');
         navigate('/login', { replace: true });

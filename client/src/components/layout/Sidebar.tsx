@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Briefcase, FileText, MessageSquare, CreditCard,
-  Star, BarChart3, Users, Shield, AlertTriangle, ScrollText,
+  Star, BarChart3, Users, Shield, AlertTriangle, ScrollText, Settings,
   ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
@@ -26,6 +26,7 @@ const freelancerLinks: SidebarLink[] = [
   { label: 'Analytics', href: '/freelancer/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'Schedule', href: '/freelancer/schedule', icon: <Calendar className="w-5 h-5" /> },
   { label: 'Profile', href: '/freelancer/profile', icon: <User className="w-5 h-5" /> },
+  { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 const clientLinks: SidebarLink[] = [
@@ -37,6 +38,7 @@ const clientLinks: SidebarLink[] = [
   { label: 'Payments', href: '/client/payments', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Reviews', href: '/client/reviews', icon: <Star className="w-5 h-5" /> },
   { label: 'Profile', href: '/client/profile', icon: <User className="w-5 h-5" /> },
+  { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 const adminLinks: SidebarLink[] = [
@@ -48,6 +50,7 @@ const adminLinks: SidebarLink[] = [
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'Audit Logs', href: '/admin/logs', icon: <ScrollText className="w-5 h-5" /> },
   { label: 'Notifications', href: '/notifications', icon: <Bell className="w-5 h-5" /> },
+  { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 export function Sidebar() {

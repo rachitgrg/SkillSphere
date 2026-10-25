@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
-import ClientProfile from '../models/ClientProfile';
-import FreelancerProfile from '../models/FreelancerProfile';
-import { AuthRequest, IUser, UserRole } from '../types';
+import accountService from '../services/accountService';
+import { AuthRequest, IUser } from '../types';
 import { isSuspended } from '../utils/suspension';
 import {
   REFRESH_COOKIE,
@@ -36,42 +35,10 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       twoFactorEnabled: false
     });
 
+    user.lastLoginIp = req.ip;
     await user.save();
-
-    if (user.role === UserRole.CLIENT) {
-      const clientProfile = new ClientProfile({
-        user: user._id,
-        totalSpent: 0,
-        postedGigs: 0,
-        activeGigs: 0,
-        completedGigs: 0,
-        averageRating: 0,
-        totalReviews: 0,
-        paymentVerified: false
-      });
-      await clientProfile.save();
-    } else if (user.role === UserRole.FREELANCER) {
-      const freelancerProfile = new FreelancerProfile({
-        user: user._id,
-        title: 'New Freelancer',
-        headline: 'Ready to work',
-        skills: [],
-        portfolio: [],
-        certifications: [],
-        workExperience: [],
-        education: [],
-        hourlyRate: 0,
-        availability: 'available',
-        availabilitySlots: [],
-        totalEarnings: 0,
-        completedGigs: 0,
-        averageRating: 0,
-        totalReviews: 0,
-        responseTime: 24,
-        languages: []
-      });
-      await freelancerProfile.save();
-    }
+    await accountService.createRoleProfile(user);
+    await accountService.sendEmailVerification(user);
 
     const token = await startSession(res, user);
 
@@ -111,7 +78,18 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    // Password is right but a second factor is required: no session until /auth/2fa/verify.
+    if (user.twoFactorEnabled) {
+      res.status(200).json({
+        success: true,
+        message: 'Two-factor code required',
+        data: { twoFactorRequired: true, tempToken: accountService.issueTwoFactorChallenge(user) },
+      });
+      return;
+    }
+
     user.lastLogin = new Date();
+    user.lastLoginIp = req.ip;
     const token = await startSession(res, user);
 
     res.status(200).json({
@@ -202,7 +180,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 };
 
 /** Issues an access token, rotates the (hashed) refresh token and sets its cookie. */
-const startSession = async (res: Response, user: IUser): Promise<string> => {
+export const startSession = async (res: Response, user: IUser): Promise<string> => {
   const refresh = generateRefreshToken({ id: user._id.toString() });
   user.refreshToken = hashToken(refresh);
   await user.save();

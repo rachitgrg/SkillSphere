@@ -31,6 +31,8 @@ const ForgotPasswordPage = page(() => import('./pages/auth/AuthFlowPages'), 'For
 const ResetPasswordPage = page(() => import('./pages/auth/AuthFlowPages'), 'ResetPasswordPage');
 const TwoFactorPage = page(() => import('./pages/auth/AuthFlowPages'), 'TwoFactorPage');
 const OAuthCallbackPage = page(() => import('./pages/auth/OAuthCallbackPage'), 'OAuthCallbackPage');
+const ChooseRolePage = page(() => import('./pages/auth/AuthFlowPages'), 'ChooseRolePage');
+const SettingsPage = page(() => import('./pages/settings/SettingsPage'), 'SettingsPage');
 
 // Shared (signed in)
 const ChatPage = page(() => import('./pages/chat/ChatPage'), 'ChatPage');
@@ -82,6 +84,7 @@ const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: 
     );
   }
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
+  if (user.needsRoleSelection) return <Navigate to="/choose-role" replace />;
   if (role && user.role !== role) return <Navigate to={getDashboardPath(user.role)} replace />;
   return <>{children}</>;
 };
@@ -124,11 +127,13 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/2fa" element={<TwoFactorPage />} />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/choose-role" element={<ChooseRolePage />} />
 
           {/* Any signed-in user */}
           <Route element={<Area />}>
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/projects/:gigId" element={<ProjectProgressPage />} />
             <Route path="/disputes/new" element={<CreateDisputePage />} />
             <Route path="/disputes/:id" element={<DisputeDetailPage />} />

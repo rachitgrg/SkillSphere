@@ -49,13 +49,29 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
+  params: z.object({ token: z.string().min(1, 'Token is required') }),
   body: z.object({
-    token: z.string().min(1, 'Token is required'),
     password: z.string().min(8, 'Password must be at least 8 characters')
       .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number'),
   }),
+});
+
+const otpCode = z.string().trim().min(6, 'Enter the 6-digit code').max(20);
+
+export const twoFactorCodeSchema = z.object({ body: z.object({ code: otpCode }) });
+
+export const twoFactorDisableSchema = z.object({
+  body: z.object({ password: z.string().optional().default(''), code: otpCode }),
+});
+
+export const twoFactorVerifySchema = z.object({
+  body: z.object({ tempToken: z.string().min(1), code: otpCode }),
+});
+
+export const chooseRoleSchema = z.object({
+  body: z.object({ role: z.enum(['freelancer', 'client']) }),
 });
 
 export const changePasswordSchema = z.object({

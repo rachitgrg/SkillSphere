@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, loginUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
+import { GoogleButton } from '../../components/auth/GoogleButton';
 
 
 export const LoginPage: React.FC = () => {
@@ -19,6 +20,10 @@ export const LoginPage: React.FC = () => {
     event.preventDefault();
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
+      if ('twoFactorRequired' in result) {
+        navigate('/2fa', { state: { tempToken: result.tempToken } });
+        return;
+      }
       navigate(getDashboardPath(result.user.role), { replace: true });
     } catch {
       // The error message is stored in the auth slice and rendered by the form.
@@ -67,11 +72,7 @@ export const LoginPage: React.FC = () => {
             required
           />
 
-          <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center text-slate-400">
-              <input type="checkbox" className="mr-2 bg-slate-900 border-slate-700 rounded text-indigo-500 focus:ring-indigo-500" />
-              Remember me
-            </label>
+          <div className="flex items-center justify-end text-sm">
             <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300">Forgot password?</Link>
           </div>
 
@@ -82,10 +83,7 @@ export const LoginPage: React.FC = () => {
             <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900/80 text-slate-500">Or continue with</span></div>
           </div>
 
-          <Button type="button" variant="ghost" fullWidth className="border-slate-700 hover:bg-slate-800">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 mr-2" />
-            Google
-          </Button>
+          <GoogleButton />
         </form>
 
         <p className="text-center text-sm text-slate-400 mt-6">

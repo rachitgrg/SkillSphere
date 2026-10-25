@@ -57,6 +57,7 @@ export interface User {
   banReason?: string;
   suspendedUntil?: string;
   twoFactorEnabled: boolean;
+  needsRoleSelection?: boolean;
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
@@ -667,6 +668,15 @@ export interface AdminLog {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+/** POST /auth/login: a session, or a 2FA challenge. */
+export type LoginResult = AuthResponse | { twoFactorRequired: true; tempToken: string };
+
+export interface TwoFactorSetup {
+  qrCode: string;
+  secret: string;
+  otpauthUrl: string;
 }
 
 export interface RegisterInput {

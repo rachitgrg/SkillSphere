@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createProposal, getMyProposals, getProposalsForGig, getProposalById, updateProposalStatus, withdrawProposal, negotiateProposal } from '../controllers/proposalController';
 import { protect } from '../middleware/auth';
-import { authorize } from '../middleware/rbac';
+import { authorize, requireVerified } from '../middleware/rbac';
 import { UserRole } from '../types';
 import { validate } from '../middleware/validate';
 import { createProposalSchema, updateProposalStatusSchema, negotiateProposalSchema } from '../utils/validators';
@@ -10,7 +10,7 @@ const router = Router();
 
 router.use(protect);
 
-router.post('/', authorize(UserRole.FREELANCER), validate(createProposalSchema), createProposal);
+router.post('/', authorize(UserRole.FREELANCER), requireVerified, validate(createProposalSchema), createProposal);
 router.get('/mine', authorize(UserRole.FREELANCER), getMyProposals);
 router.get('/gig/:gigId', getProposalsForGig);
 router.get('/:id', getProposalById);

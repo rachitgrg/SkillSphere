@@ -211,6 +211,9 @@ export interface IUser extends Document {
   googleId?: string;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
+  needsRoleSelection?: boolean;
+  lastLoginIp?: string;
   refreshToken?: string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;

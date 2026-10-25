@@ -25,6 +25,8 @@ import searchRoutes from './routes/searchRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import aiRoutes from './routes/aiRoutes';
 import swaggerUi from 'swagger-ui-express';
+import passport from 'passport';
+import configurePassport from './config/passport';
 import { buildOpenApiDocument } from './docs/openapi';
 import { env } from './config/env';
 
@@ -42,6 +44,8 @@ app.use(mongoSanitize());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
+configurePassport();
+app.use(passport.initialize());
 app.use(compression());
 
 if (env.NODE_ENV === 'development') {

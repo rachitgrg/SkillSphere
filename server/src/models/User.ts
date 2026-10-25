@@ -9,6 +9,7 @@ const SENSITIVE_FIELDS = [
   'refreshToken',
   'twoFactorSecret',
   'twoFactorBackupCodes',
+  'lastLoginIp',
   'passwordResetToken',
   'passwordResetExpires',
   'emailVerificationToken',
@@ -67,6 +68,8 @@ const userSchema = new Schema<IUser>(
       },
       coordinates: {
         type: [Number],
+        // No empty [] default: an empty point breaks the 2dsphere index.
+        default: undefined,
       },
     },
     address: {
@@ -100,10 +103,20 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    // AES-GCM encrypted TOTP seed (utils/crypto.ts); set during setup, active once twoFactorEnabled.
     twoFactorSecret: {
       type: String,
       select: false,
     },
+    // sha256 hashes of one-time backup codes.
+    twoFactorBackupCodes: {
+      type: [String],
+      select: false,
+    },
+    // Google sign-ups pick client/freelancer on first login.
+    needsRoleSelection: { type: Boolean, default: false },
+    // Used for fraud signals (same IP for reviewer and reviewee).
+    lastLoginIp: { type: String, select: false },
     refreshToken: {
       type: String,
       select: false,

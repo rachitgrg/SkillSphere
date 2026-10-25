@@ -33,6 +33,18 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/auth/refresh', tag: 'Auth', summary: 'Rotate the refresh cookie and get a new access token', access: 'cookie' },
   { method: 'post', path: '/auth/logout', tag: 'Auth', summary: 'Revoke the refresh token and clear the cookie', access: 'cookie' },
   { method: 'get', path: '/auth/me', tag: 'Auth', summary: 'Current user', access: 'auth' },
+  { method: 'get', path: '/auth/verify-email/:token', tag: 'Auth', summary: 'Confirm an email address', access: 'public' },
+  { method: 'post', path: '/auth/resend-verification', tag: 'Auth', summary: 'Email a new verification link', access: 'auth' },
+  { method: 'post', path: '/auth/forgot-password', tag: 'Auth', summary: 'Email a password reset link (always 200)', access: 'public', body: bodyOf(v.forgotPasswordSchema) },
+  { method: 'post', path: '/auth/reset-password/:token', tag: 'Auth', summary: 'Set a new password; revokes sessions', access: 'public', body: v.resetPasswordSchema.shape.body },
+  { method: 'post', path: '/auth/2fa/setup', tag: 'Auth', summary: 'Start TOTP setup (QR code)', access: 'auth' },
+  { method: 'post', path: '/auth/2fa/enable', tag: 'Auth', summary: 'Confirm the first code; returns backup codes', access: 'auth', body: bodyOf(v.twoFactorCodeSchema) },
+  { method: 'post', path: '/auth/2fa/disable', tag: 'Auth', summary: 'Turn 2FA off (password + code)', access: 'auth', body: bodyOf(v.twoFactorDisableSchema) },
+  { method: 'post', path: '/auth/2fa/verify', tag: 'Auth', summary: 'Second login step: tempToken + code', access: 'public', body: bodyOf(v.twoFactorVerifySchema), description: 'Login returns { twoFactorRequired, tempToken } for 2FA users.' },
+  { method: 'get', path: '/auth/providers', tag: 'Auth', summary: 'Configured sign-in providers', access: 'public' },
+  { method: 'get', path: '/auth/google', tag: 'Auth', summary: 'Start Google sign-in (503 if not configured)', access: 'public' },
+  { method: 'get', path: '/auth/google/callback', tag: 'Auth', summary: 'Google redirect target; sets the refresh cookie', access: 'public' },
+  { method: 'post', path: '/auth/choose-role', tag: 'Auth', summary: 'First Google login: pick client or freelancer', access: 'auth', body: bodyOf(v.chooseRoleSchema) },
   { method: 'put', path: '/auth/change-password', tag: 'Auth', summary: 'Change password (revokes other sessions)', access: 'auth', body: bodyOf(v.changePasswordSchema) },
 
   // Users

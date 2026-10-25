@@ -129,7 +129,7 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
     // GeoJSON point [lng, lat] used for nearby search and proximity scoring.
     location: {
       type: { type: String, enum: ['Point'] },
-      coordinates: { type: [Number] },
+      coordinates: { type: [Number], default: undefined },
     },
     socialLinks: {
       github: String,
