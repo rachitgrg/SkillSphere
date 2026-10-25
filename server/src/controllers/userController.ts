@@ -1,10 +1,10 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import User from '../models/User';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
 import { AuthRequest, UserRole } from '../types';
 
-export const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getUserById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) {
@@ -12,12 +12,12 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
     res.status(200).json({ success: true, message: 'User found', data: user });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user?._id;
     const { firstName, lastName, phone, bio, location, address } = req.body;
@@ -29,12 +29,12 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     ).select('-password');
 
     res.status(200).json({ success: true, message: 'Profile updated', data: user });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getFreelancerProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getFreelancerProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const profile = await FreelancerProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName avatar email');
     if (!profile) {
@@ -42,12 +42,12 @@ export const getFreelancerProfile = async (req: AuthRequest, res: Response): Pro
       return;
     }
     res.status(200).json({ success: true, message: 'Profile found', data: profile });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateFreelancerProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateFreelancerProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.FREELANCER) {
       res.status(403).json({ success: false, message: 'Not authorized' });
@@ -59,12 +59,12 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response): 
       { new: true, runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getClientProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getClientProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const profile = await ClientProfile.findOne({ user: req.params.userId }).populate('user', 'firstName lastName avatar email');
     if (!profile) {
@@ -72,12 +72,12 @@ export const getClientProfile = async (req: AuthRequest, res: Response): Promise
       return;
     }
     res.status(200).json({ success: true, message: 'Profile found', data: profile });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateClientProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateClientProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.CLIENT) {
       res.status(403).json({ success: false, message: 'Not authorized' });
@@ -89,7 +89,7 @@ export const updateClientProfile = async (req: AuthRequest, res: Response): Prom
       { new: true, runValidators: true }
     );
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

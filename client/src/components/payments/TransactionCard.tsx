@@ -1,7 +1,16 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
 
-export const TransactionCard: React.FC<{ transaction: any }> = ({ transaction }) => {
+export interface TransactionItem {
+  id?: string;
+  type: 'credit' | 'debit';
+  description?: string;
+  date?: string;
+  amount?: number | string;
+  status?: string;
+}
+
+export const TransactionCard: React.FC<{ transaction: TransactionItem }> = ({ transaction }) => {
   const isCredit = transaction.type === 'credit';
   
   return (

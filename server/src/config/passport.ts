@@ -5,7 +5,7 @@ import { UserRole } from '../types';
 
 const configurePassport = (): void => {
   passport.serializeUser((user: Express.User, done) => {
-    done(null, (user as any)._id);
+    done(null, user._id);
   });
 
   passport.deserializeUser(async (id: string, done) => {

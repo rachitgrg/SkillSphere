@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
-import { proposalApi } from '../../api/proposalApi';
 import type { ProposalFormData } from '../../types';
 import toast from 'react-hot-toast';
 
@@ -12,7 +11,8 @@ interface ApplyModalProps {
   gigId: string;
 }
 
-export const ApplyModal: React.FC<ApplyModalProps> = ({ isOpen, onClose, gigId }) => {
+export const ApplyModal: React.FC<ApplyModalProps> = ({ isOpen, onClose, gigId: _gigId }) => {
+  // TODO(plan 3.3): submit via POST /proposals instead of the simulated delay below.
   const [formData, setFormData] = useState<ProposalFormData>({
     coverLetter: '',
     bidAmount: 0,
@@ -70,7 +70,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({ isOpen, onClose, gigId }
               <select
                 className="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-indigo-500"
                 value={formData.durationUnit}
-                onChange={(e) => setFormData({ ...formData, durationUnit: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, durationUnit: e.target.value as ProposalFormData['durationUnit'] })}
               >
                 <option value="hours">Hours</option>
                 <option value="days">Days</option>

@@ -1,8 +1,17 @@
 import React from 'react';
 import { Avatar } from '../common/Avatar';
 
+export interface ConversationListItem {
+  id: string;
+  user?: { name?: string; avatar?: string };
+  isOnline?: boolean;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount: number;
+}
+
 export const ConversationList: React.FC<{
-  conversations: any[];
+  conversations: ConversationListItem[];
   activeId?: string;
   onSelect: (id: string) => void;
 }> = ({ conversations, activeId, onSelect }) => {

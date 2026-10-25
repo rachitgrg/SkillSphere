@@ -1,6 +1,12 @@
 import React from 'react';
 
-export const RecentActivity: React.FC<{ activities: any[] }> = ({ activities }) => {
+export interface ActivityItem {
+  content: React.ReactNode;
+  time: string;
+  icon?: React.ReactNode;
+}
+
+export const RecentActivity: React.FC<{ activities: ActivityItem[] }> = ({ activities }) => {
   return (
     <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden">
       <div className="p-5 border-b border-slate-800 flex justify-between items-center">

@@ -91,7 +91,7 @@
   - Check `utils/generateToken.ts`, `services/searchService.ts:*` and `services/aiMatchingService.ts:*` typing.
   - Goal: `npx tsc --noEmit` = 0 errors, and `npm run build && npm start` boots.
 - [x] **0.3 Fix the client type errors (4).** `client/src/pages/client/ClientDashboard.tsx:27-28` and `client/src/pages/client/ProfilePage.tsx:27-28` pass `budget` as a string. These pages get rewritten in Phase 3; for now pass numbers. Goal: `npm run build` in `client/` passes.
-- [ ] **0.4 ESLint.**
+- [x] **0.4 ESLint.**
   - Add `client/eslint.config.js` (flat config: `@eslint/js`, `typescript-eslint`, `react-hooks`, `react-refresh`; all already in devDeps).
   - Add ESLint + `typescript-eslint` to `server/` with a flat config, and change its `lint` script to `eslint src`.
   - Fix or justify the warnings.

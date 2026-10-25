@@ -1,8 +1,8 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Notification from '../models/Notification';
 import { AuthRequest } from '../types';
 
-export const getNotifications = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getNotifications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const limit = Number(req.query.limit) || 20;
     const notifications = await Notification.find({ recipient: req.user?._id })
@@ -10,12 +10,12 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
       .limit(limit);
 
     res.status(200).json({ success: true, message: 'Notifications retrieved', data: notifications });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const markAsRead = async (req: AuthRequest, res: Response): Promise<void> => {
+export const markAsRead = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const notification = await Notification.findOneAndUpdate(
       { _id: req.params.id, recipient: req.user?._id },
@@ -29,28 +29,28 @@ export const markAsRead = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     res.status(200).json({ success: true, message: 'Notification marked as read', data: notification });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const markAllAsRead = async (req: AuthRequest, res: Response): Promise<void> => {
+export const markAllAsRead = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     await Notification.updateMany(
       { recipient: req.user?._id, isRead: false },
       { isRead: true, readAt: new Date() }
     );
     res.status(200).json({ success: true, message: 'All notifications marked as read' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const deleteNotification = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteNotification = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.user?._id });
     res.status(200).json({ success: true, message: 'Notification deleted' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

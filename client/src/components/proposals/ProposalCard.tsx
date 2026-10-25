@@ -1,8 +1,14 @@
 import React from 'react';
 import { Avatar } from '../common/Avatar';
-import { Clock, DollarSign } from 'lucide-react';
 
-export const ProposalCard: React.FC<{ proposal: any }> = ({ proposal }) => {
+export interface ProposalCardData {
+  freelancer?: { name?: string; title?: string; avatar?: string };
+  bidAmount?: number;
+  estimatedTime?: string;
+  coverLetter?: string;
+}
+
+export const ProposalCard: React.FC<{ proposal: ProposalCardData }> = ({ proposal }) => {
   return (
     <div className="glass-card p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row gap-5">
       <div className="flex flex-col items-center text-center w-full md:w-48 shrink-0">

@@ -14,6 +14,7 @@ const SocketContext = createContext<SocketContextType>({
   onlineUsers: [],
 });
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook is colocated with its provider
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {

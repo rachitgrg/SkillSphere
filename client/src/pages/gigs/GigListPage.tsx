@@ -327,7 +327,7 @@ export const GigListPage: React.FC = () => {
               <span className="text-xs text-slate-400">Sort by:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
               >
                 <option value="newest">Newest First</option>

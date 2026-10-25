@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import razorpayInstance from '../config/razorpay';
 import Payment from '../models/Payment';
-import Gig from '../models/Gig';
+import { Types } from 'mongoose';
 import { PaymentStatus } from '../types';
 
 class PaymentService {
@@ -122,7 +122,7 @@ class PaymentService {
       role === 'client' ? 'amount' : 'freelancerAmount';
 
     const stats = await Payment.aggregate([
-      { $match: { [matchField]: new (require('mongoose').Types.ObjectId)(userId) } },
+      { $match: { [matchField]: new Types.ObjectId(userId) } },
       {
         $group: {
           _id: '$status',

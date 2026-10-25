@@ -1,8 +1,14 @@
 import { InferenceClient } from '@huggingface/inference';
 import FreelancerProfile from '../models/FreelancerProfile';
-import Gig from '../models/Gig';
-import { IGig, IFreelancerProfile, MatchScore, GigStatus, AvailabilityStatus } from '../types';
+import { IGig, IFreelancerProfile, MatchScore, AvailabilityStatus } from '../types';
 import { Types } from 'mongoose';
+
+export interface CareerReport {
+  targetRoles: string[];
+  strengths: string[];
+  weaknesses: string[];
+  summary: string;
+}
 
 class AIMatchingService {
   private client: InferenceClient | null = null;
@@ -209,7 +215,7 @@ class AIMatchingService {
     }
   }
 
-  async analyzeCareerFromResume(resumeText: string): Promise<any> {
+  async analyzeCareerFromResume(resumeText: string): Promise<CareerReport> {
     try {
       const client = this.getClient();
       const prompt = `Act as an expert Career Coach. Analyze the following resume/skills and provide a JSON response with career advice.

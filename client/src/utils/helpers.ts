@@ -82,3 +82,12 @@ export const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: n
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 };
+
+/** Extracts a user-facing message from an axios/unknown error. */
+export const getErrorMessage = (error: unknown, fallback = 'Something went wrong') => {
+  if (typeof error === 'object' && error !== null) {
+    const e = error as { response?: { data?: { message?: string } }; message?: string };
+    return e.response?.data?.message || e.message || fallback;
+  }
+  return fallback;
+};

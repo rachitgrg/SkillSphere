@@ -3,7 +3,15 @@ import { Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router';
 
-export const NotificationDropdown: React.FC<{ isOpen: boolean; onClose: () => void; notifications: any[] }> = ({ isOpen, onClose, notifications }) => {
+export interface NotificationItem {
+  id: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  time?: string;
+}
+
+export const NotificationDropdown: React.FC<{ isOpen: boolean; onClose: () => void; notifications: NotificationItem[] }> = ({ isOpen, onClose, notifications }) => {
   if (!isOpen) return null;
 
   return (

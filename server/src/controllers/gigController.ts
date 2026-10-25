@@ -1,9 +1,10 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
 import aiMatchingService from '../services/aiMatchingService';
-import { AuthRequest, UserRole, GigStatus } from '../types';
+import { QueryFilter } from 'mongoose';
+import { AuthRequest, UserRole, GigStatus, IGig } from '../types';
 
-export const createGig = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.CLIENT) {
       res.status(403).json({ success: false, message: 'Only clients can create gigs' });
@@ -21,17 +22,17 @@ export const createGig = async (req: AuthRequest, res: Response): Promise<void> 
 
     await gig.save();
     res.status(201).json({ success: true, message: 'Gig created successfully', data: gig });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getGigs = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getGigs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { page = 1, limit = 10, category, status } = req.query;
-    const query: any = {};
-    if (category) query.category = category;
-    if (status) query.status = status;
+    const query: QueryFilter<IGig> = {};
+    if (category) query.category = String(category);
+    if (status) query.status = String(status) as GigStatus;
 
     const gigs = await Gig.find(query)
       .populate('client', 'firstName lastName avatar')
@@ -52,12 +53,12 @@ export const getGigs = async (req: AuthRequest, res: Response): Promise<void> =>
         pages: Math.ceil(total / +limit)
       }
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const analyzeCareer = async (req: AuthRequest, res: Response): Promise<void> => {
+export const analyzeCareer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { resumeText } = req.body;
     if (!resumeText) {
@@ -72,12 +73,12 @@ export const analyzeCareer = async (req: AuthRequest, res: Response): Promise<vo
       message: 'Career analysis complete',
       data: report
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getGigById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getGigById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const gig = await Gig.findById(req.params.id)
       .populate('client', 'firstName lastName avatar')
@@ -92,12 +93,12 @@ export const getGigById = async (req: AuthRequest, res: Response): Promise<void>
     await gig.save();
 
     res.status(200).json({ success: true, message: 'Gig retrieved', data: gig });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateGig = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const gig = await Gig.findById(req.params.id);
     if (!gig) {
@@ -112,12 +113,12 @@ export const updateGig = async (req: AuthRequest, res: Response): Promise<void> 
 
     const updatedGig = await Gig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     res.status(200).json({ success: true, message: 'Gig updated', data: updatedGig });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const deleteGig = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const gig = await Gig.findById(req.params.id);
     if (!gig) {
@@ -132,7 +133,7 @@ export const deleteGig = async (req: AuthRequest, res: Response): Promise<void> 
 
     await Gig.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Gig deleted successfully' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

@@ -1,14 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
-import { AuthRequest, UserRole } from '../types';
+import { AuthRequest, UserRole, RefreshTokenPayload } from '../types';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
     
@@ -77,12 +75,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       message: 'User registered successfully',
       data: { user, token, refreshToken }
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -114,24 +112,24 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       message: 'Login successful',
       data: { user, token, refreshToken }
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
+export const logout = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user) {
       req.user.refreshToken = undefined;
       await req.user.save();
     }
     res.status(200).json({ success: true, message: 'Logged out successfully' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMe = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = await User.findById(req.user?._id).select('-password');
     if (!user) {
@@ -139,8 +137,8 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
     res.status(200).json({ success: true, message: 'User profile retrieved', data: user });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -152,7 +150,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as any;
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as RefreshTokenPayload;
     const user = await User.findById(decoded.id);
 
     if (!user || user.refreshToken !== token) {
@@ -162,7 +160,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
     const newToken = generateAccessToken({ id: user._id.toString(), role: user.role });
     res.status(200).json({ success: true, message: 'Token refreshed', data: { token: newToken } });
-  } catch (error: any) {
+  } catch {
     res.status(500).json({ success: false, message: 'Invalid refresh token' });
   }
 };

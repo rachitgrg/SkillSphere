@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import User from '../models/User';
 import Gig from '../models/Gig';
 import Payment from '../models/Payment';
@@ -6,7 +6,7 @@ import Dispute from '../models/Dispute';
 import AdminLog from '../models/AdminLog';
 import { AuthRequest, UserRole, AdminAction, PaymentStatus, DisputeStatus } from '../types';
 
-export const getDashboardStats = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const totalUsers = await User.countDocuments();
     const totalGigs = await Gig.countDocuments();
@@ -18,12 +18,12 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
       message: 'Dashboard stats retrieved',
       data: { totalUsers, totalGigs, totalPayments, activeDisputes }
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const banUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const banUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId, reason } = req.body;
     
@@ -51,12 +51,12 @@ export const banUser = async (req: AuthRequest, res: Response): Promise<void> =>
     });
 
     res.status(200).json({ success: true, message: 'User banned successfully' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const unbanUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const unbanUser = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.body;
     
@@ -79,16 +79,16 @@ export const unbanUser = async (req: AuthRequest, res: Response): Promise<void> 
     });
 
     res.status(200).json({ success: true, message: 'User unbanned successfully' });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllUsers = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.status(200).json({ success: true, message: 'Users retrieved', data: users });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

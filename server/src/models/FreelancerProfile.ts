@@ -81,7 +81,7 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
     skills: {
       type: [skillSchema],
       validate: {
-        validator: (v: any[]) => v.length <= 50,
+        validator: (v: unknown[]) => v.length <= 50,
         message: 'Cannot have more than 50 skills',
       },
     },

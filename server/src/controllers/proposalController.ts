@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Proposal from '../models/Proposal';
 import Gig from '../models/Gig';
-import { AuthRequest, UserRole, ProposalStatus } from '../types';
+import { AuthRequest, UserRole, ProposalStatus, IGig } from '../types';
 
-export const createProposal = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createProposal = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.FREELANCER) {
       res.status(403).json({ success: false, message: 'Only freelancers can submit proposals' });
@@ -44,12 +44,12 @@ export const createProposal = async (req: AuthRequest, res: Response): Promise<v
     await gig.save();
 
     res.status(201).json({ success: true, message: 'Proposal submitted', data: proposal });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getProposalsForGig = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProposalsForGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const gig = await Gig.findById(req.params.gigId);
     if (!gig) {
@@ -67,12 +67,12 @@ export const getProposalsForGig = async (req: AuthRequest, res: Response): Promi
       .sort({ submittedAt: -1 });
 
     res.status(200).json({ success: true, message: 'Proposals retrieved', data: proposals });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getProposalById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProposalById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const proposal = await Proposal.findById(req.params.id)
       .populate('freelancer', 'firstName lastName avatar')
@@ -83,19 +83,19 @@ export const getProposalById = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    const gig = proposal.gig as any;
+    const gig = proposal.gig as unknown as IGig;
     if (gig.client.toString() !== req.user?._id.toString() && proposal.freelancer._id.toString() !== req.user?._id.toString()) {
       res.status(403).json({ success: false, message: 'Not authorized to view this proposal' });
       return;
     }
 
     res.status(200).json({ success: true, message: 'Proposal retrieved', data: proposal });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateProposalStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateProposalStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { status, clientNotes } = req.body;
     const proposal = await Proposal.findById(req.params.id).populate('gig');
@@ -105,7 +105,7 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    const gig = proposal.gig as any;
+    const gig = proposal.gig as unknown as IGig;
     if (gig.client.toString() !== req.user?._id.toString()) {
       res.status(403).json({ success: false, message: 'Only the gig client can update proposal status' });
       return;
@@ -121,7 +121,7 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response): Pro
     }
 
     res.status(200).json({ success: true, message: 'Proposal status updated', data: proposal });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

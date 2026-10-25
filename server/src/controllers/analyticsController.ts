@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Payment from '../models/Payment';
 import { AuthRequest, UserRole } from '../types';
 import mongoose from 'mongoose';
 
-export const getEarningsAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getEarningsAnalytics = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.FREELANCER) {
       res.status(403).json({ success: false, message: 'Not authorized' });
@@ -22,12 +22,12 @@ export const getEarningsAnalytics = async (req: AuthRequest, res: Response): Pro
     ]);
 
     res.status(200).json({ success: true, message: 'Analytics retrieved', data: earnings });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getSpendingAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getSpendingAnalytics = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (req.user?.role !== UserRole.CLIENT) {
       res.status(403).json({ success: false, message: 'Not authorized' });
@@ -46,7 +46,7 @@ export const getSpendingAnalytics = async (req: AuthRequest, res: Response): Pro
     ]);
 
     res.status(200).json({ success: true, message: 'Analytics retrieved', data: spending });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

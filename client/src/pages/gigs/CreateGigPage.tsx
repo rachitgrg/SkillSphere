@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { gigApi } from '../../api/gigApi';
-import type { GigFormData, GigBudgetType } from '../../types';
+import type { GigFormData } from '../../types';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../../utils/helpers';
 
 const CATEGORIES = [
   'Web Development',
@@ -70,8 +71,8 @@ export const CreateGigPage: React.FC = () => {
       await gigApi.createGig(payload);
       toast.success('Gig posted successfully!');
       navigate('/gigs');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to post gig');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to post gig'));
     } finally {
       setIsSubmitting(false);
     }
@@ -200,7 +201,7 @@ export const CreateGigPage: React.FC = () => {
               <select 
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500"
                 value={formData.durationUnit}
-                onChange={(e) => setFormData({ ...formData, durationUnit: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, durationUnit: e.target.value as GigFormData['durationUnit'] })}
               >
                 <option value="hours">Hours</option>
                 <option value="days">Days</option>

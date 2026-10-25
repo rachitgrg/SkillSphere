@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Dispute from '../models/Dispute';
 import Payment from '../models/Payment';
 import { AuthRequest, DisputeStatus, PaymentStatus } from '../types';
 
-export const createDispute = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createDispute = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, paymentId, againstId, title, description, evidence } = req.body;
 
@@ -25,24 +25,24 @@ export const createDispute = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     res.status(201).json({ success: true, message: 'Dispute opened successfully', data: dispute });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getDisputes = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getDisputes = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const disputes = await Dispute.find({
       $or: [{ raisedBy: req.user?._id }, { against: req.user?._id }]
     }).populate('gig', 'title').sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, message: 'Disputes retrieved', data: disputes });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const resolveDispute = async (req: AuthRequest, res: Response): Promise<void> => {
+export const resolveDispute = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { resolution, adminNotes, paymentAction } = req.body;
 
@@ -68,7 +68,7 @@ export const resolveDispute = async (req: AuthRequest, res: Response): Promise<v
     }
 
     res.status(200).json({ success: true, message: 'Dispute resolved', data: dispute });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../common/Button';
 import { gigApi } from '../../api/gigApi';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../../utils/helpers';
 import { Sparkles, FileText, Loader2, Target, Zap, AlertTriangle } from 'lucide-react';
 
 interface CareerReport {
@@ -27,8 +28,8 @@ export const ResumeMatcher: React.FC = () => {
       const response = await gigApi.analyzeCareer(resumeText);
       setReport(response.data.data);
       toast.success('Career analysis complete!');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to analyze resume');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to analyze resume'));
     } finally {
       setIsProcessing(false);
     }

@@ -1,19 +1,21 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import aiMatchingService from '../services/aiMatchingService';
+import { QueryFilter } from 'mongoose';
+import { GigStatus, IGig, IFreelancerProfile } from '../types';
 
-export const searchGigs = async (req: Request, res: Response): Promise<void> => {
+export const searchGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { q, category, skills, minBudget, maxBudget } = req.query;
     
-    let query: any = { status: 'open' };
+    const query: QueryFilter<IGig> = { status: GigStatus.OPEN };
 
     if (q) {
       query.$text = { $search: q as string };
     }
     if (category) {
-      query.category = category;
+      query.category = String(category);
     }
     if (skills) {
       const skillsArray = (skills as string).split(',').map(s => s.trim());
@@ -31,16 +33,16 @@ export const searchGigs = async (req: Request, res: Response): Promise<void> => 
       .limit(50);
 
     res.status(200).json({ success: true, message: 'Gigs found', data: gigs });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const searchFreelancers = async (req: Request, res: Response): Promise<void> => {
+export const searchFreelancers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { q, skills, minRate, maxRate } = req.query;
 
-    let query: any = {};
+    const query: QueryFilter<IFreelancerProfile> = {};
     if (q) {
       query.$text = { $search: q as string };
     }
@@ -60,12 +62,12 @@ export const searchFreelancers = async (req: Request, res: Response): Promise<vo
       .limit(50);
 
     res.status(200).json({ success: true, message: 'Freelancers found', data: freelancers });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getMatchesForGig = async (req: Request, res: Response): Promise<void> => {
+export const getMatchesForGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId } = req.params;
     const gig = await Gig.findById(gigId);
@@ -76,10 +78,10 @@ export const getMatchesForGig = async (req: Request, res: Response): Promise<voi
     }
 
     // Using AI Service
-    const matches = await aiMatchingService.matchFreelancersToGig(gig as any);
+    const matches = await aiMatchingService.matchFreelancersToGig(gig);
 
     res.status(200).json({ success: true, message: 'Matches generated', data: matches });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

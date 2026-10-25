@@ -1,6 +1,12 @@
 import React from 'react';
 
-export const MessageBubble: React.FC<{ message: any; isOwn: boolean }> = ({ message, isOwn }) => {
+export interface MessageBubbleData {
+  content: string;
+  time?: string;
+  status?: 'sent' | 'read';
+}
+
+export const MessageBubble: React.FC<{ message: MessageBubbleData; isOwn: boolean }> = ({ message, isOwn }) => {
   return (
     <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end ml-auto' : 'items-start mr-auto'} mb-4`}>
       <div className={`px-4 py-2 rounded-2xl ${

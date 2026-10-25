@@ -2,7 +2,15 @@ import React from 'react';
 import { StarRating } from '../common/StarRating';
 import { Avatar } from '../common/Avatar';
 
-export const ReviewCard: React.FC<{ review: any }> = ({ review }) => {
+export interface ReviewCardData {
+  author?: { name?: string; avatar?: string };
+  date?: string;
+  rating?: number;
+  projectTitle?: string;
+  comment?: string;
+}
+
+export const ReviewCard: React.FC<{ review: ReviewCardData }> = ({ review }) => {
   return (
     <div className="glass-card p-5 rounded-2xl border border-slate-800">
       <div className="flex justify-between items-start mb-4">

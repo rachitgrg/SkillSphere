@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import { AuthRequest } from '../types';
 
-export const getConversations = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getConversations = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const conversations = await Conversation.find({ participants: req.user?._id })
       .populate('participants', 'firstName lastName avatar')
@@ -11,12 +11,12 @@ export const getConversations = async (req: AuthRequest, res: Response): Promise
       .sort({ lastMessageAt: -1 });
 
     res.status(200).json({ success: true, message: 'Conversations retrieved', data: conversations });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getMessages = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMessages = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { conversationId } = req.params;
     
@@ -31,12 +31,12 @@ export const getMessages = async (req: AuthRequest, res: Response): Promise<void
       .sort({ createdAt: 1 });
 
     res.status(200).json({ success: true, message: 'Messages retrieved', data: messages });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const createConversation = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createConversation = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { recipientId, gigId } = req.body;
     const participants = [req.user?._id, recipientId];
@@ -54,12 +54,12 @@ export const createConversation = async (req: AuthRequest, res: Response): Promi
     }
 
     res.status(201).json({ success: true, message: 'Conversation retrieved/created', data: conversation });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
+export const sendMessage = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { conversationId, content, type, fileUrl, fileName } = req.body;
 
@@ -83,12 +83,12 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     await message.save();
 
-    conversation.lastMessage = message._id as any;
+    conversation.lastMessage = message._id;
     conversation.lastMessageAt = new Date();
     await conversation.save();
 
     res.status(201).json({ success: true, message: 'Message sent', data: message });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

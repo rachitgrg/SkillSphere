@@ -1,11 +1,11 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Payment from '../models/Payment';
 import Gig from '../models/Gig';
 import { AuthRequest, PaymentStatus } from '../types';
 import razorpay from '../config/razorpay';
 import crypto from 'crypto';
 
-export const createPaymentIntent = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createPaymentIntent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, milestoneId, freelancerId, amount, description } = req.body;
 
@@ -49,12 +49,12 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response): Prom
     await payment.save();
 
     res.status(201).json({ success: true, message: 'Payment intent created', data: { payment, order } });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const verifyPayment = async (req: AuthRequest, res: Response): Promise<void> => {
+export const verifyPayment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
@@ -79,12 +79,12 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<vo
     } else {
       res.status(400).json({ success: false, message: 'Invalid signature sent!' });
     }
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const releasePayment = async (req: AuthRequest, res: Response): Promise<void> => {
+export const releasePayment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const payment = await Payment.findById(req.params.id);
     if (!payment) {
@@ -107,19 +107,19 @@ export const releasePayment = async (req: AuthRequest, res: Response): Promise<v
     await payment.save();
 
     res.status(200).json({ success: true, message: 'Payment released to freelancer', data: payment });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getPayments = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getPayments = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const payments = await Payment.find({
       $or: [{ client: req.user?._id }, { freelancer: req.user?._id }]
     }).populate('gig', 'title').sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, message: 'Payments retrieved', data: payments });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

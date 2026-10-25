@@ -44,7 +44,7 @@ const startServer = async () => {
 startServer();
 
 // Handle unhandled rejections
-process.on('unhandledRejection', (err: any) => {
+process.on('unhandledRejection', (err: Error) => {
   console.log('UNHANDLED REJECTION! 💥 Shutting down...');
   console.log(err.name, err.message);
   server.close(() => {
@@ -52,7 +52,7 @@ process.on('unhandledRejection', (err: any) => {
   });
 });
 
-process.on('uncaughtException', (err: any) => {
+process.on('uncaughtException', (err: Error) => {
   console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
   console.log(err.name, err.message);
   process.exit(1);

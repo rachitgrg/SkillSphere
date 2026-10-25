@@ -1,8 +1,8 @@
-import { type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { type ReactNode } from 'react';
+import { motion, type HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
@@ -50,7 +50,7 @@ export function Button({
         transition-all duration-200
         ${className}
       `}
-      disabled={disabled || isLoading} {...(props as any)}
+      disabled={disabled || isLoading} {...props}
       
     >
       {isLoading ? (

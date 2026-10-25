@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, X, Check } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 
 interface GigFiltersProps {
   selectedTypes: { fixed: boolean; hourly: boolean };

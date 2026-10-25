@@ -1,11 +1,11 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import Review from '../models/Review';
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
 import { AuthRequest } from '../types';
 
-export const createReview = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createReview = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gigId, revieweeId, categories, comment } = req.body;
     
@@ -60,12 +60,12 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     res.status(201).json({ success: true, message: 'Review submitted', data: review });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getReviews = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getReviews = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.params;
     const reviews = await Review.find({ reviewee: userId, isVisible: true })
@@ -74,12 +74,12 @@ export const getReviews = async (req: AuthRequest, res: Response): Promise<void>
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, message: 'Reviews retrieved', data: reviews });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const replyToReview = async (req: AuthRequest, res: Response): Promise<void> => {
+export const replyToReview = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -102,7 +102,7 @@ export const replyToReview = async (req: AuthRequest, res: Response): Promise<vo
     await review.save();
 
     res.status(200).json({ success: true, message: 'Response added', data: review });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

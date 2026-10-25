@@ -112,7 +112,7 @@ class SearchService {
 
     // Filter out inactive/banned users
     const activeProfiles = profiles.filter(
-      (p: any) => p.user && p.user.isActive
+      (p) => (p.user as unknown as { isActive?: boolean } | null)?.isActive
     );
 
     return {
