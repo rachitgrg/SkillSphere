@@ -141,7 +141,7 @@
   - Client `axiosInstance.ts`: on 401 (excluding `/auth/*`), call `/auth/refresh` once (single‑flight queue), retry the original request, and only log out if refresh fails.
   - `logout` must call `POST /auth/logout` and clear the cookie.
   - Test: refresh works; reuse of an old refresh token fails.
-- [ ] **1.7 Socket security (C7).**
+- [x] **1.7 Socket security (C7).**
   - Create one `io` instance in `config/socket.ts` (`initializeSocket(server)`) with a single auth middleware that rejects banned/inactive users. Use it from `server.ts` and delete the duplicate `io.use` in `sockets/chatSocket.ts` and `sockets/notificationSocket.ts`.
   - Personal room name is `user:<id>`, matching `notificationService`. Never let a client join it by event.
   - `join_conversation`: verify `Conversation.exists({_id, participants: userId})`, else emit an error.

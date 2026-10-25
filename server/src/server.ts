@@ -2,12 +2,11 @@
 import { env, logMissingIntegrations } from './config/env';
 import http from 'http';
 import mongoose from 'mongoose';
-import { Server } from 'socket.io';
 import app from './app';
 import connectDB from './config/db';
 import { configureCloudinary } from './config/cloudinary';
-import { chatSocket } from './sockets/chatSocket';
-import { notificationSocket } from './sockets/notificationSocket';
+import { initializeSocket } from './config/socket';
+import { registerChatHandlers } from './sockets/chatSocket';
 
 logMissingIntegrations();
 configureCloudinary();
@@ -15,18 +14,8 @@ configureCloudinary();
 // Initialize server
 const server = http.createServer(app);
 
-// Initialize Socket.io
-const io = new Server(server, {
-  cors: {
-    origin: env.CLIENT_URL,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
-  }
-});
-
-// Setup sockets
-chatSocket(io);
-notificationSocket(io);
+// Single Socket.IO instance (auth + personal rooms in config/socket.ts)
+initializeSocket(server, [registerChatHandlers]);
 
 // Connect to Database and start server
 const PORT = env.PORT;

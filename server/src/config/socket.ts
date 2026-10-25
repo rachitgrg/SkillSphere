@@ -1,12 +1,25 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import jwt from 'jsonwebtoken';
-import { JwtPayload } from '../types';
+import User from '../models/User';
 import { env } from './env';
+import { verifyAccessToken } from '../utils/generateToken';
 
-let io: Server;
+let io: Server | null = null;
 
-export const initializeSocket = (httpServer: HttpServer): Server => {
+/** Connected socket count per user id, for presence. */
+const onlineCounts = new Map<string, number>();
+
+export const isUserOnline = (userId: string): boolean => (onlineCounts.get(userId) ?? 0) > 0;
+
+/**
+ * Creates the single Socket.IO server. One auth middleware verifies the access token and
+ * rejects banned/inactive users; each socket joins only its own `user:<id>` room here.
+ * Feature handlers (chat, …) are registered per connection.
+ */
+export const initializeSocket = (
+  httpServer: HttpServer,
+  handlers: ((io: Server, socket: Socket) => void)[] = []
+): Server => {
   io = new Server(httpServer, {
     cors: {
       origin: env.CLIENT_URL,
@@ -17,22 +30,44 @@ export const initializeSocket = (httpServer: HttpServer): Server => {
     pingInterval: 25000,
   });
 
-  // Authentication middleware for socket connections
-  io.use((socket: Socket, next) => {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      return next(new Error('Authentication required'));
-    }
-
+  io.use(async (socket, next) => {
     try {
-      const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-      socket.data.userId = decoded.id;
-      socket.data.userRole = decoded.role;
+      const token: unknown = socket.handshake.auth?.token;
+      if (typeof token !== 'string' || !token) return next(new Error('Authentication required'));
+
+      const decoded = verifyAccessToken(token);
+      const user = await User.findById(decoded.id).select('firstName lastName avatar role isActive isBanned');
+      if (!user) return next(new Error('User not found'));
+      if (user.isBanned || !user.isActive) return next(new Error('Account is not active'));
+
+      socket.data.userId = user._id.toString();
+      socket.data.role = user.role;
       next();
     } catch {
       next(new Error('Invalid token'));
     }
+  });
+
+  io.on('connection', (socket) => {
+    const userId: string = socket.data.userId;
+    socket.join(`user:${userId}`);
+
+    const count = (onlineCounts.get(userId) ?? 0) + 1;
+    onlineCounts.set(userId, count);
+    if (count === 1) io!.emit('presence', { userId, online: true });
+    socket.emit('presence:list', { online: [...onlineCounts.keys()] });
+
+    socket.on('disconnect', () => {
+      const remaining = (onlineCounts.get(userId) ?? 1) - 1;
+      if (remaining > 0) {
+        onlineCounts.set(userId, remaining);
+      } else {
+        onlineCounts.delete(userId);
+        io?.emit('presence', { userId, online: false });
+      }
+    });
+
+    for (const register of handlers) register(io!, socket);
   });
 
   return io;
@@ -43,4 +78,13 @@ export const getIO = (): Server => {
     throw new Error('Socket.IO not initialized');
   }
   return io;
+};
+
+/** For services that emit opportunistically (e.g. under tests there is no socket server). */
+export const getIOOrNull = (): Server | null => io;
+
+/** Test helper: forget the server and presence state. */
+export const resetSocketState = (): void => {
+  io = null;
+  onlineCounts.clear();
 };

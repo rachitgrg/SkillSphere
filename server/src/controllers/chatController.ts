@@ -1,6 +1,8 @@
 import { Response, NextFunction } from 'express';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
+import User from '../models/User';
+import chatService from '../services/chatService';
 import { AuthRequest } from '../types';
 
 export const getConversations = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -38,22 +40,34 @@ export const getMessages = async (req: AuthRequest, res: Response, next: NextFun
 
 export const createConversation = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { recipientId, gigId } = req.body;
-    const participants = [req.user?._id, recipientId];
+    const { participantId, gigId } = req.body;
+    const me = req.user!._id;
 
-    let conversation = await Conversation.findOne({ participants: { $all: participants }, gig: gigId });
+    if (String(participantId) === me.toString()) {
+      res.status(400).json({ success: false, message: 'You cannot start a conversation with yourself' });
+      return;
+    }
+    if (!(await User.exists({ _id: participantId, isActive: true, isBanned: false }))) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const participants = [me, participantId];
+    const filter = { participants: { $all: participants, $size: 2 }, gig: gigId ?? null };
+    let conversation = await Conversation.findOne(filter);
+    const created = !conversation;
 
     if (!conversation) {
-      conversation = new Conversation({
+      conversation = await Conversation.create({
         participants,
         gig: gigId,
         isActive: true,
         lastMessageAt: new Date()
       });
-      await conversation.save();
     }
+    await conversation.populate('participants', 'firstName lastName avatar');
 
-    res.status(201).json({ success: true, message: 'Conversation retrieved/created', data: conversation });
+    res.status(created ? 201 : 200).json({ success: true, message: 'Conversation ready', data: conversation });
   } catch (error) {
     next(error);
   }
@@ -61,32 +75,8 @@ export const createConversation = async (req: AuthRequest, res: Response, next: 
 
 export const sendMessage = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { conversationId, content, type, fileUrl, fileName } = req.body;
-
-    const conversation = await Conversation.findOne({ _id: conversationId, participants: req.user?._id });
-    if (!conversation) {
-      res.status(404).json({ success: false, message: 'Conversation not found or not a participant' });
-      return;
-    }
-
-    const message = new Message({
-      conversation: conversationId,
-      sender: req.user?._id,
-      content,
-      type: type || 'text',
-      fileUrl,
-      fileName,
-      readBy: [{ user: req.user?._id, readAt: new Date() }],
-      isEdited: false,
-      isDeleted: false
-    });
-
-    await message.save();
-
-    conversation.lastMessage = message._id;
-    conversation.lastMessageAt = new Date();
-    await conversation.save();
-
+    const conversationId = req.params.conversationId ?? req.body.conversationId;
+    const message = await chatService.sendMessage(req.user!._id.toString(), { ...req.body, conversationId });
     res.status(201).json({ success: true, message: 'Message sent', data: message });
   } catch (error) {
     next(error);
