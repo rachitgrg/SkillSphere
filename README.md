@@ -5,6 +5,12 @@ A MERN (TypeScript) platform connecting clients with verified local freelancers.
 > The full README (setup, architecture, features, demo accounts) is written in Phase 5 of
 > `CLAUDE_CODE_PLAN.md`. This file currently records only the facts that later phases rely on.
 
+## API docs
+
+Interactive Swagger UI at **http://localhost:5000/api/docs** (raw spec: `/api/docs.json`). The OpenAPI
+document is generated from `server/src/docs/openapi.ts` and request bodies come from the same zod schemas
+that validate requests, so the docs cannot drift; a test fails if a route is undocumented.
+
 ## Seed data and demo accounts
 
 `npm run seed` (in `server/`) creates demo data **without deleting anything** (it upserts by email,

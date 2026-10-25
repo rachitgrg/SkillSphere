@@ -1,5 +1,4 @@
 import request from 'supertest';
-import { Router } from 'express';
 import app from '../src/app';
 import Conversation from '../src/models/Conversation';
 import Dispute from '../src/models/Dispute';
@@ -10,48 +9,7 @@ import Review from '../src/models/Review';
 import { GigStatus, NotificationType, PaymentStatus, UserRole } from '../src/types';
 import { createGig, createUser } from './helpers';
 
-import adminRoutes from '../src/routes/adminRoutes';
-import aiRoutes from '../src/routes/aiRoutes';
-import analyticsRoutes from '../src/routes/analyticsRoutes';
-import authRoutes from '../src/routes/authRoutes';
-import chatRoutes from '../src/routes/chatRoutes';
-import disputeRoutes from '../src/routes/disputeRoutes';
-import gigRoutes from '../src/routes/gigRoutes';
-import notificationRoutes from '../src/routes/notificationRoutes';
-import paymentRoutes from '../src/routes/paymentRoutes';
-import proposalRoutes from '../src/routes/proposalRoutes';
-import reviewRoutes from '../src/routes/reviewRoutes';
-import searchRoutes from '../src/routes/searchRoutes';
-import userRoutes from '../src/routes/userRoutes';
-
-/** Mount points from app.ts. */
-const MOUNTS: [string, Router][] = [
-  ['/api/v1/admin', adminRoutes],
-  ['/api/v1/ai', aiRoutes],
-  ['/api/v1/analytics', analyticsRoutes],
-  ['/api/v1/auth', authRoutes],
-  ['/api/v1/chat', chatRoutes],
-  ['/api/v1/disputes', disputeRoutes],
-  ['/api/v1/gigs', gigRoutes],
-  ['/api/v1/notifications', notificationRoutes],
-  ['/api/v1/payments', paymentRoutes],
-  ['/api/v1/proposals', proposalRoutes],
-  ['/api/v1/reviews', reviewRoutes],
-  ['/api/v1/search', searchRoutes],
-  ['/api/v1/users', userRoutes],
-];
-
-type Layer = { route?: { path: string; methods: Record<string, boolean> } };
-
-/** Every registered route as "METHOD /full/path/:param". */
-const registeredRoutes = (): string[] =>
-  MOUNTS.flatMap(([base, router]) =>
-    (router.stack as unknown as Layer[])
-      .filter((layer) => layer.route)
-      .flatMap((layer) =>
-        Object.keys(layer.route!.methods).map((m) => `${m.toUpperCase()} ${base}${layer.route!.path}`)
-      )
-  );
+import { registeredRoutes } from './routeRegistry';
 
 type Role = 'public' | 'admin' | 'client' | 'freelancer';
 type Ids = Awaited<ReturnType<typeof fixtures>>;

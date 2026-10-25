@@ -24,6 +24,8 @@ import disputeRoutes from './routes/disputeRoutes';
 import searchRoutes from './routes/searchRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import aiRoutes from './routes/aiRoutes';
+import swaggerUi from 'swagger-ui-express';
+import { buildOpenApiDocument } from './docs/openapi';
 import { env } from './config/env';
 
 const app: Application = express();
@@ -63,6 +65,13 @@ app.use('/api/v1/disputes', disputeRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiRoutes);
+
+// API docs (OpenAPI generated from the route registry + zod validators)
+const openApiDocument = buildOpenApiDocument();
+app.get('/api/docs.json', (_req: Request, res: Response) => {
+  res.json(openApiDocument);
+});
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: 'SkillSphere API' }));
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
