@@ -42,7 +42,7 @@ class NotificationService {
       title: 'New Proposal Received',
       message: `A new proposal has been submitted for "${gigTitle}"`,
       data: { gigId },
-      link: `/gigs/${gigId}/proposals`,
+      link: `/client/gigs/${gigId}/proposals`,
     });
   }
 
@@ -59,7 +59,7 @@ class NotificationService {
       title: 'Proposal Accepted!',
       message: `Your proposal for "${gigTitle}" has been accepted`,
       data: { gigId },
-      link: `/gigs/${gigId}`,
+      link: `/projects/${gigId}`,
     });
   }
 
@@ -76,7 +76,7 @@ class NotificationService {
       title: 'Proposal Update',
       message: `Your proposal for "${gigTitle}" was not selected`,
       data: { gigId },
-      link: `/gigs/${gigId}`,
+      link: '/freelancer/proposals',
     });
   }
 
@@ -93,7 +93,7 @@ class NotificationService {
       title: 'Gig Awarded!',
       message: `You have been awarded the gig "${gigTitle}"`,
       data: { gigId },
-      link: `/gigs/${gigId}`,
+      link: `/projects/${gigId}`,
     });
   }
 
@@ -175,7 +175,7 @@ class NotificationService {
       title: 'New Message',
       message: `You have a new message from ${senderName}`,
       data: { conversationId },
-      link: `/chat/${conversationId}`,
+      link: `/chat?c=${conversationId}`,
     });
   }
 
@@ -221,7 +221,7 @@ class NotificationService {
       title: 'Gig Completed',
       message: `The gig "${gigTitle}" has been marked as completed`,
       data: { gigId },
-      link: `/gigs/${gigId}`,
+      link: `/projects/${gigId}`,
     });
   }
 
@@ -238,7 +238,7 @@ class NotificationService {
       title: 'Milestone Completed',
       message: `The milestone "${milestoneTitle}" has been completed`,
       data: { gigId },
-      link: `/gigs/${gigId}`,
+      link: `/projects/${gigId}`,
     });
   }
 

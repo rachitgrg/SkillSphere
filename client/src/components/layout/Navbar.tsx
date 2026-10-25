@@ -10,6 +10,7 @@ import { logoutUser } from '../../store/slices/authSlice';
 import { toggleMobileMenu, setMobileMenuOpen, setNotificationDropdownOpen, toggleNotificationDropdown } from '../../store/slices/uiSlice';
 import { Avatar } from '../common/Avatar';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
+import { useUnreadCount } from '../../hooks/queries/useNotifications';
 
 export function Navbar() {
   const { user, isAuthenticated } = useAppSelector((s) => s.auth);
@@ -17,6 +18,7 @@ export function Navbar() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: unread = 0 } = useUnreadCount(isAuthenticated);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -96,12 +98,15 @@ export function Navbar() {
                     className="relative p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
                   >
                     <Bell className="w-5 h-5" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full" />
+                    {unread > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary-500 text-[10px] font-bold text-white flex items-center justify-center" aria-label={`${unread} unread`}>
+                        {unread > 99 ? '99+' : unread}
+                      </span>
+                    )}
                   </button>
                   <NotificationDropdown
                     isOpen={notificationDropdownOpen}
                     onClose={() => dispatch(setNotificationDropdownOpen(false))}
-                    notifications={[]}
                   />
                 </div>
 

@@ -292,7 +292,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - Online presence: the server tracks connected user ids and emits `presence`.
   - Attachments: upload, then send a message with `fileUrl`.
   - A "Message" button on gig, proposal and profile pages creates or opens the conversation.
-- [ ] **3.7 Notifications.**
+- [x] **3.7 Notifications.**
   - `NotificationDropdown` in `Navbar` shows the live unread count via the socket `notification` event.
   - `/notifications` page with paginated list, mark read / all read, delete; clicking navigates to `link`.
 - [ ] **3.8 Admin.** Real data for `/admin/dashboard`, `/admin/users` (search, filter, suspend/unsuspend, verify), `/admin/gigs` (approval queue), `/admin/payments`, `/admin/disputes`, `/admin/analytics` and `/admin/logs`. Remove `/admin/settings` from the sidebar unless you build it.

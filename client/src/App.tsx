@@ -86,6 +86,12 @@ const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: 
   return <>{children}</>;
 };
 
+/** Sends each role to its own version of a page. */
+const RoleRedirect = (paths: Record<UserRole, string>) => {
+  const role = useAppSelector((s) => s.auth.user?.role) ?? 'client';
+  return <Navigate to={paths[role]} replace />;
+};
+
 /** Signed-in area with the dashboard chrome; `role` restricts it to one role. */
 const Area = ({ role }: { role?: UserRole }) => (
   <ProtectedRoute role={role}>
@@ -126,6 +132,9 @@ export default function App() {
             <Route path="/projects/:gigId" element={<ProjectProgressPage />} />
             <Route path="/disputes/new" element={<CreateDisputePage />} />
             <Route path="/disputes/:id" element={<DisputeDetailPage />} />
+            {/* Role-neutral links (used by notifications) */}
+            <Route path="/payments" element={<RoleRedirect client="/client/payments" freelancer="/freelancer/earnings" admin="/admin/payments" />} />
+            <Route path="/reviews" element={<RoleRedirect client="/client/reviews" freelancer="/freelancer/reviews" admin="/admin/dashboard" />} />
           </Route>
 
           {/* Client */}

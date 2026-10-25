@@ -283,7 +283,7 @@ export const negotiateProposal = async (req: AuthRequest, res: Response, next: N
       sender: me,
       type: NotificationType.PROPOSAL_COUNTERED,
       title: 'New counter-offer',
-      message: `${isClient ? 'The client' : 'The freelancer'} proposed ${amount.toLocaleString('en-IN')} INR for "${gig.title}"`,
+      message: `${isClient ? 'The client' : 'The freelancer'} proposed ₹${amount.toLocaleString('en-IN')} for "${gig.title}"`,
       data: { proposalId: proposal._id.toString(), gigId: gig._id.toString(), amount },
       link: isClient ? '/freelancer/proposals' : `/client/gigs/${gig._id}/proposals`,
     });
