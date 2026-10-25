@@ -156,7 +156,7 @@
   - Tests: rating, earnings, status and views cannot be set by users.
 - [x] **1.9 Regex crash (C9).** Add `escapeRegex()` to `utils/helpers.ts` and use it in `aiMatchingService.ts:21` and `:338`, and anywhere else `new RegExp(userInput)` appears.
   - Test: a gig with skills `["C++", "C#", "Node.js"]` returns 200.
-- [ ] **1.10 Freelancer text search (C10).** Add a text index on `FreelancerProfile` (`title`, `headline`, `skills.name`) or switch to an aggregate with `$lookup` to users plus a regex on the escaped query. Test `?q=react` → 200.
+- [x] **1.10 Freelancer text search (C10).** Add a text index on `FreelancerProfile` (`title`, `headline`, `skills.name`) or switch to an aggregate with `$lookup` to users plus a regex on the escaped query. Test `?q=react` → 200.
 - [ ] **1.11 Gig views and seeds (C11).**
   - `getGigById`: use `Gig.updateOne({_id}, {$inc:{views:1}})`, then fetch with `.lean()`.
   - Replace `server/scripts/seed-admin.js` and `seed-gigs.js` with one **non‑destructive** `server/scripts/seed.ts` (`npm run seed`). It:

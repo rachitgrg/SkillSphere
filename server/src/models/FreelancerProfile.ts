@@ -133,6 +133,11 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
 
 // Indexes
 freelancerProfileSchema.index({ 'skills.name': 1 });
+// Powers $text search on /search/freelancers?q=
+freelancerProfileSchema.index(
+  { title: 'text', headline: 'text', 'skills.name': 'text' },
+  { weights: { 'skills.name': 5, title: 3, headline: 1 }, name: 'freelancer_text' }
+);
 freelancerProfileSchema.index({ hourlyRate: 1 });
 freelancerProfileSchema.index({ availability: 1 });
 freelancerProfileSchema.index({ averageRating: -1 });
