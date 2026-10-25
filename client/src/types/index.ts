@@ -357,8 +357,8 @@ export interface PaginatedResponse<T> {
   };
 }
 
+/** `data` of login/register/refresh responses. The refresh token is an httpOnly cookie. */
 export interface AuthResponse {
-  success: boolean;
   token: string;
   user: User;
 }

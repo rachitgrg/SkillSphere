@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, Zap,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
-import { logout } from '../../store/slices/authSlice';
+import { logoutUser } from '../../store/slices/authSlice';
 import { toggleMobileMenu, setMobileMenuOpen, setNotificationDropdownOpen, toggleNotificationDropdown } from '../../store/slices/uiSlice';
 import { Avatar } from '../common/Avatar';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
@@ -43,8 +43,7 @@ export function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+    dispatch(logoutUser()).finally(() => navigate('/login'));
   };
 
   const getDashboardPath = () => {

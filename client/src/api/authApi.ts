@@ -31,6 +31,9 @@ export const authApi = {
   googleAuth: (tokenId: string) =>
     axiosInstance.post('/auth/google', { tokenId }),
 
+  refresh: () =>
+    axiosInstance.post('/auth/refresh'),
+
   logout: () =>
     axiosInstance.post('/auth/logout'),
 };

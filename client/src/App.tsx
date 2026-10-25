@@ -19,6 +19,7 @@ import { UserManagement } from './pages/admin/UserManagement';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import { useAppSelector } from './hooks/useRedux';
+import { Spinner } from './components/common/Spinner';
 
 const getDashboardPath = (role: 'client' | 'freelancer' | 'admin') => {
   if (role === 'admin') return '/admin/dashboard';
@@ -27,8 +28,15 @@ const getDashboardPath = (role: 'client' | 'freelancer' | 'admin') => {
 };
 
 const ProtectedRoute = ({ children, role }: { children: React.ReactNode, role?: 'client' | 'freelancer' | 'admin' }) => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user, isBootstrapping } = useAppSelector((state) => state.auth);
 
+  if (isBootstrapping) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
   if (role && user.role !== role && user.role !== 'admin') return <Navigate to={getDashboardPath(user.role)} replace />;
   return <>{children}</>;

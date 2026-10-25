@@ -135,7 +135,7 @@
   - `createPaymentIntent`: caller must be the gig's `client`; `freelancerId` must equal `gig.selectedFreelancer`; amount must equal the milestone amount (when `milestoneId` is given) or be within the accepted proposal amount; reject if a non‑refunded payment already exists for that milestone.
   - `verifyPayment`: payment must belong to the caller; compare signatures with `crypto.timingSafeEqual`.
   - Tests for each rejection.
-- [ ] **1.6 Refresh tokens (C6).**
+- [x] **1.6 Refresh tokens (C6).**
   - Server: `refreshToken` must load the user with `.select('+refreshToken')` and use `generateAccessToken`. Rotate the refresh token on each refresh and store a **hash** of it, not the raw value.
   - Preferred: set the refresh token as an httpOnly, `sameSite=lax`, `secure`‑in‑prod cookie scoped to `/api/v1/auth`. The access token stays in memory/Redux, not `localStorage`.
   - Client `axiosInstance.ts`: on 401 (excluding `/auth/*`), call `/auth/refresh` once (single‑flight queue), retry the original request, and only log out if refresh fails.
