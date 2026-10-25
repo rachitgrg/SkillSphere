@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { IUser, UserRole } from '../types';
+import { env } from '../config/env';
 
 /** Never serialised to API responses or socket payloads. */
 const SENSITIVE_FIELDS = [
@@ -152,7 +153,8 @@ userSchema.pre('save', async function () {
   if (!this.isModified('password') || !this.password) {
     return;
   }
-  const salt = await bcrypt.genSalt(12);
+  // Low cost under test keeps suites fast; production uses 12 rounds.
+  const salt = await bcrypt.genSalt(env.NODE_ENV === 'test' ? 4 : 12);
   this.password = await bcrypt.hash(this.password, salt);
 });
 

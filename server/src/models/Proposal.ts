@@ -49,6 +49,11 @@ const proposalSchema = new Schema<IProposal>(
       required: [true, 'Proposed amount is required'],
       min: [0, 'Amount cannot be negative'],
     },
+    // Last amount both parties agreed on during negotiation (falls back to proposedAmount).
+    finalAmount: {
+      type: Number,
+      min: [0, 'Amount cannot be negative'],
+    },
     estimatedDuration: {
       type: String,
       required: [true, 'Estimated duration is required'],

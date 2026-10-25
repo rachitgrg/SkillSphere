@@ -126,12 +126,12 @@
   - Test: register/login responses contain none of these keys.
 - [x] **1.3 Mongoose 9 hooks (C3).** In `models/Payment.ts:74-81` and `models/Review.ts:64-78`, drop the `next` parameter and the `next()` call. In `Review.ts`, also make `rating` not `required` (the hook computes it) and compute it in `pre('validate')` so validation passes.
   - Test: create a Payment and a Review → saved; review rating equals the weighted formula.
-- [ ] **1.4 Razorpay module.**
+- [x] **1.4 Razorpay module.**
   - Make `config/razorpay.ts` lazy: a `getRazorpay()` that reads `env` at call time and returns `null` if not configured.
   - Every payment route returns **503 "Payments not configured"** when it is null.
   - Remove the duplicated fee math in `paymentController.ts` (the model hook already computes `platformFee` / `freelancerAmount`).
   - Move payment logic into `services/paymentService.ts`, which already exists, and have controllers call it.
-- [ ] **1.5 Payment authorization (C5).**
+- [x] **1.5 Payment authorization (C5).**
   - `createPaymentIntent`: caller must be the gig's `client`; `freelancerId` must equal `gig.selectedFreelancer`; amount must equal the milestone amount (when `milestoneId` is given) or be within the accepted proposal amount; reject if a non‑refunded payment already exists for that milestone.
   - `verifyPayment`: payment must belong to the caller; compare signatures with `crypto.timingSafeEqual`.
   - Tests for each rejection.

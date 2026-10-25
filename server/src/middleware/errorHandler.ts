@@ -63,7 +63,7 @@ export const errorHandler = (
     message = err.message;
   }
 
-  console.error(`[Error] ${statusCode} - ${message}`, {
+  if (statusCode >= 500) console.error(`[Error] ${statusCode} - ${message}`, {
     stack: env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 

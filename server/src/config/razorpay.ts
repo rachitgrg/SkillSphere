@@ -14,3 +14,13 @@ export const getRazorpay = (): Razorpay | null => {
   }
   return instance;
 };
+
+/** Key id (public, sent to Checkout), key secret (signatures) and webhook secret. */
+export const getRazorpayKeys = (): { keyId: string; keySecret: string; webhookSecret?: string } | null => {
+  if (!features.razorpay) return null;
+  return {
+    keyId: env.RAZORPAY_KEY_ID!,
+    keySecret: env.RAZORPAY_KEY_SECRET!,
+    webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+  };
+};

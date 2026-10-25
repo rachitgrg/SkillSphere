@@ -300,6 +300,7 @@ export interface IProposal extends Document {
   freelancer: Types.ObjectId;
   coverLetter: string;
   proposedAmount: number;
+  finalAmount?: number;
   estimatedDuration: string;
   milestones: IMilestone[];
   attachments: string[];

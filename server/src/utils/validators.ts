@@ -223,16 +223,19 @@ export const createPaymentSchema = z.object({
   body: z.object({
     gigId: z.string().min(1),
     milestoneId: z.string().optional(),
-    amount: z.number().min(1, 'Amount must be at least 1'),
-    description: z.string().optional(),
+    freelancerId: z.string().optional(),
+    // Required when no milestoneId is given; otherwise taken from the milestone.
+    amount: z.number().min(1, 'Amount must be at least 1').optional(),
+    description: z.string().max(500).optional(),
   }),
 });
 
+// Field names match what Razorpay Checkout passes to its success handler.
 export const verifyPaymentSchema = z.object({
   body: z.object({
-    razorpayOrderId: z.string().min(1),
-    razorpayPaymentId: z.string().min(1),
-    razorpaySignature: z.string().min(1),
+    razorpay_order_id: z.string().min(1),
+    razorpay_payment_id: z.string().min(1),
+    razorpay_signature: z.string().min(1),
   }),
 });
 
