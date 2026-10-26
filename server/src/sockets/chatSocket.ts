@@ -8,13 +8,20 @@ const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
 const conversationPayload = z.object({ conversationId: objectId });
 
-const sendMessagePayload = z.object({
-  conversationId: objectId,
-  content: z.string().trim().min(1).max(5000),
-  type: z.enum([MessageType.TEXT, MessageType.IMAGE, MessageType.FILE]).optional(),
-  fileUrl: z.string().url().optional(),
-  fileName: z.string().max(255).optional(),
-});
+/** Files must come from POST /chat/conversations/:id/files, i.e. our Cloudinary account. */
+const UPLOADED_FILE_URL = /^https:\/\/res\.cloudinary\.com\//;
+
+const sendMessagePayload = z
+  .object({
+    conversationId: objectId,
+    content: z.string().trim().min(1).max(5000),
+    type: z.enum([MessageType.TEXT, MessageType.IMAGE, MessageType.FILE]).optional(),
+    fileUrl: z.string().url().regex(UPLOADED_FILE_URL, 'Upload the file first').optional(),
+    fileName: z.string().max(255).optional(),
+  })
+  .refine((m) => (m.type === MessageType.IMAGE || m.type === MessageType.FILE) === Boolean(m.fileUrl), {
+    message: 'File messages need a fileUrl (and only they may have one)',
+  });
 
 type Ack = (response: { ok: boolean; error?: string; [key: string]: unknown }) => void;
 

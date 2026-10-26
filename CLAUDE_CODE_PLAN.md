@@ -371,9 +371,9 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **"New gig posted" notification:** when a gig is approved, notify the top‑20 matching freelancers (via 4.2).
 
 ### 4.5 Proposals & negotiation (module 5)
-- [ ] `POST /proposals/:id/negotiate {amount, message}`. Either party can counter; it appends to `negotiationHistory` and sets status `negotiating`. Accepting a negotiated proposal uses the **last agreed amount** (`proposal.finalAmount`).
-- [ ] UI: a negotiation thread inside the proposal detail (client and freelancer), with "Accept offer" / "Counter" / "Reject".
-- [ ] Freelancer withdraw (only while `pending|negotiating`).
+- [x] `POST /proposals/:id/negotiate {amount, message}`. Either party can counter; it appends to `negotiationHistory` and sets status `negotiating`. Accepting a negotiated proposal uses the **last agreed amount** (`proposal.finalAmount`).
+- [x] UI: a negotiation thread inside the proposal detail (client and freelancer), with "Accept offer" / "Counter" / "Reject".
+- [x] Freelancer withdraw (only while `pending|negotiating`).
 
 ### 4.6 Chat extras (module 6)
 - [ ] File sharing (images inline, other files as a download chip), typing, read receipts and presence (done in 3.6).

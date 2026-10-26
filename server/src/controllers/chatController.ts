@@ -3,7 +3,8 @@ import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import User from '../models/User';
 import chatService from '../services/chatService';
-import { AuthRequest } from '../types';
+import uploadService from '../services/uploadService';
+import { AuthRequest, MessageType } from '../types';
 import { Types } from 'mongoose';
 
 export const getConversations = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -101,6 +102,24 @@ export const createConversation = async (req: AuthRequest, res: Response, next: 
     await conversation.populate('participants', 'firstName lastName avatar');
 
     res.status(created ? 201 : 200).json({ success: true, message: 'Conversation ready', data: conversation });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /chat/conversations/:id/files — uploads one file (`file`, 10 MB) for a participant.
+ * The client then sends a message over the socket with the returned url (type image|file).
+ */
+export const uploadChatFile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!(await chatService.isParticipant(String(req.params.id), req.user!._id))) {
+      res.status(404).json({ success: false, message: 'Conversation not found' });
+      return;
+    }
+    const { url, name, size, mimeType } = await uploadService.uploadFile(req.file!, 'chat');
+    const type = mimeType.startsWith('image/') ? MessageType.IMAGE : MessageType.FILE;
+    res.status(201).json({ success: true, message: 'File uploaded', data: { url, name, size, mimeType, type } });
   } catch (error) {
     next(error);
   }

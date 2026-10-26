@@ -107,6 +107,7 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/chat/conversations', tag: 'Chat', summary: 'My conversations with unread counts', access: 'auth' },
   { method: 'post', path: '/chat/conversations', tag: 'Chat', summary: 'Open (or reuse) a conversation', access: 'auth', body: bodyOf(v.createConversationSchema) },
   { method: 'get', path: '/chat/conversations/:id/messages', tag: 'Chat', summary: 'Message history (cursor pagination)', access: 'auth', query: { before: 'Message id or ISO date; loads older messages', limit: 'Default 30, max 100' } },
+  { method: 'post', path: '/chat/conversations/:id/files', tag: 'Chat', summary: 'Upload a file to share (then send it via the socket)', access: 'auth', multipart: { file: 'file: image, PDF, DOC/DOCX, TXT or ZIP — 10 MB' }, description: 'Returns { url, name, size, mimeType, type }. 503 when Cloudinary is not configured.' },
 
   // Payments
   { method: 'get', path: '/payments/', tag: 'Payments', summary: 'Transaction history', access: 'auth', query: { status: 'Payment status', gig: 'Gig id', ...pageQuery } },

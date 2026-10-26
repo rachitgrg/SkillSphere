@@ -88,6 +88,7 @@ const CASES: Record<string, Case> = {
   // Chat
   'GET /api/v1/chat/conversations': { role: 'client' },
   'POST /api/v1/chat/conversations': { role: 'client', body: (i) => ({ participantId: i.freelancerId }) },
+  'POST /api/v1/chat/conversations/:id/files': { role: 'client', path: (i) => `/api/v1/chat/conversations/${i.conversationId}/files` },
   'GET /api/v1/chat/conversations/:id/messages': { role: 'client', path: (i) => `/api/v1/chat/conversations/${i.conversationId}/messages` },
 
   // Payments (money-moving routes answer 503 without Razorpay keys, which is allowed)

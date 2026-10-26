@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Paperclip, Send } from 'lucide-react';
 import { ConversationList } from '../../components/chat/ConversationList';
 import { MessageBubble } from '../../components/chat/MessageBubble';
 import { TypingIndicator } from '../../components/chat/TypingIndicator';
@@ -10,12 +10,13 @@ import { Avatar } from '../../components/common/Avatar';
 import { Spinner } from '../../components/common/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useConversations } from '../../hooks/queries/useChat';
+import { useConfig } from '../../hooks/queries/useConfig';
 import { keys } from '../../hooks/queries/keys';
 import { chatApi } from '../../api/chatApi';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAppSelector } from '../../hooks/useRedux';
 import type { Conversation, Message, MessagePage } from '../../types';
-import { fullName } from '../../utils/helpers';
+import { fullName, getErrorMessage } from '../../utils/helpers';
 
 type Pages = InfiniteData<MessagePage, string | undefined>;
 type Ack = { ok: boolean; error?: string; message?: Message };
@@ -70,6 +71,8 @@ function Thread({ conversation, meId, onBack }: { conversation: Conversation; me
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const uploadsEnabled = useConfig().data?.uploads ?? false;
   const stickToBottom = useRef(true);
   const key = keys.chat.messages(conversation._id);
 
@@ -176,21 +179,44 @@ function Thread({ conversation, meId, onBack }: { conversation: Conversation; me
     typingTimer.current = setTimeout(() => socket.emit('stop_typing', { conversationId: conversation._id }), 2000);
   };
 
-  const send = (e: React.FormEvent) => {
+  /** Emits `send_message`; resolves true when the server stored it. */
+  const emitMessage = (payload: Record<string, unknown>) =>
+    new Promise<boolean>((resolve) => {
+      socket!.emit('send_message', { conversationId: conversation._id, ...payload }, (res: Ack) => {
+        if (!res.ok) {
+          toast.error(res.error ?? 'Message not sent');
+          return resolve(false);
+        }
+        if (res.message) appendMessage(res.message);
+        stickToBottom.current = true;
+        queryClient.invalidateQueries({ queryKey: keys.chat.conversations });
+        resolve(true);
+      });
+    });
+
+  const send = async (e: React.FormEvent) => {
     e.preventDefault();
     const content = text.trim();
     if (!content || !socket) return;
     setSending(true);
     clearTimeout(typingTimer.current);
     socket.emit('stop_typing', { conversationId: conversation._id });
-    socket.emit('send_message', { conversationId: conversation._id, content }, (res: Ack) => {
+    if (await emitMessage({ content })) setText('');
+    setSending(false);
+  };
+
+  const sendFile = async (file: File) => {
+    if (!socket) return;
+    if (file.size > 10 * 1024 * 1024) return toast.error('Files must be 10 MB or smaller');
+    setSending(true);
+    try {
+      const uploaded = await chatApi.uploadFile(conversation._id, file);
+      await emitMessage({ content: uploaded.name, type: uploaded.type, fileUrl: uploaded.url, fileName: uploaded.name });
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Upload failed'));
+    } finally {
       setSending(false);
-      if (!res.ok) return toast.error(res.error ?? 'Message not sent');
-      if (res.message) appendMessage(res.message);
-      setText('');
-      stickToBottom.current = true;
-      queryClient.invalidateQueries({ queryKey: keys.chat.conversations });
-    });
+    }
   };
 
   const isOnline = other ? onlineUsers.has(other._id) : false;
@@ -242,6 +268,27 @@ function Thread({ conversation, meId, onBack }: { conversation: Conversation; me
       </div>
 
       <form onSubmit={send} className="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-800 shrink-0 flex items-center gap-3">
+        <input
+          ref={fileInput}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) void sendFile(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          disabled={!uploadsEnabled || sending || !socket}
+          title={uploadsEnabled ? 'Share a file' : 'File sharing is not configured on this server'}
+          aria-label="Share a file"
+          className="p-3 text-slate-400 hover:text-white disabled:opacity-40 rounded-xl"
+        >
+          <Paperclip className="w-5 h-5" />
+        </button>
         <label htmlFor="chat-input" className="sr-only">Message</label>
         <input
           id="chat-input"

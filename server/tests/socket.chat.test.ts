@@ -182,3 +182,17 @@ describe('Socket.IO security (C7)', () => {
     expect((await emitAck(attacker, 'messages_read', { conversationId })).ok).toBe(false);
   });
 });
+
+describe('file messages (4.6)', () => {
+  it('accepts uploaded Cloudinary files and rejects foreign or mismatched file payloads', async () => {
+    const { client, conversationId } = await setup();
+    const socket = await connect(client.token);
+    const base = { conversationId, content: 'spec.pdf', fileName: 'spec.pdf' };
+
+    const ok = await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://res.cloudinary.com/demo/raw/upload/spec.pdf' });
+    expect(ok.ok).toBe(true);
+    expect((await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://evil.example/x.exe' })).ok).toBe(false);
+    expect((await emitAck(socket, 'send_message', { ...base, type: 'file' })).ok).toBe(false);
+    expect((await emitAck(socket, 'send_message', { ...base, fileUrl: 'https://res.cloudinary.com/demo/raw/upload/spec.pdf' })).ok).toBe(false);
+  });
+});

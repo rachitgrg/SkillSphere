@@ -150,6 +150,15 @@ export type VerificationRequest = FreelancerProfile & {
   verification: FreelancerVerification;
 };
 
+/** POST /chat/conversations/:id/files */
+export interface ChatUpload {
+  url: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  type: 'image' | 'file';
+}
+
 /** GET /config */
 export interface PlatformConfig {
   uploads: boolean;
