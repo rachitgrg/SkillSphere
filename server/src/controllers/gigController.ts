@@ -5,6 +5,7 @@ import { Types } from 'mongoose';
 import Payment from '../models/Payment';
 import Proposal from '../models/Proposal';
 import notificationService from '../services/notificationService';
+import embeddingService from '../services/embeddingService';
 import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
 import { buildPublicGigFilter, gigSort, toStringList } from '../services/gigQuery';
@@ -48,6 +49,7 @@ export const createGig = async (req: AuthRequest, res: Response, next: NextFunct
       status: GigStatus.PENDING_APPROVAL,
     }).save();
     await ClientProfile.updateOne({ user: req.user!._id }, { $inc: { postedGigs: 1 } });
+    embeddingService.queue(() => embeddingService.refreshGig(gig._id));
     res.status(201).json({ success: true, message: 'Gig submitted for approval', data: gig });
   } catch (error) {
     next(error);
@@ -155,7 +157,9 @@ export const updateGig = async (req: AuthRequest, res: Response, next: NextFunct
 
     // Saving the document (not findByIdAndUpdate) runs the budget pre-validate hook.
     gig.set(pick(req.body, GIG_EDITABLE));
+    const textChanged = ['title', 'description', 'skills', 'category'].some((f) => gig.isModified(f));
     await gig.save();
+    if (textChanged) embeddingService.queue(() => embeddingService.refreshGig(gig._id));
     res.status(200).json({ success: true, message: 'Gig updated', data: gig });
   } catch (error) {
     next(error);

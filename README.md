@@ -46,3 +46,36 @@ Last checked: 2026-10-25 (`npm audit` and `npm audit --omit=dev` in `/`, `server
 
 Upgrades made to get there: `multer` 1.x → 2.x, `nodemailer` 6.x → 10.x, `zod` 3.x → 4.x
 (both apps), plus non-breaking `npm audit fix`.
+
+## AI matching (module 2)
+
+Code: `server/src/services/aiMatchingService.ts` (`MATCH_WEIGHTS`, `scoreMatch`) and
+`server/src/services/embeddingService.ts`.
+
+- **Embeddings:** `sentence-transformers/all-MiniLM-L6-v2` (384-dim) through Hugging Face
+  `featureExtraction` on the `hf-inference` provider. Gigs embed *title + category + skills +
+  description*; freelancer profiles embed *title + headline + skills*. Vectors are cached on
+  `Gig.embedding` / `FreelancerProfile.embedding` (`select: false`), recomputed in the background
+  when those fields change, and backfilled at boot for documents that have none.
+- **Fallback:** without `HF_ACCESS_TOKEN`, or for 10 minutes after a failed call, skill similarity is
+  the normalised skill coverage blended with Jaccard overlap, and responses carry `source: 'fallback'`.
+- **Score (0–100):**
+
+| Component | Weight | Value (0–1) |
+|---|---|---|
+| Skill similarity | 0.45 | 0.7 · rescaled embedding cosine + 0.3 · skill coverage (fallback: 0.8 · coverage + 0.2 · Jaccard) |
+| Rating | 0.20 | Bayesian average / 5 — prior of 5 reviews at the platform mean rating |
+| Proximity | 0.15 | onsite/hybrid: `1 − min(distanceKm, 50) / 50` (0 if the freelancer has no location); remote: 1 |
+| Experience fit | 0.10 | average proficiency on the gig's skills ÷ level required (entry 1, intermediate 2.5, expert 3.5) |
+| Budget fit | 0.05 | hourly rate (fixed gigs: cheapest package) ≤ `budgetMax` → 1, linear penalty above, 0.5 if unknown |
+| Availability | 0.05 | available 1, busy 0.5 |
+
+  Verified freelancers get +3 points. Candidates are profiles sharing a skill with the gig plus,
+  for onsite/hybrid gigs, profiles within 50 km (`$nearSphere`); banned, inactive and (when
+  `REQUIRE_EMAIL_VERIFICATION` is on) unverified accounts are excluded.
+- **Career coach:** `Qwen/Qwen2.5-72B-Instruct` via HF Inference Providers with automatic provider
+  routing (it is served by featherless-ai and deepinfra, not by `hf-inference`). Without a working
+  token the keyword-based report is returned with `source: 'fallback'` and the UI labels it.
+  The token must be a fine-grained token with the *Make calls to Inference Providers* permission.
+- **Trending skills:** skill counts on gigs from the last 30 days vs the previous 30, with growth %,
+  cached for an hour (`GET /search/trending-skills`).

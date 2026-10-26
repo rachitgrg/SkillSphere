@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  TrendingUp,
   UsersRound,
   Video,
   Zap,
@@ -19,6 +20,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
+import { useTrendingSkills } from '../../hooks/queries/useMarketplace';
 
 type Category = {
   title: string;
@@ -261,6 +263,32 @@ function DashboardPreview() {
   );
 }
 
+/** Live trending skills (last 30 days vs the 30 before); hidden until there is data. */
+function TrendingSkills() {
+  const trending = useTrendingSkills();
+  const skills = trending.data?.slice(0, 6) ?? [];
+  if (!skills.length) return null;
+  return (
+    <div className="mt-7">
+      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <TrendingUp className="h-3 w-3" /> Trending skills this month
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {skills.map(({ skill, growth }) => (
+          <Link
+            key={skill}
+            to={`/gigs?skills=${encodeURIComponent(skill)}`}
+            className="rounded-full border border-slate-700/80 bg-slate-900/60 px-3 py-1 text-xs text-slate-300 transition hover:border-primary-400/50 hover:text-white focus-ring"
+          >
+            {skill}
+            {growth > 0 && <span className="ml-1.5 text-[10px] text-emerald-400">+{growth}%</span>}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const LandingPage = () => {
   return (
     <div className="min-h-screen overflow-hidden bg-[#020b16] text-white">
@@ -299,6 +327,7 @@ export const LandingPage = () => {
                 })}
               </div>
 
+              <TrendingSkills />
             </motion.div>
 
             <DashboardPreview />

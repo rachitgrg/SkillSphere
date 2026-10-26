@@ -122,6 +122,8 @@ const gigSchema = new Schema<IGig>(
     // Set by an admin when the gig is rejected from the approval queue.
     rejectionReason: String,
     approvedAt: Date,
+    // Sentence embedding of title + skills + description (embeddingService); never sent to clients.
+    embedding: { type: [Number], select: false, default: undefined },
   },
   {
     timestamps: true,

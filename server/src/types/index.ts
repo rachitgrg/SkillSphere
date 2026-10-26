@@ -250,6 +250,7 @@ export interface IFreelancerProfile extends Document {
   responseTime: number; // in hours
   milestonePricing: { title: string; description?: string; price: number; deliveryDays: number }[];
   location?: IGeoLocation;
+  embedding?: number[];
   languages: { language: string; proficiency: string }[];
   socialLinks: {
     github?: string;
@@ -308,6 +309,7 @@ export interface IGig extends Document {
   completedAt?: Date;
   rejectionReason?: string;
   approvedAt?: Date;
+  embedding?: number[];
   createdAt: Date;
   updatedAt: Date;
 }

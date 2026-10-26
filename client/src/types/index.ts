@@ -560,16 +560,38 @@ export interface SearchSuggestions {
   skills: string[];
 }
 
-export interface MatchScore {
-  freelancerId: UserSummary;
-  score: number;
-  reasons: string[];
+export type AiSource = 'ai' | 'fallback';
+
+/** Each component is 0–1; see MATCH_WEIGHTS on the server. */
+export interface MatchBreakdown {
+  skill: number;
+  rating: number;
+  proximity: number;
+  experience: number;
+  budget: number;
+  availability: number;
 }
 
-export interface GigRecommendation {
-  gig: Gig;
+interface MatchFields {
+  /** 0–100 */
   score: number;
+  breakdown: MatchBreakdown;
   matchedSkills: string[];
+  distanceKm?: number;
+  reasons: string[];
+  source: AiSource;
+}
+
+export interface MatchScore extends MatchFields {
+  freelancerId: UserSummary & { address?: { city?: string; state?: string }; isVerified?: boolean };
+  profile: Pick<
+    FreelancerProfile,
+    'title' | 'headline' | 'skills' | 'averageRating' | 'totalReviews' | 'completedGigs' | 'hourlyRate' | 'availability'
+  > & { verification?: { status?: string } };
+}
+
+export interface GigRecommendation extends MatchFields {
+  gig: Gig;
 }
 
 export interface CareerReport {
@@ -577,6 +599,7 @@ export interface CareerReport {
   strengths: string[];
   weaknesses: string[];
   summary: string;
+  source: AiSource;
 }
 
 // ========== ANALYTICS ==========

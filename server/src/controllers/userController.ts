@@ -5,6 +5,7 @@ import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
 import { AuthRequest, UserRole } from '../types';
 import { pick } from '../utils/helpers';
+import embeddingService from '../services/embeddingService';
 
 /** Fields users may edit; ratings, earnings and counters are server-controlled. */
 export const FREELANCER_EDITABLE = [
@@ -76,6 +77,9 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
       { $set: pick(req.body, FREELANCER_EDITABLE) },
       { returnDocument: 'after', runValidators: true }
     );
+    if (['title', 'headline', 'skills'].some((f) => f in (req.body ?? {}))) {
+      embeddingService.queue(() => embeddingService.refreshProfile(req.user!._id));
+    }
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
   } catch (error) {
     next(error);

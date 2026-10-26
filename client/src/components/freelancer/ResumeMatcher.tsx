@@ -3,14 +3,9 @@ import { Button } from '../common/Button';
 import { aiApi } from '../../api/aiApi';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/helpers';
+import type { CareerReport } from '../../types';
 import { Sparkles, FileText, Loader2, Target, Zap, AlertTriangle } from 'lucide-react';
 
-interface CareerReport {
-  targetRoles: string[];
-  strengths: string[];
-  weaknesses: string[];
-  summary: string;
-}
 
 export const ResumeMatcher: React.FC = () => {
   const [resumeText, setResumeText] = useState('');
@@ -83,6 +78,15 @@ export const ResumeMatcher: React.FC = () => {
         {report && !isProcessing && (
           <div className="space-y-6 animate-fade-in">
             <div className="bg-indigo-500/10 rounded-2xl p-6 border border-indigo-500/20">
+              <span
+                className={`inline-block mb-3 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                  report.source === 'ai'
+                    ? 'text-indigo-300 border-indigo-400/30 bg-indigo-500/10'
+                    : 'text-slate-400 border-slate-600 bg-slate-800/60'
+                }`}
+              >
+                {report.source === 'ai' ? 'AI-generated' : 'Basic analysis (AI unavailable)'}
+              </span>
               <p className="text-indigo-200 leading-relaxed italic">
                 "{report.summary}"
               </p>

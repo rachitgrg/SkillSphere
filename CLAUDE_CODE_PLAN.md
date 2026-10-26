@@ -329,11 +329,11 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - Add a settings page with enable/disable 2FA, change password and email verification status.
 
 ### 4.2 AI matching (module 2), with real Hugging Face use
-- [ ] Create `services/embeddingService.ts`.
+- [x] Create `services/embeddingService.ts`.
   - Use `@huggingface/inference` `featureExtraction` with model `sentence-transformers/all-MiniLM-L6-v2` (384‑dim).
   - Cache embeddings in Mongo: `Gig.embedding: [Number]` (select:false) and `FreelancerProfile.embedding`, recomputed when skills, title or description change. Use a background job or recompute on save via service call, not a model hook that blocks the request.
   - If HF is unavailable, fall back to the Jaccard similarity of normalized skill sets and **flag `source: 'fallback'`**.
-- [ ] **Score** in `aiMatchingService` (document the weights in code and README):
+- [x] **Score** in `aiMatchingService` (document the weights in code and README):
   - `0.45·cosine(skillEmbedding)`
   - `0.20·rating/5` (Bayesian‑adjusted by review count)
   - `0.15·proximity` (for `onsite`/`hybrid` gigs: `1 - min(distKm, 50)/50`; for remote: 1)
@@ -343,9 +343,9 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 
   Candidate set via `$geoNear` (when the gig has a location) + skill prefilter. Exclude banned, inactive and unverified users.
 - [ ] `GET /ai/gigs/:gigId/matches` (client owner): top N with score breakdown and reasons. UI: a "Recommended freelancers" panel on the client's gig page with an "Invite" button.
-- [ ] `GET /ai/recommendations` (freelancer): gigs ranked for this freelancer. UI: a dashboard widget.
-- [ ] **Trending skills:** aggregation over gigs created in the last 30 days vs the previous 30 (`$unwind skills`, counts, growth %). Cache for 1h (in‑memory, or Redis if `REDIS_URL` is set). UI: chips on the marketplace and landing page.
-- [ ] **Career analysis:** keep the endpoint. Response = `{ ...report, source: 'ai' | 'fallback' }`, and the UI shows a small "AI‑generated" or "Basic analysis (AI unavailable)" label. Verify the chosen chat model is actually served by HF Inference Providers. If not, switch to one that is and document it. Raise the body limit (done in 1.16).
+- [x] `GET /ai/recommendations` (freelancer): gigs ranked for this freelancer. UI: a dashboard widget.
+- [x] **Trending skills:** aggregation over gigs created in the last 30 days vs the previous 30 (`$unwind skills`, counts, growth %). Cache for 1h (in‑memory, or Redis if `REDIS_URL` is set). UI: chips on the marketplace and landing page.
+- [x] **Career analysis:** keep the endpoint. Response = `{ ...report, source: 'ai' | 'fallback' }`, and the UI shows a small "AI‑generated" or "Basic analysis (AI unavailable)" label. Verify the chosen chat model is actually served by HF Inference Providers. If not, switch to one that is and document it. Raise the body limit (done in 1.16).
 
 ### 4.3 Freelancer profiles (module 3)
 - [ ] **Uploads (shared infrastructure, needed by 4.4, 4.6, 4.13, 4.14).**

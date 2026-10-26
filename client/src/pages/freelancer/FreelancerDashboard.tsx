@@ -71,7 +71,10 @@ export function FreelancerDashboard() {
           <h2 className="font-semibold text-white mb-1 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-400" /> Recommended for you
           </h2>
-          <p className="text-xs text-slate-500 mb-4">Open gigs ranked by how well they match your skills.</p>
+          <p className="text-xs text-slate-500 mb-4">
+            Open gigs ranked by skill fit, distance, budget and your experience
+            {recommendations.data?.[0] && (recommendations.data[0].source === 'ai' ? ' · AI semantic match' : ' · skill-overlap match (AI unavailable)')}.
+          </p>
           <QueryState
             isLoading={recommendations.isLoading}
             isError={recommendations.isError}
@@ -80,11 +83,16 @@ export function FreelancerDashboard() {
             empty={{ title: 'No matches yet', description: 'Add skills to your profile to get recommendations.' }}
           >
             <ul className="space-y-4">
-              {recommendations.data?.map(({ gig, score, matchedSkills }) => (
+              {recommendations.data?.map(({ gig, score, matchedSkills, distanceKm }) => (
                 <li key={gig._id} className="border-b border-slate-800 last:border-0 pb-4 last:pb-0">
                   <Link to={`/gigs/${gig._id}`} className="font-medium text-white hover:text-indigo-400 text-sm">{gig.title}</Link>
-                  <p className="text-xs text-slate-400 mt-1">{formatBudget(gig)}</p>
-                  <p className="text-xs text-indigo-300 mt-1">{score}% match · {matchedSkills.join(', ')}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {formatBudget(gig)}
+                    {gig.locationType !== 'remote' && distanceKm !== undefined && ` · ${Math.round(distanceKm)} km away`}
+                  </p>
+                  <p className="text-xs text-indigo-300 mt-1">
+                    {Math.round(score)}% match{matchedSkills.length > 0 && ` · ${matchedSkills.join(', ')}`}
+                  </p>
                 </li>
               ))}
             </ul>

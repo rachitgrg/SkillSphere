@@ -131,6 +131,8 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
       type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number], default: undefined },
     },
+    // Sentence embedding of title + headline + skills (embeddingService); never sent to clients.
+    embedding: { type: [Number], select: false, default: undefined },
     socialLinks: {
       github: String,
       linkedin: String,

@@ -7,6 +7,7 @@ import connectDB from './config/db';
 import { configureCloudinary } from './config/cloudinary';
 import { initializeSocket } from './config/socket';
 import { registerChatHandlers } from './sockets/chatSocket';
+import embeddingService from './services/embeddingService';
 
 logMissingIntegrations();
 configureCloudinary();
@@ -26,6 +27,7 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
+    embeddingService.queue(() => embeddingService.backfillMissing());
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
