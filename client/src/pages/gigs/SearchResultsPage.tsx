@@ -10,6 +10,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { Avatar } from '../../components/common/Avatar';
 import { GigCard } from '../../components/gigs/GigCard';
 import { VerifiedBadge } from '../../components/profile/VerifiedBadge';
+import { NearMeFilter } from '../../components/common/NearMeFilter';
 import { SkillBadge } from '../../components/profile/SkillBadge';
 import { searchApi } from '../../api/searchApi';
 import { keys } from '../../hooks/queries/keys';
@@ -62,18 +63,29 @@ export function SearchResultsPage() {
           />
         </div>
         <StatusTabs label="Search in" value={tab} onChange={(t) => set({ tab: t })} tabs={[{ value: 'gigs', label: 'Gigs' }, { value: 'freelancers', label: 'Freelancers' }]} />
-        {tab === 'gigs' ? <GigResults params={params} page={page} onPage={(p) => set({ page: String(p) })} /> : <FreelancerResults params={params} page={page} set={set} />}
+        {tab === 'gigs' ? <GigResults params={params} page={page} onPage={(p) => set({ page: String(p) })} set={set} /> : <FreelancerResults params={params} page={page} set={set} />}
       </main>
       <Footer />
     </div>
   );
 }
 
-function GigResults({ params, page, onPage }: { params: URLSearchParams; page: number; onPage: (p: number) => void }) {
-  const filters: GigFilters = { q: params.get('q') || undefined, page, limit: 12 };
+const num = (params: URLSearchParams, key: string) => (params.get(key) ? Number(params.get(key)) : undefined);
+const nearFrom = (params: URLSearchParams) => ({ lat: num(params, 'lat'), lng: num(params, 'lng'), radiusKm: num(params, 'radiusKm') });
+const nearPatch = (near: { lat?: number; lng?: number; radiusKm?: number }) => ({
+  lat: near.lat?.toString(),
+  lng: near.lng?.toString(),
+  radiusKm: near.radiusKm?.toString(),
+});
+
+function GigResults({ params, page, onPage, set }: { params: URLSearchParams; page: number; onPage: (p: number) => void; set: (patch: Record<string, string | undefined>) => void }) {
+  const filters: GigFilters = { q: params.get('q') || undefined, ...nearFrom(params), page, limit: 12 };
   const results = useQuery({ queryKey: keys.search.gigs(filters), queryFn: () => searchApi.searchGigs(filters), placeholderData: keepPreviousData });
   return (
     <QueryState isLoading={results.isLoading} isError={results.isError} error={results.error} onRetry={() => results.refetch()} isEmpty={!results.data?.items.length} empty={{ title: 'No gigs found', description: 'Try other keywords, or browse the marketplace with filters.' }}>
+      <div className="max-w-xs mb-4">
+        <NearMeFilter value={nearFrom(params)} onChange={(near) => set(nearPatch(near))} />
+      </div>
       <p className="text-sm text-slate-400 mb-4">{results.data?.pagination.total} gigs · <Link to={`/gigs${params.get('q') ? `?q=${encodeURIComponent(params.get('q')!)}` : ''}`} className="text-indigo-400 hover:underline">more filters in the marketplace</Link></p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{results.data?.items.map((g) => <GigCard key={g._id} gig={g} />)}</div>
       {results.data && <div className="mt-8"><Pagination currentPage={page} totalPages={results.data.pagination.pages} onPageChange={onPage} /></div>}
@@ -91,6 +103,8 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
     experience: (params.get('experience') as FreelancerFilters['experience']) || undefined,
     sort: (params.get('sort') as FreelancerSort) || undefined,
     verified: params.get('verified') === 'true' || undefined,
+    availability: (params.get('availability') as FreelancerFilters['availability']) || undefined,
+    ...nearFrom(params),
     page,
     limit: 12,
   }), [params, page]);
@@ -122,6 +136,13 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
             <option value="">Any</option><option value="intermediate">2+ years</option><option value="expert">5+ years</option>
           </select>
         </div>
+        <NearMeFilter value={nearFrom(params)} onChange={(near) => set({ ...nearPatch(near), ...(!near.lat && params.get('sort') === 'distance' && { sort: undefined }) })} />
+        <div>
+          <label htmlFor="f-availability" className="block text-xs text-slate-400 mb-1">Availability</label>
+          <select id="f-availability" value={params.get('availability') ?? ''} onChange={(e) => set({ availability: e.target.value || undefined })} className={`${selectClass} w-full`}>
+            <option value="">Any</option><option value="available">Available now</option><option value="busy">Busy (takes bookings)</option>
+          </select>
+        </div>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input type="checkbox" checked={params.get('verified') === 'true'} onChange={(e) => set({ verified: e.target.checked ? 'true' : undefined })} />
           Verified only
@@ -129,7 +150,7 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
         <div>
           <label htmlFor="f-sort" className="block text-xs text-slate-400 mb-1">Sort by</label>
           <select id="f-sort" value={params.get('sort') ?? ''} onChange={(e) => set({ sort: e.target.value || undefined })} className={`${selectClass} w-full`}>
-            <option value="">Best match</option><option value="rating">Rating</option><option value="rate_low">Rate: low to high</option><option value="rate_high">Rate: high to low</option><option value="experience">Most jobs done</option>
+            <option value="">Best match</option><option value="rating">Rating</option><option value="rate_low">Rate: low to high</option><option value="rate_high">Rate: high to low</option><option value="experience">Most jobs done</option>{params.get('lat') && <option value="distance">Nearest first</option>}
           </select>
         </div>
       </aside>
@@ -142,7 +163,10 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
                   <Avatar src={f.user.avatar} firstName={f.user.firstName} lastName={f.user.lastName} size="md" />
                   <div className="min-w-0">
                     <p className="font-semibold text-white truncate flex items-center gap-1">{fullName(f.user)} <VerifiedBadge status={f.verification?.status} compact /></p>
-                    <p className="text-xs text-slate-400 truncate">{f.title}{f.user.address?.city ? ` · ${f.user.address.city}` : ''}</p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {f.title}{f.user.address?.city ? ` · ${f.user.address.city}` : ''}
+                      {f.distanceKm !== undefined && <span className="text-cyan-300"> · {f.distanceKm} km away</span>}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-3">{f.skills.slice(0, 4).map((s) => <SkillBadge key={s.name} skill={s} />)}</div>

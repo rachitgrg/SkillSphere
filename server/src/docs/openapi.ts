@@ -80,7 +80,7 @@ export const ROUTES: RouteDoc[] = [
   // Gigs
   {
     method: 'get', path: '/gigs/', tag: 'Gigs', summary: 'Marketplace: open, public gigs', access: 'public',
-    query: { q: 'Text search', category: 'Category', skills: 'Comma list or repeated param', budgetMin: 'Overlap lower bound (INR)', budgetMax: 'Overlap upper bound (INR)', budgetType: 'fixed | hourly', experienceLevel: 'entry | intermediate | expert', locationType: 'remote | onsite | hybrid', sort: 'newest | oldest | budget_high | budget_low | popular', ...pageQuery },
+    query: { q: 'Text search', category: 'Category', skills: 'Comma list or repeated param', budgetMin: 'Overlap lower bound (INR)', budgetMax: 'Overlap upper bound (INR)', budgetType: 'fixed | hourly', experienceLevel: 'entry | intermediate | expert', locationType: 'remote | onsite | hybrid', lat: 'Near me: latitude', lng: 'Near me: longitude', radiusKm: 'Near me radius (default 25, max 500)', sort: 'newest | oldest | budget_high | budget_low | popular', ...pageQuery },
   },
   { method: 'get', path: '/gigs/mine', tag: 'Gigs', summary: 'Clients: gigs I posted; freelancers: gigs I was hired on', access: 'client|freelancer', query: { status: 'Comma list of statuses', ...pageQuery } },
   { method: 'get', path: '/gigs/:id', tag: 'Gigs', summary: 'Gig details (non-public gigs only for their parties)', access: 'public' },
@@ -147,7 +147,7 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/search/gigs', tag: 'Search', summary: 'Gig search (same filters as GET /gigs)', access: 'public' },
   {
     method: 'get', path: '/search/freelancers', tag: 'Search', summary: 'Freelancer search', access: 'public',
-    query: { q: 'Text search over title/headline/skills', skills: 'Comma list', minRate: 'INR/hour', maxRate: 'INR/hour', minRating: '0-5', experience: 'entry | intermediate | expert | min years', sort: 'rating | rate_low | rate_high | experience | newest', ...pageQuery },
+    query: { q: 'Text search over title/headline/skills', skills: 'Comma list', minRate: 'INR/hour', maxRate: 'INR/hour', minRating: '0-5', experience: 'entry | intermediate | expert | min years', availability: 'available | busy (comma list)', verified: 'true = verified only', lat: 'Latitude', lng: 'Longitude', radiusKm: 'Radius around lat/lng (default 25, max 500)', sort: 'rating | rate_low | rate_high | experience | newest | distance', ...pageQuery },
   },
   { method: 'get', path: '/search/trending-skills', tag: 'Search', summary: 'Skills trending in new gigs (cached 1h)', access: 'public', query: { days: 'Window in days (default 30)', limit: 'Default 15' } },
   { method: 'get', path: '/search/categories', tag: 'Search', summary: 'Categories of open gigs with counts', access: 'public' },

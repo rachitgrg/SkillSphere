@@ -1,5 +1,6 @@
 import React from 'react';
 import { Filter, TrendingUp, X } from 'lucide-react';
+import { NearMeFilter } from '../common/NearMeFilter';
 import type { ExperienceLevel, GigBudgetType, GigFilters as Filters, LocationType } from '../../types';
 import { EXPERIENCE_LABELS, LOCATION_TYPE_LABELS } from '../../utils/helpers';
 
@@ -141,6 +142,11 @@ export const GigFilters: React.FC<GigFiltersProps> = ({
             ))}
           </select>
         </div>
+
+        <NearMeFilter
+          value={{ lat: value.lat, lng: value.lng, radiusKm: value.radiusKm }}
+          onChange={(near) => onChange({ lat: near.lat, lng: near.lng, radiusKm: near.radiusKm })}
+        />
 
         <div>
           <label htmlFor="filter-location" className="block text-sm font-medium text-slate-300 mb-2">

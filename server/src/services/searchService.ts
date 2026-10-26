@@ -3,6 +3,7 @@ import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { GigStatus } from '../types';
 import { containsRegex, escapeRegex } from '../utils/helpers';
+import { env } from '../config/env';
 import { toStringList } from './gigQuery';
 
 const toNumber = (value: unknown): number | undefined => {
@@ -24,6 +25,22 @@ const FREELANCER_SORTS: Record<string, Record<string, 1 | -1>> = {
 
 const TRENDING_TTL_MS = 60 * 60 * 1000;
 
+/** Haversine distance in metres from `[lng, lat]` to the document's `location` (Atlas path, after $search). */
+const geoDistanceExpr = ([lng, lat]: [number, number]) => {
+  const rad = (v: unknown) => ({ $degreesToRadians: v });
+  const docLng = { $arrayElemAt: ['$location.coordinates', 0] };
+  const docLat = { $arrayElemAt: ['$location.coordinates', 1] };
+  const dLat = { $subtract: [rad(docLat), rad(lat)] };
+  const dLng = { $subtract: [rad(docLng), rad(lng)] };
+  const h = {
+    $add: [
+      { $pow: [{ $sin: { $divide: [dLat, 2] } }, 2] },
+      { $multiply: [{ $cos: rad(lat) }, { $cos: rad(docLat) }, { $pow: [{ $sin: { $divide: [dLng, 2] } }, 2] }] },
+    ],
+  };
+  return { $multiply: [2 * 6_371_000, { $asin: { $sqrt: h } }] };
+};
+
 export interface TrendingSkill {
   skill: string;
   count: number;
@@ -35,15 +52,35 @@ let trendingCache: { at: number; days: number; data: TrendingSkill[] } | null = 
 
 class SearchService {
   /**
-   * Freelancer search over profiles joined with their (active, non-banned) users.
-   * Filters: q (text), skills, minRate/maxRate, minRating, experience.
-   * Sort: relevance (default with q) | rating | rate_low | rate_high | experience | newest.
-   * `verified=true` limits results to verified freelancers.
+   * Builds the freelancer search pipeline over profiles joined with their (active, non-banned) users.
+   *
+   * Filters: q (text), skills, minRate/maxRate, minRating, experience (level or min years),
+   * availability (available|busy), verified=true, lat+lng+radiusKm (default 25 km).
+   * Sort: relevance (default with q) | rating | rate_low | rate_high | experience | newest | distance.
+   *
+   * Geo uses `$geoNear` (must be the first stage, and can't be combined with `$text`), so a text
+   * query next to a location falls back to an escaped regex. With USE_ATLAS_SEARCH=true a text query
+   * uses an Atlas `$search` stage (fuzzy text, optional geoWithin circle) instead — see
+   * docs/atlas-search-index.json.
    */
-  async searchFreelancers(query: Record<string, unknown>, page: number, limit: number) {
+  buildFreelancerPipeline(query: Record<string, unknown>, page: number, limit: number): PipelineStage[] {
     const match: Record<string, unknown> = {};
-    const q = typeof query.q === 'string' ? query.q.trim() : '';
-    if (q) match.$text = { $search: q };
+    const q = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : '';
+
+    const lat = toNumber(query.lat);
+    const lng = toNumber(query.lng);
+    const geo = lat !== undefined && lng !== undefined && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? ([lng, lat] as [number, number]) : null;
+    const radiusKm = Math.min(Math.max(toNumber(query.radiusKm) ?? 25, 1), 500);
+    const atlas = env.USE_ATLAS_SEARCH && Boolean(q);
+
+    if (q && !atlas) {
+      if (geo) {
+        const pattern = containsRegex(q);
+        match.$or = [{ title: pattern }, { headline: pattern }, { 'skills.name': pattern }];
+      } else {
+        match.$text = { $search: q };
+      }
+    }
 
     const skills = toStringList(query.skills);
     if (skills.length) match['skills.name'] = { $in: skills.map((s) => new RegExp(`^${escapeRegex(s)}$`, 'i')) };
@@ -66,48 +103,92 @@ class SearchService {
 
     if (query.verified === 'true') match['verification.status'] = 'verified';
 
-    // Relevance and rating sorts give verified freelancers a small boost (10% text score, +0.25 stars).
+    const availability = toStringList(query.availability).filter((a) => ['available', 'busy'].includes(a));
+    if (availability.length) match.availability = { $in: availability };
+
+    // Relevance and rating sorts give verified freelancers a small boost (10% relevance, +0.25 stars).
     const sortKey = typeof query.sort === 'string' ? query.sort : '';
-    const sort: Record<string, 1 | -1> = FREELANCER_SORTS[sortKey] ?? (q ? { rank: -1 } : { rank: -1, totalReviews: -1 });
+    const textRanked = Boolean(q) && (atlas || !geo);
+    const sort: Record<string, 1 | -1> =
+      sortKey === 'distance' && geo ? { distanceKm: 1 } : FREELANCER_SORTS[sortKey] ?? (textRanked ? { rank: -1 } : { rank: -1, totalReviews: -1 });
     const isVerified = { $eq: ['$verification.status', 'verified'] };
-    const rank = q
-      ? { $multiply: [{ $meta: 'textScore' }, { $cond: [isVerified, 1.1, 1] }] }
+    const relevance = atlas ? { $meta: 'searchScore' } : { $meta: 'textScore' };
+    const rank = textRanked
+      ? { $multiply: [relevance, { $cond: [isVerified, 1.1, 1] }] }
       : { $add: ['$averageRating', { $cond: [isVerified, 0.25, 0] }] };
 
-    const pipeline: PipelineStage[] = [
-      { $match: match },
-      { $addFields: { rank } },
-      { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
-      { $unwind: '$user' },
-      { $match: { 'user.isActive': true, 'user.isBanned': false } },
+    const first: PipelineStage[] = atlas
+      ? [
+          {
+            $search: {
+              index: 'freelancers',
+              compound: {
+                must: [{ text: { query: q, path: ['title', 'headline', 'skills.name'], fuzzy: { maxEdits: 1 } } }],
+                ...(geo && { filter: [{ geoWithin: { circle: { center: { type: 'Point', coordinates: geo }, radius: radiusKm * 1000 }, path: 'location' } }] }),
+              },
+            },
+          } as PipelineStage,
+          ...(geo ? [{ $addFields: { distanceMeters: geoDistanceExpr(geo) } } as PipelineStage] : []),
+          { $match: match },
+        ]
+      : geo
+        ? [
+            {
+              $geoNear: {
+                near: { type: 'Point', coordinates: geo },
+                distanceField: 'distanceMeters',
+                maxDistance: radiusKm * 1000,
+                spherical: true,
+                query: match,
+              },
+            },
+          ]
+        : [{ $match: match }];
+
+    return [
+      ...first,
+      { $addFields: { rank, ...(geo && { distanceKm: { $round: [{ $divide: ['$distanceMeters', 1000] }, 1] } }) } },
       {
-        $project: {
-          'user.password': 0,
-          'user.refreshToken': 0,
-          'user.email': 0,
-          'user.phone': 0,
-          'user.twoFactorSecret': 0,
-          'user.passwordResetToken': 0,
-          'user.passwordResetExpires': 0,
-          'user.emailVerificationToken': 0,
-          'user.emailVerificationExpires': 0,
-          'user.googleId': 0,
-          'user.__v': 0,
-          'user.twoFactorBackupCodes': 0,
-          'user.lastLoginIp': 0,
-          // Aggregations ignore select:false, so private profile fields are dropped explicitly.
-          embedding: 0,
-          'verification.documents': 0,
-          'portfolio.imagePublicIds': 0,
-          __v: 0,
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+          // Public user fields only.
+          pipeline: [{ $project: { firstName: 1, lastName: 1, avatar: 1, bio: 1, address: 1, role: 1, isVerified: 1, isActive: 1, isBanned: 1, createdAt: 1, lastLogin: 1 } }],
         },
       },
+      { $unwind: '$user' },
+      { $match: { 'user.isActive': true, 'user.isBanned': false } },
+      // Aggregations ignore select:false, so private profile fields are dropped explicitly.
+      { $project: { embedding: 0, 'verification.documents': 0, 'portfolio.imagePublicIds': 0, distanceMeters: 0, __v: 0 } },
       { $sort: sort },
       { $facet: { data: [{ $skip: (page - 1) * limit }, { $limit: limit }], total: [{ $count: 'count' }] } },
     ];
+  }
 
-    const [result] = await FreelancerProfile.aggregate<{ data: unknown[]; total: { count: number }[] }>(pipeline);
+  async searchFreelancers(query: Record<string, unknown>, page: number, limit: number) {
+    const [result] = await FreelancerProfile.aggregate<{ data: unknown[]; total: { count: number }[] }>(this.buildFreelancerPipeline(query, page, limit));
     return { freelancers: result.data, total: result.total[0]?.count ?? 0 };
+  }
+
+  /**
+   * Atlas Search variant of the gig search (USE_ATLAS_SEARCH=true with a text query): fuzzy `$search`
+   * on title/description/skills/tags, then the usual marketplace filter (without `$text`).
+   */
+  async searchGigsAtlas(q: string, filter: Record<string, unknown>, sort: Record<string, unknown>, page: number, limit: number) {
+    const { $text: _text, ...rest } = filter;
+    const textSort = Object.values(sort).some((v) => typeof v === 'object');
+    const [result] = await Gig.aggregate<{ data: unknown[]; total: { count: number }[] }>([
+      { $search: { index: 'gigs', text: { query: q.slice(0, 100), path: ['title', 'description', 'skills', 'tags'], fuzzy: { maxEdits: 1 } } } } as PipelineStage,
+      { $match: rest },
+      { $addFields: { score: { $meta: 'searchScore' } } },
+      { $sort: (textSort ? { score: -1 } : sort) as Record<string, 1 | -1> },
+      { $project: { embedding: 0 } },
+      { $facet: { data: [{ $skip: (page - 1) * limit }, { $limit: limit }], total: [{ $count: 'count' }] } },
+    ]);
+    const gigs = await Gig.populate(result.data, { path: 'client', select: 'firstName lastName avatar' });
+    return { gigs, total: result.total[0]?.count ?? 0 };
   }
 
   /** Gig title and skill suggestions for the search box. */

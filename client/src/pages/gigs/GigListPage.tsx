@@ -32,6 +32,9 @@ const readFilters = (params: URLSearchParams): Filters => {
     budgetType: (params.get('budgetType') as Filters['budgetType']) || undefined,
     experienceLevel: (params.get('experienceLevel') as Filters['experienceLevel']) || undefined,
     locationType: (params.get('locationType') as Filters['locationType']) || undefined,
+    lat: num('lat'),
+    lng: num('lng'),
+    radiusKm: num('radiusKm'),
     sort: (params.get('sort') as GigSort) || undefined,
     page: num('page'),
   };
@@ -86,6 +89,7 @@ export const GigListPage: React.FC = () => {
     filters.locationType,
     filters.budgetMin,
     filters.budgetMax,
+    filters.lat,
   ].filter((v) => v !== undefined).length + (filters.skills?.length ?? 0);
 
   const clearAll = () => {

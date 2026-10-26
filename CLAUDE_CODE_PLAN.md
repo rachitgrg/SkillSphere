@@ -422,12 +422,12 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Admin logs** viewer (`AdminLog`).
 
 ### 4.10 Advanced search (module 10)
-- [ ] Store GeoJSON `location` on `User` / `FreelancerProfile` and `Gig` (coordinates `[lng, lat]`).
+- [x] Store GeoJSON `location` on `User` / `FreelancerProfile` and `Gig` (coordinates `[lng, lat]`).
   - In the UI, capture it with `navigator.geolocation` or a city dropdown with built‑in coordinates for major Indian cities. Avoid paid geocoding APIs; optionally use the OSM Nominatim free tier with a proper User‑Agent.
-- [ ] Freelancer search: `$geoNear` (`lat`, `lng`, `radiusKm`) + skills + hourly rate range + `minRating` + experience (max years in skills / proficiency) + verified only + availability. Sort by relevance, rating, rate or distance. Show the distance in results.
-- [ ] Gig search: text + category + skills + budget overlap + experience level + location type + near me.
-- [ ] Create a **`SearchResultsPage`** with tabs (Gigs / Freelancers) and URL‑synced filters (`useSearchParams`). Hook the Navbar search to it.
-- [ ] **Atlas Search (advanced option):** if `USE_ATLAS_SEARCH=true`, use a `$search` stage (fuzzy text + `near` geo). Otherwise fall back to `$text` / regex. Document the index JSON in `docs/atlas-search-index.json`.
+- [x] Freelancer search: `$geoNear` (`lat`, `lng`, `radiusKm`) + skills + hourly rate range + `minRating` + experience (max years in skills / proficiency) + verified only + availability. Sort by relevance, rating, rate or distance. Show the distance in results.
+- [x] Gig search: text + category + skills + budget overlap + experience level + location type + near me.
+- [x] Create a **`SearchResultsPage`** with tabs (Gigs / Freelancers) and URL‑synced filters (`useSearchParams`). Hook the Navbar search to it.
+- [x] **Atlas Search (advanced option):** if `USE_ATLAS_SEARCH=true`, use a `$search` stage (fuzzy text + `near` geo). Otherwise fall back to `$text` / regex. Document the index JSON in `docs/atlas-search-index.json`.
 
 ### 4.11 Notifications (module 11)
 - [ ] Call the existing `notificationService.notify*` methods from controllers at every event:

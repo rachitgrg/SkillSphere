@@ -3,12 +3,20 @@ import Gig from '../models/Gig';
 import searchService from '../services/searchService';
 import { buildPublicGigFilter, gigSort } from '../services/gigQuery';
 import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
+import { env } from '../config/env';
 
 export const searchGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const query = req.query as Record<string, unknown>;
     const { page, limit } = parsePaginationParams(query);
     const filter = buildPublicGigFilter(query);
+    const q = typeof query.q === 'string' ? query.q.trim() : '';
+
+    if (env.USE_ATLAS_SEARCH && q) {
+      const { gigs, total } = await searchService.searchGigsAtlas(q, filter as Record<string, unknown>, gigSort(query), page, limit);
+      res.status(200).json({ success: true, message: 'Gigs found', data: gigs, pagination: buildPaginationResponse(total, page, limit) });
+      return;
+    }
 
     const [gigs, total] = await Promise.all([
       Gig.find(filter)

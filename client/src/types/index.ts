@@ -372,6 +372,10 @@ export interface GigFilters {
   budgetType?: GigBudgetType;
   experienceLevel?: ExperienceLevel;
   locationType?: LocationType;
+  /** Near me: point + radius (km). */
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
   sort?: GigSort;
   page?: number;
   limit?: number;
@@ -639,7 +643,7 @@ export interface ResolveDisputeInput {
 }
 
 // ========== SEARCH / AI ==========
-export type FreelancerSort = 'rating' | 'rate_low' | 'rate_high' | 'experience' | 'newest';
+export type FreelancerSort = 'rating' | 'rate_low' | 'rate_high' | 'experience' | 'newest' | 'distance';
 
 export interface FreelancerFilters {
   q?: string;
@@ -650,12 +654,16 @@ export interface FreelancerFilters {
   experience?: ExperienceLevel | number;
   sort?: FreelancerSort;
   verified?: boolean;
+  availability?: 'available' | 'busy';
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
   page?: number;
   limit?: number;
 }
 
 /** Freelancer search rows: profile with the public user joined in. */
-export type FreelancerSearchResult = FreelancerProfile & { user: UserSummary & Pick<User, 'bio' | 'address' | 'isVerified'> };
+export type FreelancerSearchResult = FreelancerProfile & { user: UserSummary & Pick<User, 'bio' | 'address' | 'isVerified'>; distanceKm?: number };
 
 export interface TrendingSkill {
   skill: string;

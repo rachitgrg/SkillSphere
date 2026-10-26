@@ -1,0 +1,36 @@
+{
+  "_comment": "MongoDB Atlas Search indexes used when USE_ATLAS_SEARCH=true. Create them in Atlas → Search → Create Index (JSON editor) on the database from MONGO_URI.",
+  "indexes": [
+    {
+      "name": "freelancers",
+      "collection": "freelancerprofiles",
+      "definition": {
+        "mappings": {
+          "dynamic": false,
+          "fields": {
+            "title": { "type": "string", "analyzer": "lucene.standard" },
+            "headline": { "type": "string", "analyzer": "lucene.standard" },
+            "skills": { "type": "document", "fields": { "name": { "type": "string", "analyzer": "lucene.standard" } } },
+            "location": { "type": "geo" }
+          }
+        }
+      }
+    },
+    {
+      "name": "gigs",
+      "collection": "gigs",
+      "definition": {
+        "mappings": {
+          "dynamic": false,
+          "fields": {
+            "title": { "type": "string", "analyzer": "lucene.standard" },
+            "description": { "type": "string", "analyzer": "lucene.english" },
+            "skills": { "type": "string", "analyzer": "lucene.standard" },
+            "tags": { "type": "string", "analyzer": "lucene.standard" },
+            "location": { "type": "geo" }
+          }
+        }
+      }
+    }
+  ]
+}

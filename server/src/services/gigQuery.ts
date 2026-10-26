@@ -22,7 +22,8 @@ const pickEnum = <T extends string>(value: unknown, allowed: readonly T[]): T | 
 
 /**
  * Builds the filter for the public marketplace: only open, public gigs, plus optional
- * text, category, skills, budget-range overlap, budget type, experience and location type.
+ * text, category, skills, budget-range overlap, budget type, experience, location type and
+ * near-me (lat, lng, radiusKm).
  * Budget overlap: a gig [budgetMin, budgetMax] matches the requested [min, max] when
  * gig.budgetMin <= max && gig.budgetMax >= min.
  */
@@ -50,6 +51,15 @@ export const buildPublicGigFilter = (query: Record<string, unknown>): QueryFilte
 
   const locationType = pickEnum(query.locationType, ['remote', 'onsite', 'hybrid'] as const);
   if (locationType) filter.locationType = locationType;
+
+  // "Near me": gigs whose location lies within radiusKm (default 25) of lat/lng. $geoWithin (unlike
+  // $near) combines with $text and countDocuments; remote gigs have no location and drop out.
+  const lat = toNumber(query.lat);
+  const lng = toNumber(query.lng);
+  if (lat !== undefined && lng !== undefined && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    const radiusKm = Math.min(Math.max(toNumber(query.radiusKm) ?? 25, 1), 500);
+    filter.location = { $geoWithin: { $centerSphere: [[lng, lat], radiusKm / 6371] } };
+  }
 
   return filter;
 };
