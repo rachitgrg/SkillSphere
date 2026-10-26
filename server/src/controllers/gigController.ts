@@ -9,7 +9,7 @@ import notificationService from '../services/notificationService';
 import uploadService from '../services/uploadService';
 import { uploadedFiles } from '../middleware/upload';
 import embeddingService from '../services/embeddingService';
-import { AuthRequest, UserRole, GigStatus, IGig, NotificationType, PaymentStatus, ProposalStatus } from '../types';
+import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
 import { buildPublicGigFilter, gigSort, isInvited, toStringList } from '../services/gigQuery';
 
@@ -312,15 +312,15 @@ export const removeAttachment = async (req: AuthRequest, res: Response, next: Ne
 };
 
 /**
- * POST /gigs/:id/invite { freelancerId, message? } — invites a freelancer to an open gig
+ * POST /gigs/:id/invite { freelancerId, message? } — invites a freelancer to an open or pending gig
  * (in-app + email). Invite-only gigs are visible to invitees only.
  */
 export const inviteFreelancer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const gig = await loadOwnGig(req, res);
     if (!gig) return;
-    if (gig.status !== GigStatus.OPEN) {
-      res.status(409).json({ success: false, message: 'Freelancers can be invited once the gig is approved and open' });
+    if (![GigStatus.PENDING_APPROVAL, GigStatus.OPEN].includes(gig.status)) {
+      res.status(409).json({ success: false, message: 'Freelancers can only be invited before someone is hired' });
       return;
     }
     const { freelancerId, message } = req.body as { freelancerId: string; message?: string };
@@ -344,17 +344,8 @@ export const inviteFreelancer = async (req: AuthRequest, res: Response, next: Ne
       return;
     }
 
-    const client = req.user!;
-    await notificationService.create({
-      recipient: freelancer._id.toString(),
-      sender: client._id.toString(),
-      type: NotificationType.GIG_INVITATION,
-      title: 'You are invited to a gig',
-      message: `${client.firstName} ${client.lastName} invited you to apply to "${gig.title}"${message ? `: ${message}` : ''}`,
-      data: { gigId: gig._id.toString() },
-      link: `/gigs/${gig._id}`,
-      category: 'gigs',
-    });
+    // Invitees of a gig still awaiting approval are notified when an admin approves it.
+    if (gig.status === GigStatus.OPEN) await notificationService.notifyGigInvitation(gig, freelancer._id.toString(), req.user!, message);
 
     res.status(200).json({ success: true, message: 'Freelancer invited', data: updated.invitations });
   } catch (error) {

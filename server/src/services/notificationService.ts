@@ -45,6 +45,25 @@ class NotificationService {
     }
   }
 
+  /** In-app + email invitation to apply (per the freelancer's preferences). */
+  async notifyGigInvitation(
+    gig: { _id: { toString(): string }; title: string },
+    freelancerId: string,
+    client: { _id: { toString(): string }; firstName: string; lastName: string },
+    message?: string
+  ): Promise<void> {
+    await this.create({
+      recipient: freelancerId,
+      sender: client._id.toString(),
+      type: NotificationType.GIG_INVITATION,
+      title: 'You are invited to a gig',
+      message: `${client.firstName} ${client.lastName} invited you to apply to "${gig.title}"${message ? `: ${message}` : ''}`,
+      data: { gigId: gig._id.toString() },
+      link: `/gigs/${gig._id}`,
+      category: 'gigs',
+    });
+  }
+
   async notifyProposalReceived(
     clientId: string,
     freelancerId: string,

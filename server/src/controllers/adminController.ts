@@ -362,11 +362,11 @@ export const rejectFreelancerVerification = reviewVerification(false);
 const NEW_GIG_MATCH_LIMIT = 20;
 
 /** "New gig posted" (in-app + email per preferences) to the top matches from the AI ranking. */
-const notifyMatchingFreelancers = async (gig: IGig): Promise<void> => {
+const notifyMatchingFreelancers = async (gig: IGig, alreadyInvited: string[]): Promise<void> => {
   try {
     const matches = await aiMatchingService.matchFreelancersToGig(gig._id, NEW_GIG_MATCH_LIMIT);
     await Promise.all(
-      matches.map((m) =>
+      matches.filter((m) => !alreadyInvited.includes(m.freelancerId._id.toString())).map((m) =>
         notificationService.create({
           recipient: m.freelancerId._id.toString(),
           type: NotificationType.GIG_MATCH,
@@ -415,7 +415,12 @@ const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, 
       link: `/gigs/${gig._id}`,
     });
 
-    if (approve && gig.visibility === 'public') await notifyMatchingFreelancers(gig);
+    if (approve) {
+      const owner = await User.findById(gig.client).select('firstName lastName');
+      const pending = gig.invitations.filter((i) => i.status === 'pending');
+      if (owner) await Promise.all(pending.map((i) => notificationService.notifyGigInvitation(gig, i.freelancer.toString(), owner)));
+      if (gig.visibility === 'public') await notifyMatchingFreelancers(gig, pending.map((i) => i.freelancer.toString()));
+    }
 
     res.status(200).json({ success: true, message: approve ? 'Gig approved' : 'Gig rejected', data: gig });
   } catch (error) {

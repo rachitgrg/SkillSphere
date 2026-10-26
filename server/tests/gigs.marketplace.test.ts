@@ -99,8 +99,8 @@ describe('invitations (4.4)', () => {
     expect(email).toHaveBeenCalledTimes(1);
 
     await request(app).post(`/api/v1/gigs/${gig._id}/invite`).set(c.auth).send({ freelancerId: f.user._id }).expect(409);
-    const pending = await createGig(c.user._id, { status: GigStatus.PENDING_APPROVAL });
-    await request(app).post(`/api/v1/gigs/${pending._id}/invite`).set(c.auth).send({ freelancerId: f.user._id }).expect(409);
+    const hired = await createGig(c.user._id, { status: GigStatus.IN_PROGRESS });
+    await request(app).post(`/api/v1/gigs/${hired._id}/invite`).set(c.auth).send({ freelancerId: f.user._id }).expect(409);
     await request(app).post(`/api/v1/gigs/${gig._id}/invite`).set(c.auth).send({ freelancerId: c.user._id }).expect(404);
   });
 
@@ -147,6 +147,23 @@ describe('invitations (4.4)', () => {
     const statuses = Object.fromEntries((await Gig.findById(gig._id))!.invitations.map((i) => [i.freelancer.toString(), i.status]));
     expect(statuses[invitee.user._id.toString()]).toBe('accepted');
     expect(statuses[decliner.user._id.toString()]).toBe('declined');
+  });
+});
+
+describe('inviting before approval', () => {
+  it('records the invite and notifies once the admin approves', async () => {
+    jest.spyOn(emailService, 'sendNotificationEmail').mockResolvedValue();
+    const admin = await createUser(UserRole.ADMIN);
+    const c = await createUser(UserRole.CLIENT);
+    const f = await createUser(UserRole.FREELANCER);
+    const gig = await createGig(c.user._id, { status: GigStatus.PENDING_APPROVAL, skills: ['React'] });
+    await FreelancerProfile.updateOne({ user: f.user._id }, { $set: { skills: [{ name: 'React', proficiency: ProficiencyLevel.ADVANCED }] } });
+
+    await request(app).post(`/api/v1/gigs/${gig._id}/invite`).set(c.auth).send({ freelancerId: f.user._id }).expect(200);
+    expect(await Notification.countDocuments({ recipient: f.user._id })).toBe(0);
+    await request(app).put(`/api/v1/admin/gigs/${gig._id}/approve`).set(admin.auth).expect(200);
+    // Invited, so not also told about it as a "match".
+    expect(await Notification.find({ recipient: f.user._id }).distinct('type')).toEqual([NotificationType.GIG_INVITATION]);
   });
 });
 
