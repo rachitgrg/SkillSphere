@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { CheckCircle2, FileText, IndianRupee, Lock, Sparkles } from 'lucide-react';
+import { CheckCircle2, FileText, IndianRupee, Lock, MailPlus, Sparkles } from 'lucide-react';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QueryState } from '../../components/common/QueryState';
@@ -8,6 +8,7 @@ import { ResumeMatcher } from '../../components/freelancer/ResumeMatcher';
 import { useFreelancerAnalytics, useMyGigs, useRecommendations } from '../../hooks/queries/useDashboard';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useMe } from '../../hooks/queries/useProfiles';
+import { useMyInvitations } from '../../hooks/queries/useMarketplace';
 import type { FreelancerProfile, UserSummary } from '../../types';
 import { formatBudget, formatCurrency, fullName, populated } from '../../utils/helpers';
 
@@ -17,6 +18,8 @@ export function FreelancerDashboard() {
   const projects = useMyGigs({ status: ['in_progress'], limit: 3 });
   const recommendations = useRecommendations();
   const me = useMe();
+  const invitations = useMyInvitations();
+  const pendingInvites = (invitations.data ?? []).filter((i) => i.invitation.status === 'pending');
   const a = analytics.data;
 
   return (
@@ -69,6 +72,23 @@ export function FreelancerDashboard() {
           <ResumeMatcher hasStoredResume={Boolean((me.data?.profile as FreelancerProfile | null | undefined)?.resume)} />
         </div>
 
+        <div className="space-y-6 h-fit">
+        {pendingInvites.length > 0 && (
+          <section className="glass-card p-6 rounded-2xl border border-indigo-500/30">
+            <h2 className="font-semibold text-white mb-1 flex items-center gap-2">
+              <MailPlus className="w-4 h-4 text-indigo-400" /> Invitations
+            </h2>
+            <p className="text-xs text-slate-500 mb-4">Clients asked you to apply.</p>
+            <ul className="space-y-3">
+              {pendingInvites.map(({ gig }) => (
+                <li key={gig._id} className="border-b border-slate-800 last:border-0 pb-3 last:pb-0">
+                  <Link to={`/gigs/${gig._id}`} className="font-medium text-white hover:text-indigo-400 text-sm">{gig.title}</Link>
+                  <p className="text-xs text-slate-400 mt-1">{formatBudget(gig)} · from {fullName(populated<UserSummary>(gig.client as UserSummary))}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <section className="glass-card p-6 rounded-2xl border border-slate-800 h-fit">
           <h2 className="font-semibold text-white mb-1 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-400" /> Recommended for you
@@ -100,6 +120,7 @@ export function FreelancerDashboard() {
             </ul>
           </QueryState>
         </section>
+        </div>
       </div>
     </div>
   );

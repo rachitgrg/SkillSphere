@@ -9,6 +9,9 @@ import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { PageHeader } from '../../components/common/PageHeader';
 import { useCreateGig } from '../../hooks/queries/useDashboard';
+import { useAddAttachments } from '../../hooks/queries/useMarketplace';
+import { useConfig } from '../../hooks/queries/useConfig';
+import { FileUpload } from '../../components/common/FileUpload';
 import type { GigInput } from '../../types';
 import { CITIES, GIG_CATEGORIES, nearestCity } from '../../utils/constants';
 import { formatCurrency, getErrorMessage } from '../../utils/helpers';
@@ -30,7 +33,7 @@ const schema = z
     deadline: z.string().optional(),
     locationType: z.enum(['remote', 'onsite', 'hybrid']),
     city: z.string().optional(),
-    visibility: z.enum(['public', 'private']),
+    visibility: z.enum(['public', 'invite_only', 'private']),
     milestones: z.array(
       z.object({
         title: z.string().trim().min(1, 'Title required'),
@@ -64,6 +67,9 @@ export const CreateGigPage: React.FC = () => {
   const [skillInput, setSkillInput] = useState('');
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<[number, number] | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const addAttachments = useAddAttachments();
+  const uploadsEnabled = useConfig().data?.uploads ?? false;
 
   const {
     register,
@@ -138,9 +144,17 @@ export const CreateGigPage: React.FC = () => {
       milestones: values.milestones.length ? values.milestones : undefined,
       ...(values.locationType !== 'remote' && point && { location: { type: 'Point', coordinates: point } }),
     };
+    if (files.length > 10) return toast.error('Attach at most 10 files');
     try {
       const gig = await createGig.mutateAsync(input);
-      toast.success('Gig submitted. It goes live once an admin approves it.');
+      if (files.length) {
+        try {
+          for (let i = 0; i < files.length; i += 5) await addAttachments.mutateAsync({ gigId: gig._id, files: files.slice(i, i + 5) });
+        } catch (error) {
+          toast.error(getErrorMessage(error, 'The gig was saved but some attachments failed; add them from the gig page'));
+        }
+      }
+      toast.success('Gig submitted. It goes live once an admin approves it — invite recommended freelancers meanwhile.');
       navigate(`/gigs/${gig._id}`);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to post gig'));
@@ -282,7 +296,8 @@ export const CreateGigPage: React.FC = () => {
             <Label htmlFor="visibility">Visibility</Label>
             <select id="visibility" className={fieldClass} {...register('visibility')}>
               <option value="public">Public — listed in the marketplace</option>
-              <option value="private">Private — only people you share it with</option>
+              <option value="invite_only">Invite only — just freelancers you invite</option>
+              <option value="private">Private — only you (draft-like)</option>
             </select>
           </div>
         </section>
@@ -326,11 +341,20 @@ export const CreateGigPage: React.FC = () => {
           </button>
         </section>
 
+        <section className="space-y-3 border-t border-slate-800 pt-6">
+          <h2 className="text-lg font-semibold text-white">5. Attachments (optional)</h2>
+          {uploadsEnabled ? (
+            <FileUpload multiple accept=".pdf,.doc,.docx,.txt,.zip,image/*" maxSize={10 * 1024 * 1024} label="Briefs, specs or mockups — up to 10 files" onFilesSelected={setFiles} />
+          ) : (
+            <p className="text-xs text-slate-500">File uploads are not configured on this server.</p>
+          )}
+        </section>
+
         <div className="border-t border-slate-800 pt-6 flex justify-end gap-3">
           <Button variant="ghost" type="button" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button type="submit" isLoading={createGig.isPending}>
+          <Button type="submit" isLoading={createGig.isPending || addAttachments.isPending}>
             Submit for approval
           </Button>
         </div>

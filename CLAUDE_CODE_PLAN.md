@@ -342,7 +342,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - `0.05·availability`
 
   Candidate set via `$geoNear` (when the gig has a location) + skill prefilter. Exclude banned, inactive and unverified users.
-- [ ] `GET /ai/gigs/:gigId/matches` (client owner): top N with score breakdown and reasons. UI: a "Recommended freelancers" panel on the client's gig page with an "Invite" button.
+- [x] `GET /ai/gigs/:gigId/matches` (client owner): top N with score breakdown and reasons. UI: a "Recommended freelancers" panel on the client's gig page with an "Invite" button.
 - [x] `GET /ai/recommendations` (freelancer): gigs ranked for this freelancer. UI: a dashboard widget.
 - [x] **Trending skills:** aggregation over gigs created in the last 30 days vs the previous 30 (`$unwind skills`, counts, growth %). Cache for 1h (in‑memory, or Redis if `REDIS_URL` is set). UI: chips on the marketplace and landing page.
 - [x] **Career analysis:** keep the endpoint. Response = `{ ...report, source: 'ai' | 'fallback' }`, and the UI shows a small "AI‑generated" or "Basic analysis (AI unavailable)" label. Verify the chosen chat model is actually served by HF Inference Providers. If not, switch to one that is and document it. Raise the body limit (done in 1.16).
@@ -363,12 +363,12 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - Verified freelancers get a small ranking boost in search.
 
 ### 4.4 Gig marketplace (module 4)
-- [ ] Gig status flow: `draft → pending_approval → open → in_progress → completed | cancelled` (add `PENDING_APPROVAL`, `REJECTED` to `GigStatus`). Only `open` gigs are public.
-- [ ] **Milestones** defined at creation (editor in 3.4); validate that the sum ≤ `budgetMax`.
-- [ ] **Attach documents:** `attachments: [{url, name, size, mimeType}]`. Migrate from `[String]`.
-- [ ] **Invite freelancers:** `Gig.invitations: [{ freelancer, invitedAt, status: 'pending'|'accepted'|'declined' }]`. `POST /gigs/:id/invite` notifies the freelancer (socket + email). `invite_only` gigs are visible only to invitees.
-- [ ] **Track progress:** see 4.14. **Track application status:** see 3.3.
-- [ ] **"New gig posted" notification:** when a gig is approved, notify the top‑20 matching freelancers (via 4.2).
+- [x] Gig status flow: `draft → pending_approval → open → in_progress → completed | cancelled` (add `PENDING_APPROVAL`, `REJECTED` to `GigStatus`). Only `open` gigs are public.
+- [x] **Milestones** defined at creation (editor in 3.4); validate that the sum ≤ `budgetMax`.
+- [x] **Attach documents:** `attachments: [{url, name, size, mimeType}]`. Migrate from `[String]`.
+- [x] **Invite freelancers:** `Gig.invitations: [{ freelancer, invitedAt, status: 'pending'|'accepted'|'declined' }]`. `POST /gigs/:id/invite` notifies the freelancer (socket + email). `invite_only` gigs are visible only to invitees.
+- [x] **Track progress:** see 4.14. **Track application status:** see 3.3.
+- [x] **"New gig posted" notification:** when a gig is approved, notify the top‑20 matching freelancers (via 4.2).
 
 ### 4.5 Proposals & negotiation (module 5)
 - [ ] `POST /proposals/:id/negotiate {amount, message}`. Either party can counter; it appends to `negotiationHistory` and sets status `negotiating`. Accepting a negotiated proposal uses the **last agreed amount** (`proposal.finalAmount`).

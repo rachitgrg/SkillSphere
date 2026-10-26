@@ -255,7 +255,9 @@ export interface Gig {
   duration: string;
   experienceLevel: ExperienceLevel;
   milestones: Milestone[];
-  attachments: string[];
+  attachments: Attachment[];
+  /** Owner/admin see every invitation; an invitee sees only their own. */
+  invitations?: GigInvitation[];
   location?: GeoPoint;
   locationType: LocationType;
   status: GigStatus;
@@ -271,6 +273,28 @@ export interface Gig {
   approvedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Attachment {
+  _id: ID;
+  url: string;
+  name: string;
+  size?: number;
+  mimeType?: string;
+  uploadedAt?: string;
+}
+
+export interface GigInvitation {
+  freelancer: ID;
+  invitedAt: string;
+  status: 'pending' | 'accepted' | 'declined';
+  respondedAt?: string;
+}
+
+/** GET /gigs/invitations */
+export interface MyInvitation {
+  gig: Gig;
+  invitation: GigInvitation;
 }
 
 export interface MilestoneInput {
@@ -293,7 +317,6 @@ export interface GigInput {
   duration: string;
   experienceLevel: ExperienceLevel;
   milestones?: MilestoneInput[];
-  attachments?: string[];
   location?: GeoPoint;
   locationType?: LocationType;
   visibility?: GigVisibility;

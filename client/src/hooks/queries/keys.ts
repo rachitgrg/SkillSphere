@@ -8,6 +8,7 @@ export const keys = {
     list: (filters: GigFilters) => ['gigs', 'list', filters] as const,
     mine: (params: object) => ['gigs', 'mine', params] as const,
     detail: (id: string) => ['gigs', 'detail', id] as const,
+    invitations: ['gigs', 'invitations'] as const,
   },
   proposals: {
     all: ['proposals'] as const,

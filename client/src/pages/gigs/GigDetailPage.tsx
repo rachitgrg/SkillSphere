@@ -12,7 +12,6 @@ import {
   IndianRupee,
   MapPin,
   MessageSquare,
-  Paperclip,
   Share2,
   ShieldCheck,
   Star,
@@ -25,6 +24,8 @@ import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
 import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
 import { ApplyModal } from './ApplyModal';
+import { GigAttachments, InvitationBanner, RecommendedFreelancers } from '../../components/gigs/GigPanels';
+import { useConfig } from '../../hooks/queries/useConfig';
 import { useGig } from '../../hooks/queries/useMarketplace';
 import { useMyProposals } from '../../hooks/queries/useProposals';
 import { useClientProfile } from '../../hooks/queries/useProfiles';
@@ -44,6 +45,9 @@ import {
   populated,
   refId,
 } from '../../utils/helpers';
+
+/** Statuses in which the owner can still change attachments and invite freelancers. */
+const EDITABLE = ['draft', 'pending_approval', 'open'];
 
 const STATUS_LABELS: Record<string, string> = {
   pending_approval: 'Awaiting admin approval',
@@ -71,6 +75,7 @@ export const GigDetailPage: React.FC = () => {
   const myProposals = useMyProposals({ limit: 50 }, isFreelancer);
   const myProposal: Proposal | undefined = myProposals.data?.items.find((p) => refId(p.gig as { _id: string }) === id);
   const startConversation = useStartConversation();
+  const config = useConfig();
 
   const share = async () => {
     try {
@@ -184,6 +189,8 @@ export const GigDetailPage: React.FC = () => {
           ← Back to gigs
         </Link>
 
+        {isFreelancer && <InvitationBanner gig={gig} />}
+
         {gig.status !== 'open' && (
           <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             {STATUS_LABELS[gig.status] ?? gig.status}
@@ -237,20 +244,7 @@ export const GigDetailPage: React.FC = () => {
                 </section>
               )}
 
-              {gig.attachments.length > 0 && (
-                <section className="border-t border-slate-800 pt-6">
-                  <h2 className="text-lg font-semibold text-white mb-3">Attachments</h2>
-                  <ul className="space-y-2">
-                    {gig.attachments.map((url) => (
-                      <li key={url}>
-                        <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-indigo-400 hover:underline">
-                          <Paperclip className="w-4 h-4" /> {decodeURIComponent(url.split('/').pop() ?? 'Attachment')}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+              <GigAttachments gig={gig} canEdit={isOwner && EDITABLE.includes(gig.status)} uploadsEnabled={config.data?.uploads ?? false} />
             </article>
           </div>
 
@@ -280,6 +274,8 @@ export const GigDetailPage: React.FC = () => {
               </div>
               {renderAction()}
             </div>
+
+            {isOwner && ['pending_approval', 'open'].includes(gig.status) && <RecommendedFreelancers gig={gig} />}
 
             {client && (
               <div className="glass-card p-6 rounded-3xl border border-slate-800">
