@@ -6,6 +6,8 @@ import {
   updateFreelancerProfile,
   getClientProfile,
   updateClientProfile,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 } from '../controllers/userController';
 import {
   uploadAvatar,
@@ -27,6 +29,7 @@ import {
   updateClientProfileSchema,
   portfolioItemSchema,
   verificationRequestSchema,
+  notificationPreferencesSchema,
 } from '../utils/validators';
 import { UserRole } from '../types';
 
@@ -34,6 +37,8 @@ const router = Router();
 
 router.get('/me', protect, getMe);
 router.put('/me', protect, validate(updateProfileSchema), updateMe);
+router.get('/me/notification-preferences', protect, getNotificationPreferences);
+router.put('/me/notification-preferences', protect, validate(notificationPreferencesSchema), updateNotificationPreferences);
 router.post('/me/avatar', protect, uploadLimiter, requireUploads, fileUpload({ field: 'avatar', kinds: ['image'], maxSizeMB: 5 }), uploadAvatar);
 
 // Uploads: rate-limited, 503 without Cloudinary (checked before the body is buffered).

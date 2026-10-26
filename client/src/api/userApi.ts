@@ -7,6 +7,7 @@ import type {
   FreelancerProfile,
   GeoPoint,
   MeResponse,
+  NotificationPreferences,
   PublicClientProfile,
   PublicFreelancerProfile,
   User,
@@ -77,6 +78,11 @@ export const userApi = {
 
   updateClientProfile: (input: ClientProfileInput) =>
     data(axiosInstance.put<ApiResponse<ClientProfile>>('/users/clients/me', input)),
+
+  getNotificationPreferences: () => data(axiosInstance.get<ApiResponse<NotificationPreferences>>('/users/me/notification-preferences')),
+
+  updateNotificationPreferences: (input: { email?: Partial<NotificationPreferences['email']>; inApp?: Partial<NotificationPreferences['inApp']> }) =>
+    data(axiosInstance.put<ApiResponse<NotificationPreferences>>('/users/me/notification-preferences', input)),
 
   uploadAvatar: (file: File) => data(axiosInstance.post<ApiResponse<User>>('/users/me/avatar', multipart({}, [['avatar', [file]]]))),
 

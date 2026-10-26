@@ -3,7 +3,8 @@ import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import { IMessage, MessageType } from '../types';
 import { HttpError } from '../utils/httpError';
-import { getIOOrNull } from '../config/socket';
+import { getIOOrNull, isUserOnline } from '../config/socket';
+import notificationService from './notificationService';
 
 export const conversationRoom = (conversationId: string) => `conv:${conversationId}`;
 export const userRoom = (userId: string) => `user:${userId}`;
@@ -59,6 +60,15 @@ class ChatService {
         });
       }
     }
+
+    // People who are offline hear about it in-app (and by email if they opted in); online ones see it live.
+    const sender = message.sender as unknown as { firstName: string; lastName: string };
+    await Promise.all(
+      conversation.participants
+        .map(String)
+        .filter((id) => id !== senderId && !isUserOnline(id))
+        .map((id) => notificationService.notifyMessageReceived(id, senderId, `${sender.firstName} ${sender.lastName}`, conversation._id.toString()))
+    );
 
     return message;
   }

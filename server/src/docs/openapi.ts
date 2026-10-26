@@ -70,6 +70,8 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/users/freelancers/:userId', tag: 'Users', summary: 'Public freelancer profile', access: 'public' },
   { method: 'put', path: '/users/clients/me', tag: 'Users', summary: 'Update the client profile', access: 'client', body: bodyOf(v.updateClientProfileSchema) },
   { method: 'get', path: '/users/clients/:userId', tag: 'Users', summary: 'Public client profile', access: 'public' },
+  { method: 'get', path: '/users/me/notification-preferences', tag: 'Users', summary: 'Email / in-app switches per notification category', access: 'auth' },
+  { method: 'put', path: '/users/me/notification-preferences', tag: 'Users', summary: 'Update notification switches (partial)', access: 'auth', body: bodyOf(v.notificationPreferencesSchema) },
   { method: 'post', path: '/users/me/avatar', tag: 'Uploads', summary: 'Upload an avatar (image, 5 MB)', access: 'auth', multipart: { avatar: 'file: JPEG/PNG/GIF/WebP' }, description: '503 when Cloudinary is not configured.' },
   { method: 'post', path: '/users/freelancers/me/resume', tag: 'Uploads', summary: 'Upload or replace the resume (PDF/DOC/DOCX, 5 MB)', access: 'freelancer', multipart: { resume: 'file: PDF, DOC or DOCX' } },
   { method: 'delete', path: '/users/freelancers/me/resume', tag: 'Uploads', summary: 'Remove the resume', access: 'freelancer' },

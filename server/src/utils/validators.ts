@@ -413,6 +413,15 @@ export const idParamSchema = z.object({
 // ───────────────────────── AI Schemas ─────────────────────────
 
 /** Multipart text fields arrive as strings; technologies may be a comma list or JSON array. */
+const channelPreferences = z
+  .object({ proposals: z.boolean(), gigs: z.boolean(), payments: z.boolean(), reviews: z.boolean(), messages: z.boolean(), disputes: z.boolean(), projects: z.boolean() })
+  .partial()
+  .strict();
+
+export const notificationPreferencesSchema = z.object({
+  body: z.object({ email: channelPreferences.optional(), inApp: channelPreferences.optional() }).strict(),
+});
+
 export const portfolioItemSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1, 'Title is required').max(120),

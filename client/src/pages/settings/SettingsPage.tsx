@@ -3,7 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { CheckCircle2, KeyRound, Mail, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Bell, CheckCircle2, KeyRound, Mail, ShieldCheck, ShieldOff } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { userApi } from '../../api/userApi';
 import { PageHeader } from '../../components/common/PageHeader';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -11,7 +13,7 @@ import { authApi } from '../../api/authApi';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { updateUser, setCredentials } from '../../store/slices/authSlice';
 import { OtpInput, strongPassword } from '../auth/AuthFlowPages';
-import type { TwoFactorSetup } from '../../types';
+import type { NotificationCategory, TwoFactorSetup } from '../../types';
 import { getErrorMessage } from '../../utils/helpers';
 
 const Section = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
@@ -28,8 +30,67 @@ export function SettingsPage() {
       <PageHeader title="Settings" description="Security and account preferences." />
       <EmailStatus verified={user.isVerified} email={user.email} />
       <TwoFactorSettings enabled={user.twoFactorEnabled} />
+      <NotificationSettings />
       <ChangePassword />
     </div>
+  );
+}
+
+const CATEGORY_LABELS: Record<NotificationCategory, string> = {
+  proposals: 'Proposals & offers',
+  gigs: 'Gigs, invitations & matches',
+  projects: 'Milestones, updates & deadlines',
+  payments: 'Payments & payouts',
+  reviews: 'Reviews',
+  messages: 'Chat messages (when offline)',
+  disputes: 'Disputes',
+};
+
+function NotificationSettings() {
+  const queryClient = useQueryClient();
+  const prefs = useQuery({ queryKey: ['users', 'notification-preferences'], queryFn: userApi.getNotificationPreferences });
+  const save = useMutation({
+    mutationFn: userApi.updateNotificationPreferences,
+    onSuccess: (data) => queryClient.setQueryData(['users', 'notification-preferences'], data),
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  return (
+    <Section icon={<Bell className="w-5 h-5 text-indigo-400" />} title="Notifications">
+      {!prefs.data ? (
+        <p className="text-sm text-slate-500">{prefs.isError ? getErrorMessage(prefs.error) : 'Loading…'}</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-slate-400">
+              <th className="font-normal pb-2">Category</th>
+              <th className="font-normal pb-2 text-center w-20">In-app</th>
+              <th className="font-normal pb-2 text-center w-20">Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(Object.keys(CATEGORY_LABELS) as NotificationCategory[]).map((category) => (
+              <tr key={category} className="border-t border-slate-800">
+                <td className="py-2 text-slate-300">{CATEGORY_LABELS[category]}</td>
+                {(['inApp', 'email'] as const).map((channel) => (
+                  <td key={channel} className="py-2 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`${CATEGORY_LABELS[category]} — ${channel === 'email' ? 'email' : 'in-app'}`}
+                      checked={prefs.data[channel][category]}
+                      disabled={save.isPending}
+                      onChange={(e) => save.mutate({ [channel]: { [category]: e.target.checked } })}
+                      className="h-4 w-4 accent-indigo-500"
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="text-xs text-slate-500 mt-3">Security emails (verification, password reset) are always sent.</p>
+    </Section>
   );
 }
 

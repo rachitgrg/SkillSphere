@@ -159,6 +159,9 @@ export interface ChatUpload {
   type: 'image' | 'file';
 }
 
+export type NotificationCategory = 'proposals' | 'gigs' | 'payments' | 'reviews' | 'messages' | 'disputes' | 'projects';
+export type NotificationPreferences = Record<'email' | 'inApp', Record<NotificationCategory, boolean>>;
+
 /** GET /config */
 export interface PlatformConfig {
   uploads: boolean;

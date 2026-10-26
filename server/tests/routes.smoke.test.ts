@@ -51,6 +51,8 @@ const CASES: Record<string, Case> = {
   'PUT /api/v1/users/clients/me': { role: 'client', body: () => ({ companyName: 'Acme' }) },
   'GET /api/v1/users/clients/:userId': { role: 'public', path: (i) => `/api/v1/users/clients/${i.clientId}` },
   // Uploads answer 503 without Cloudinary (allowed); tests/uploads.test.ts covers the configured path.
+  'GET /api/v1/users/me/notification-preferences': { role: 'client' },
+  'PUT /api/v1/users/me/notification-preferences': { role: 'client', body: () => ({ email: { messages: true } }) },
   'POST /api/v1/users/me/avatar': { role: 'client' },
   'POST /api/v1/users/freelancers/me/resume': { role: 'freelancer' },
   'DELETE /api/v1/users/freelancers/me/resume': { role: 'freelancer' },

@@ -430,7 +430,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Atlas Search (advanced option):** if `USE_ATLAS_SEARCH=true`, use a `$search` stage (fuzzy text + `near` geo). Otherwise fall back to `$text` / regex. Document the index JSON in `docs/atlas-search-index.json`.
 
 ### 4.11 Notifications (module 11)
-- [ ] Call the existing `notificationService.notify*` methods from controllers at every event:
+- [x] Call the existing `notificationService.notify*` methods from controllers at every event:
   - gig approved/rejected
   - **new matching gig posted**
   - proposal received / **accepted** / rejected / countered
@@ -441,8 +441,8 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - message received (only if the user is offline)
   - dispute opened/resolved
   - deadline reminder
-- [ ] Socket emit to `user:<id>` (fixed in 1.7) with an unread‑count update.
-- [ ] **Email notifications:** `emailService` (already written) for important events, respecting `User.notificationPreferences: { email: { proposals, payments, reviews, messages }, inApp: {...} }` with a settings UI.
+- [x] Socket emit to `user:<id>` (fixed in 1.7) with an unread‑count update.
+- [x] **Email notifications:** `emailService` (already written) for important events, respecting `User.notificationPreferences: { email: { proposals, payments, reviews, messages }, inApp: {...} }` with a settings UI.
 
 ### 4.12 Availability scheduler (module 12)
 - [ ] Use the `FreelancerProfile.availabilitySlots` weekly template (day, start, end) plus a new `timezone` field (default `Asia/Kolkata`).

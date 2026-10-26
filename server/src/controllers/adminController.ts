@@ -346,6 +346,7 @@ const reviewVerification = (approve: boolean) => async (req: AuthRequest, res: R
       title: approve ? 'You are verified' : 'Verification not approved',
       message: approve ? 'Your profile now shows the verified badge.' : `Your verification request was not approved: ${reason}`,
       link: '/freelancer/profile/edit',
+      category: 'gigs',
     });
     await reputationService.updateUserReputation(profile.user.toString());
 
@@ -413,6 +414,7 @@ const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, 
       message: approve ? `"${gig.title}" is now live in the marketplace` : `"${gig.title}" was not approved: ${reason}`,
       data: { gigId: gig._id.toString() },
       link: `/gigs/${gig._id}`,
+      category: 'gigs',
     });
 
     if (approve) {

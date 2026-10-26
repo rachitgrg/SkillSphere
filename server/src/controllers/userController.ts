@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import User from '../models/User';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
-import { AuthRequest, UserRole } from '../types';
+import { AuthRequest, NOTIFICATION_CATEGORIES, NotificationCategory, NotificationPreferences, UserRole } from '../types';
 import { pick } from '../utils/helpers';
 import embeddingService from '../services/embeddingService';
 
@@ -84,6 +84,40 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
       embeddingService.queue(() => embeddingService.refreshProfile(req.user!._id));
     }
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** Defaults from the User schema, so users created before preferences existed get a full object. */
+const withDefaults = (prefs?: Partial<NotificationPreferences>): NotificationPreferences => {
+  const base = Object.fromEntries(NOTIFICATION_CATEGORIES.map((c) => [c, true])) as Record<NotificationCategory, boolean>;
+  return {
+    email: { ...base, messages: false, ...prefs?.email },
+    inApp: { ...base, ...prefs?.inApp },
+  };
+};
+
+/** GET /users/me/notification-preferences */
+export const getNotificationPreferences = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id).select('notificationPreferences').lean();
+    res.status(200).json({ success: true, message: 'Notification preferences', data: withDefaults(user?.notificationPreferences) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** PUT /users/me/notification-preferences { email?: {category: bool}, inApp?: {category: bool} } — partial update. */
+export const updateNotificationPreferences = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const body = req.body as Partial<NotificationPreferences>;
+    const $set: Record<string, boolean> = {};
+    for (const channel of ['email', 'inApp'] as const) {
+      for (const [category, enabled] of Object.entries(body[channel] ?? {})) $set[`notificationPreferences.${channel}.${category}`] = enabled;
+    }
+    const user = await User.findByIdAndUpdate(req.user!._id, { $set }, { returnDocument: 'after' }).select('notificationPreferences').lean();
+    res.status(200).json({ success: true, message: 'Preferences saved', data: withDefaults(user?.notificationPreferences) });
   } catch (error) {
     next(error);
   }
