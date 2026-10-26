@@ -60,6 +60,11 @@ const schema = z.object({
 
   REDIS_URL: optionalString,
   USE_ATLAS_SEARCH: booleanFlag,
+  // Set to false to let unverified accounts post gigs, apply and pay (e.g. when no SMTP is set up).
+  REQUIRE_EMAIL_VERIFICATION: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() !== '' ? !['0', 'false', 'no'].includes(v.trim().toLowerCase()) : v),
+    z.boolean().default(true)
+  ),
 
   ADMIN_EMAIL: optionalString,
   PLATFORM_FEE_PERCENTAGE: z.coerce.number().min(0).max(100).default(10),

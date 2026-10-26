@@ -143,7 +143,7 @@ export const twoFactorVerify = async (req: Request, res: Response, next: NextFun
 
 /** GET /auth/providers — which sign-in options are configured. */
 export const getProviders = (_req: Request, res: Response): void => {
-  res.status(200).json({ success: true, message: 'Sign-in providers', data: { google: features.google } });
+  res.status(200).json({ success: true, message: 'Sign-in providers', data: { google: features.google, emailVerification: env.REQUIRE_EMAIL_VERIFICATION } });
 };
 
 const oauthRedirect = (res: Response, error?: string) =>

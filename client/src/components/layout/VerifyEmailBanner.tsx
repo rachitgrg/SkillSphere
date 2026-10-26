@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { MailWarning } from 'lucide-react';
 import { authApi } from '../../api/authApi';
@@ -9,7 +10,8 @@ import { getErrorMessage } from '../../utils/helpers';
 export function VerifyEmailBanner() {
   const user = useAppSelector((s) => s.auth.user);
   const [sent, setSent] = useState(false);
-  if (!user || user.isVerified) return null;
+  const providers = useQuery({ queryKey: ['auth', 'providers'], queryFn: authApi.getProviders, staleTime: Infinity });
+  if (!user || user.isVerified || providers.data?.emailVerification === false) return null;
 
   const resend = async () => {
     try {

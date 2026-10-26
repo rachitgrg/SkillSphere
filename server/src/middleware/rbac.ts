@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest, UserRole } from '../types';
+import { env } from '../config/env';
 
 export const authorize = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
@@ -28,9 +29,9 @@ export const authorize = (...roles: UserRole[]) => {
   };
 };
 
-/** Blocks unverified emails from posting gigs, applying and paying. */
+/** Blocks unverified emails from posting gigs, applying and paying (off when REQUIRE_EMAIL_VERIFICATION=false). */
 export const requireVerified = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (!req.user?.isVerified) {
+  if (env.REQUIRE_EMAIL_VERIFICATION && !req.user?.isVerified) {
     res.status(403).json({ success: false, message: 'Please verify your email address first', code: 'EMAIL_NOT_VERIFIED' });
     return;
   }

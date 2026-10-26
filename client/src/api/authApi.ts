@@ -39,7 +39,7 @@ export const authApi = {
   verifyTwoFactor: (tempToken: string, code: string) =>
     data(axiosInstance.post<ApiResponse<AuthResponse>>('/auth/2fa/verify', { tempToken, code })),
 
-  getProviders: () => data(axiosInstance.get<ApiResponse<{ google: boolean }>>('/auth/providers')),
+  getProviders: () => data(axiosInstance.get<ApiResponse<{ google: boolean; emailVerification: boolean }>>('/auth/providers')),
 
   /** First Google login: pick a role; returns a fresh session. */
   chooseRole: (role: 'client' | 'freelancer') =>

@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { authenticator } from 'otplib';
 import app from '../src/app';
+import { env } from '../src/config/env';
 import User from '../src/models/User';
 import { decrypt } from '../src/utils/crypto';
 import { UserRole } from '../src/types';
@@ -48,6 +49,21 @@ describe('email verification (4.1)', () => {
       .send({ title: 'Test gig title', description: 'd', category: 'Web', skills: ['React'], budgetType: 'fixed', budgetMin: 1, budgetMax: 2, duration: '1 week', experienceLevel: 'entry' });
     expect(post.status).toBe(403);
     expect(post.body.code).toBe('EMAIL_NOT_VERIFIED');
+  });
+
+  it('lets unverified users through when REQUIRE_EMAIL_VERIFICATION is off', async () => {
+    const res = await register();
+    env.REQUIRE_EMAIL_VERIFICATION = false;
+    try {
+      const post = await request(app)
+        .post('/api/v1/gigs')
+        .set('Authorization', `Bearer ${res.body.data.token}`)
+        .send({ title: 'Test gig title', description: 'd', category: 'Web', skills: ['React'], budgetType: 'fixed', budgetMin: 1, budgetMax: 2, duration: '1 week', experienceLevel: 'entry' });
+      expect(post.body.code).not.toBe('EMAIL_NOT_VERIFIED');
+      expect((await request(app).get('/api/v1/auth/providers')).body.data.emailVerification).toBe(false);
+    } finally {
+      env.REQUIRE_EMAIL_VERIFICATION = true;
+    }
   });
 
   it('resends a fresh link', async () => {
@@ -133,7 +149,7 @@ describe('two-factor authentication (4.1)', () => {
 
 describe('Google sign-in (4.1)', () => {
   it('reports the provider as disabled and answers 503 without keys', async () => {
-    expect((await request(app).get('/api/v1/auth/providers')).body.data).toEqual({ google: false });
+    expect((await request(app).get('/api/v1/auth/providers')).body.data).toEqual({ google: false, emailVerification: true });
     expect((await request(app).get('/api/v1/auth/google')).status).toBe(503);
   });
 
