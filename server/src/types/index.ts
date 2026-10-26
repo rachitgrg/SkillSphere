@@ -33,6 +33,7 @@ export enum PaymentStatus {
   RELEASED = 'released',
   REFUNDED = 'refunded',
   DISPUTED = 'disputed',
+  FAILED = 'failed',
 }
 
 export enum DisputeStatus {
@@ -56,6 +57,11 @@ export enum NotificationType {
   DISPUTE_RESOLVED = 'dispute_resolved',
   GIG_COMPLETED = 'gig_completed',
   MILESTONE_COMPLETED = 'milestone_completed',
+  MILESTONE_UPDATE = 'milestone_update',
+  PAYOUT_PROCESSED = 'payout_processed',
+  PAYMENT_REFUNDED = 'payment_refunded',
+  DEADLINE_REMINDER = 'deadline_reminder',
+  PROGRESS_UPDATE = 'progress_update',
   GIG_APPROVED = 'gig_approved',
   GIG_REJECTED = 'gig_rejected',
   PROPOSAL_COUNTERED = 'proposal_countered',
@@ -78,10 +84,13 @@ export enum AvailabilityStatus {
   UNAVAILABLE = 'unavailable',
 }
 
+/** pending → funded → in_progress → submitted → approved | changes_requested (→ submitted again). */
 export enum MilestoneStatus {
   PENDING = 'pending',
+  FUNDED = 'funded',
   IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
+  SUBMITTED = 'submitted',
+  CHANGES_REQUESTED = 'changes_requested',
   APPROVED = 'approved',
 }
 
@@ -163,7 +172,26 @@ export interface IMilestone {
   amount: number;
   dueDate: Date;
   status: MilestoneStatus;
+  /** Freelancer's own estimate of how far along the milestone is (0–100). */
+  percent?: number;
+  startedAt?: Date;
+  submittedAt?: Date;
+  /** Latest delivery: note + files. */
+  submission?: { note?: string; attachments: IAttachment[] };
+  changeRequest?: { note: string; requestedAt: Date };
+  approvedAt?: Date;
   completedAt?: Date;
+  /** Reminder keys already sent (e.g. "due-48h", "overdue"), so the daily job never repeats one. */
+  remindersSent?: string[];
+}
+
+export interface IProgressLog {
+  _id?: Types.ObjectId;
+  author: Types.ObjectId;
+  message: string;
+  attachments: IAttachment[];
+  milestone?: Types.ObjectId;
+  createdAt: Date;
 }
 
 export interface IAttachment {
@@ -339,6 +367,7 @@ export interface IGig extends Document {
   milestones: IMilestone[];
   attachments: IAttachment[];
   invitations: IGigInvitation[];
+  progressLogs: IProgressLog[];
   location?: IGeoLocation;
   locationType: 'remote' | 'onsite' | 'hybrid';
   status: GigStatus;
@@ -424,6 +453,9 @@ export interface IPayment extends Document {
   refundedAt?: Date;
   refundReason?: string;
   refundedAmount?: number;
+  failureReason?: string;
+  /** Simulated payout to the freelancer after release (RazorpayX/Route need KYC). */
+  payout?: { status: 'queued' | 'processed' | 'failed'; queuedAt?: Date; processedAt?: Date; reference?: string };
   description?: string;
   createdAt: Date;
   updatedAt: Date;

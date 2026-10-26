@@ -1,6 +1,18 @@
 import mongoose, { Schema } from 'mongoose';
 import { IGig, GigStatus, MilestoneStatus } from '../types';
 
+const attachmentSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    publicId: String,
+    name: { type: String, required: true },
+    size: Number,
+    mimeType: String,
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const milestoneSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -13,8 +25,25 @@ const milestoneSchema = new Schema(
       default: MilestoneStatus.PENDING,
     },
     completedAt: Date,
+    percent: { type: Number, min: 0, max: 100, default: 0 },
+    startedAt: Date,
+    submittedAt: Date,
+    submission: { note: String, attachments: [attachmentSchema] },
+    changeRequest: { note: String, requestedAt: Date },
+    approvedAt: Date,
+    remindersSent: { type: [String], default: undefined },
   },
   { _id: true }
+);
+
+const progressLogSchema = new Schema(
+  {
+    author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    message: { type: String, required: true, trim: true, maxlength: 2000 },
+    attachments: [attachmentSchema],
+    milestone: Schema.Types.ObjectId,
+  },
+  { _id: true, timestamps: { createdAt: true, updatedAt: false } }
 );
 
 const gigSchema = new Schema<IGig>(
@@ -78,16 +107,8 @@ const gigSchema = new Schema<IGig>(
     },
     milestones: [milestoneSchema],
     // Uploaded via POST /gigs/:id/attachments (Cloudinary).
-    attachments: [
-      {
-        url: { type: String, required: true },
-        publicId: String,
-        name: { type: String, required: true },
-        size: Number,
-        mimeType: String,
-        uploadedAt: { type: Date, default: Date.now },
-      },
-    ],
+    attachments: [attachmentSchema],
+    progressLogs: [progressLogSchema],
     invitations: [
       {
         _id: false,

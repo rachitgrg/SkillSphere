@@ -9,6 +9,7 @@ import { initializeSocket } from './config/socket';
 import { registerChatHandlers } from './sockets/chatSocket';
 import { registerCallHandlers } from './sockets/callSocket';
 import embeddingService from './services/embeddingService';
+import { startScheduler } from './jobs/scheduler';
 
 logMissingIntegrations();
 configureCloudinary();
@@ -29,6 +30,7 @@ const startServer = async () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
     embeddingService.queue(() => embeddingService.backfillMissing());
+    startScheduler();
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

@@ -1,11 +1,16 @@
 import crypto from 'crypto';
 import { Types } from 'mongoose';
 import { getRazorpay, getRazorpayKeys } from '../config/razorpay';
+import { env } from '../config/env';
 import Payment from '../models/Payment';
 import Gig from '../models/Gig';
 import Proposal from '../models/Proposal';
-import { IPayment, IUser, PaymentStatus, ProposalStatus } from '../types';
+import FreelancerProfile from '../models/FreelancerProfile';
+import ClientProfile from '../models/ClientProfile';
+import notificationService from './notificationService';
+import { GigStatus, IPayment, IUser, MilestoneStatus, NotificationType, PaymentStatus, ProposalStatus } from '../types';
 import { HttpError } from '../utils/httpError';
+import { formatCurrency } from '../utils/helpers';
 
 const NOT_CONFIGURED = 'Payments not configured';
 
@@ -32,12 +37,31 @@ export interface CreateOrderInput {
 export interface OrderResult {
   payment: IPayment;
   order: { id: string; amount: number; currency: string };
-  keyId: string;
+  /** Razorpay key id for Checkout; null in simulated mode. */
+  keyId: string | null;
+  /** True when no gateway is involved (SIMULATE_PAYMENTS); the client confirms via /payments/:id/simulate. */
+  simulated: boolean;
 }
 
+/** Razorpay webhook events we act on (subset of the payload). */
+interface WebhookEvent {
+  event: string;
+  payload: {
+    payment?: { entity: { id: string; order_id: string; error_description?: string } };
+    refund?: { entity: { id: string; payment_id: string; amount: number } };
+  };
+}
+
+const paymentLink = '/payments';
+
 class PaymentService {
+  /** Dev/demo mode without Razorpay: checkout is confirmed by the client and no money moves. */
+  isSimulated(): boolean {
+    return getRazorpay() === null && env.SIMULATE_PAYMENTS && env.NODE_ENV !== 'production';
+  }
+
   isConfigured(): boolean {
-    return getRazorpay() !== null;
+    return getRazorpay() !== null || this.isSimulated();
   }
 
   /** Throws 503 when Razorpay keys are missing. */
@@ -54,12 +78,14 @@ class PaymentService {
    * comes from the milestone (or must fit within the accepted proposal amount).
    */
   async createOrder(user: IUser, input: CreateOrderInput): Promise<OrderResult> {
-    const { razorpay, keys } = this.assertConfigured();
+    const simulated = this.isSimulated();
+    const gateway = simulated ? null : this.assertConfigured();
 
     const gig = await Gig.findById(input.gigId);
     if (!gig) throw new HttpError(404, 'Gig not found');
     if (!sameId(gig.client, user._id)) throw new HttpError(403, 'Only the gig owner can fund this gig');
     if (!gig.selectedFreelancer) throw new HttpError(409, 'Hire a freelancer before funding this gig');
+    if (gig.status !== GigStatus.IN_PROGRESS) throw new HttpError(409, `A ${gig.status.replace('_', ' ')} gig cannot be funded`);
     if (input.freelancerId && !sameId(input.freelancerId, gig.selectedFreelancer)) {
       throw new HttpError(400, 'Freelancer is not the one hired for this gig');
     }
@@ -89,7 +115,8 @@ class PaymentService {
         return {
           payment: existing,
           order: { id: existing.razorpayOrderId, amount: Math.round(existing.amount * 100), currency: existing.currency },
-          keyId: keys.keyId,
+          keyId: gateway?.keys.keyId ?? null,
+          simulated,
         };
       }
     } else {
@@ -111,12 +138,16 @@ class PaymentService {
       amount = input.amount;
     }
 
-    const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // paise
-      currency: 'INR',
-      receipt: `gig_${gig._id.toString().slice(-12)}_${Date.now()}`,
-      notes: { gigId: gig._id.toString(), milestoneId: milestoneId?.toString() ?? '' },
-    });
+    const orderId = gateway
+      ? (
+          await gateway.razorpay.orders.create({
+            amount: Math.round(amount * 100), // paise
+            currency: 'INR',
+            receipt: `gig_${gig._id.toString().slice(-12)}_${Date.now()}`,
+            notes: { gigId: gig._id.toString(), milestoneId: milestoneId?.toString() ?? '' },
+          })
+        ).id
+      : `sim_order_${crypto.randomBytes(8).toString('hex')}`;
 
     const payment = await Payment.create({
       gig: gig._id,
@@ -126,14 +157,15 @@ class PaymentService {
       amount,
       currency: 'INR',
       status: PaymentStatus.PENDING,
-      razorpayOrderId: order.id,
+      razorpayOrderId: orderId,
       description: input.description,
     });
 
     return {
       payment,
-      order: { id: order.id, amount: Number(order.amount), currency: order.currency },
-      keyId: keys.keyId,
+      order: { id: orderId, amount: Math.round(amount * 100), currency: 'INR' },
+      keyId: gateway?.keys.keyId ?? null,
+      simulated,
     };
   }
 
@@ -144,6 +176,64 @@ class PaymentService {
       .update(`${orderId}|${paymentId}`)
       .digest('hex');
     return safeEqualHex(expected, signature);
+  }
+
+  /**
+   * Pending → escrow (idempotent): marks the milestone funded and tells both parties.
+   * Called from Checkout verification, the webhook and simulated checkout.
+   */
+  async markEscrowed(payment: IPayment, gatewayPaymentId: string, signature?: string): Promise<IPayment> {
+    const updated = await Payment.findOneAndUpdate(
+      { _id: payment._id, status: PaymentStatus.PENDING },
+      {
+        $set: {
+          status: PaymentStatus.ESCROW,
+          razorpayPaymentId: gatewayPaymentId,
+          ...(signature && { razorpaySignature: signature }),
+          escrowedAt: new Date(),
+        },
+        $unset: { failureReason: 1 },
+      },
+      { returnDocument: 'after' }
+    );
+    if (!updated) return (await Payment.findById(payment._id)) ?? payment; // already handled
+
+    const gig = await Gig.findById(updated.gig).select('title milestones');
+    if (updated.milestone) {
+      await Gig.updateOne(
+        { _id: updated.gig, milestones: { $elemMatch: { _id: updated.milestone, status: MilestoneStatus.PENDING } } },
+        { $set: { 'milestones.$.status': MilestoneStatus.FUNDED } }
+      );
+    }
+    const what = this.describe(updated, gig);
+    await Promise.all([
+      notificationService.create({
+        recipient: updated.freelancer.toString(),
+        sender: updated.client.toString(),
+        type: NotificationType.PAYMENT_ESCROW,
+        title: 'Milestone funded',
+        message: `${formatCurrency(updated.amount)} for ${what} is now held in escrow — you can start work.`,
+        data: { gigId: updated.gig.toString(), paymentId: updated._id.toString() },
+        link: `/projects/${updated.gig}`,
+        category: 'payments',
+      }),
+      notificationService.create({
+        recipient: updated.client.toString(),
+        type: NotificationType.PAYMENT_RECEIVED,
+        title: 'Payment received',
+        message: `Your payment of ${formatCurrency(updated.amount)} for ${what} is held safely in escrow.`,
+        data: { gigId: updated.gig.toString(), paymentId: updated._id.toString() },
+        link: paymentLink,
+        category: 'payments',
+      }),
+    ]);
+    return updated;
+  }
+
+  /** "milestone “X” of “Gig”" or "“Gig”", for notification text. */
+  private describe(payment: IPayment, gig: { title: string; milestones: { _id?: Types.ObjectId; title: string }[] } | null): string {
+    const milestone = payment.milestone && gig?.milestones.find((m) => sameId(m._id, payment.milestone));
+    return milestone ? `milestone "${milestone.title}" of "${gig!.title}"` : `"${gig?.title ?? 'your gig'}"`;
   }
 
   /** Verifies Checkout's signature and moves the caller's payment into escrow. Idempotent. */
@@ -159,37 +249,73 @@ class PaymentService {
     if (!this.verifyPaymentSignature(input.orderId, input.paymentId, input.signature)) {
       throw new HttpError(400, 'Invalid payment signature');
     }
+    return this.markEscrowed(payment, input.paymentId, input.signature);
+  }
 
-    if (payment.status === PaymentStatus.PENDING) {
-      payment.status = PaymentStatus.ESCROW;
-      payment.razorpayPaymentId = input.paymentId;
-      payment.razorpaySignature = input.signature;
-      payment.escrowedAt = new Date();
-      await payment.save();
-    }
-    return payment;
+  /** Simulated mode only: the client confirms the "test checkout" and the payment goes to escrow. */
+  async simulateCapture(user: IUser, paymentId: string): Promise<IPayment> {
+    if (!this.isSimulated()) throw new HttpError(503, 'Simulated payments are disabled');
+    const payment = await Payment.findById(paymentId);
+    if (!payment || !sameId(payment.client, user._id)) throw new HttpError(404, 'Payment not found');
+    if (payment.status !== PaymentStatus.PENDING) throw new HttpError(409, `Payment is already ${payment.status}`);
+    return this.markEscrowed(payment, `sim_pay_${crypto.randomBytes(8).toString('hex')}`);
   }
 
   /**
    * Moves an escrowed payment to released. Caller-level authorization happens in the controller;
    * `allowDisputed` is for admin dispute resolution only.
    */
-  async releasePayment(paymentId: string, options: { allowDisputed?: boolean } = {}): Promise<IPayment> {
-    const payment = await Payment.findById(paymentId);
-    if (!payment) throw new HttpError(404, 'Payment not found');
+  async releasePayment(paymentId: string | Types.ObjectId, options: { allowDisputed?: boolean } = {}): Promise<IPayment> {
     const releasable = options.allowDisputed ? [PaymentStatus.ESCROW, PaymentStatus.DISPUTED] : [PaymentStatus.ESCROW];
-    if (!releasable.includes(payment.status)) {
-      throw new HttpError(400, 'Payment must be in escrow to be released');
+    const payment = await Payment.findOneAndUpdate(
+      { _id: paymentId, status: { $in: releasable } },
+      { $set: { status: PaymentStatus.RELEASED, releasedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+    if (!payment) {
+      const exists = await Payment.exists({ _id: paymentId });
+      throw new HttpError(exists ? 400 : 404, exists ? 'Payment must be in escrow to be released' : 'Payment not found');
     }
-
-    payment.status = PaymentStatus.RELEASED;
-    payment.releasedAt = new Date();
-    await payment.save();
+    await this.afterRelease(payment);
     return payment;
   }
 
+  /**
+   * Bookkeeping once money is released: lifetime earnings/spend, a queued (simulated) payout,
+   * and notifications to both parties.
+   */
+  private async afterRelease(payment: IPayment): Promise<void> {
+    await Promise.all([
+      FreelancerProfile.updateOne({ user: payment.freelancer }, { $inc: { totalEarnings: payment.freelancerAmount } }),
+      ClientProfile.updateOne({ user: payment.client }, { $inc: { totalSpent: payment.amount } }),
+      Payment.updateOne({ _id: payment._id }, { $set: { payout: { status: 'queued', queuedAt: new Date() } } }),
+    ]);
+    const gig = await Gig.findById(payment.gig).select('title milestones');
+    const what = this.describe(payment, gig);
+    await Promise.all([
+      notificationService.create({
+        recipient: payment.freelancer.toString(),
+        type: NotificationType.PAYMENT_RELEASED,
+        title: 'Payment released',
+        message: `${formatCurrency(payment.freelancerAmount)} for ${what} was released to you (after the ${env.PLATFORM_FEE_PERCENTAGE}% platform fee). Payout is on its way.`,
+        data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
+        link: paymentLink,
+        category: 'payments',
+      }),
+      notificationService.create({
+        recipient: payment.client.toString(),
+        type: NotificationType.PAYMENT_RELEASED,
+        title: 'Payment released',
+        message: `You released ${formatCurrency(payment.amount)} for ${what}.`,
+        data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
+        link: paymentLink,
+        category: 'payments',
+      }),
+    ]);
+  }
+
   /** Refunds through Razorpay (test mode) when money was captured, then marks the payment refunded. */
-  async refundPayment(paymentId: string, reason: string, amount?: number): Promise<IPayment> {
+  async refundPayment(paymentId: string | Types.ObjectId, reason: string, amount?: number): Promise<IPayment> {
     const payment = await Payment.findById(paymentId);
     if (!payment) throw new HttpError(404, 'Payment not found');
 
@@ -197,7 +323,8 @@ class PaymentService {
       throw new HttpError(400, 'Payment cannot be refunded in its current state');
     }
 
-    if (payment.razorpayPaymentId) {
+    // Simulated captures ("sim_pay_…") never touched a gateway.
+    if (payment.razorpayPaymentId && !payment.razorpayPaymentId.startsWith('sim_')) {
       const { razorpay } = this.assertConfigured();
       try {
         await razorpay.payments.refund(payment.razorpayPaymentId, {
@@ -210,10 +337,36 @@ class PaymentService {
       }
     }
 
+    const wasCaptured = payment.status !== PaymentStatus.PENDING;
     payment.status = PaymentStatus.REFUNDED;
     payment.refundedAt = new Date();
     payment.refundReason = reason;
     await payment.save();
+
+    // A refunded milestone can be funded again.
+    if (payment.milestone) {
+      await Gig.updateOne(
+        { _id: payment.gig, milestones: { $elemMatch: { _id: payment.milestone, status: MilestoneStatus.FUNDED } } },
+        { $set: { 'milestones.$.status': MilestoneStatus.PENDING } }
+      );
+    }
+    if (wasCaptured) {
+      const gig = await Gig.findById(payment.gig).select('title milestones');
+      const what = this.describe(payment, gig);
+      await Promise.all(
+        [payment.client, payment.freelancer].map((recipient) =>
+          notificationService.create({
+            recipient: recipient.toString(),
+            type: NotificationType.PAYMENT_REFUNDED,
+            title: 'Payment refunded',
+            message: `${formatCurrency(amount ?? payment.amount)} for ${what} was refunded to the client. Reason: ${reason}`,
+            data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
+            link: paymentLink,
+            category: 'payments',
+          })
+        )
+      );
+    }
     return payment;
   }
 
@@ -221,7 +374,7 @@ class PaymentService {
    * Dispute split: refunds `refundAmount` to the client (partial Razorpay refund) and releases
    * the remainder to the freelancer. The payment amount shrinks so fees are recomputed on what was paid out.
    */
-  async splitPayment(paymentId: string, refundAmount: number, reason: string): Promise<IPayment> {
+  async splitPayment(paymentId: string | Types.ObjectId, refundAmount: number, reason: string): Promise<IPayment> {
     const payment = await Payment.findById(paymentId);
     if (!payment) throw new HttpError(404, 'Payment not found');
     if (![PaymentStatus.ESCROW, PaymentStatus.DISPUTED].includes(payment.status)) {
@@ -231,7 +384,7 @@ class PaymentService {
       throw new HttpError(400, 'Refund amount must be between 0 and the payment amount');
     }
 
-    if (payment.razorpayPaymentId) {
+    if (payment.razorpayPaymentId && !payment.razorpayPaymentId.startsWith('sim_')) {
       const { razorpay } = this.assertConfigured();
       try {
         await razorpay.payments.refund(payment.razorpayPaymentId, {
@@ -251,7 +404,66 @@ class PaymentService {
     payment.status = PaymentStatus.RELEASED;
     payment.releasedAt = new Date();
     await payment.save();
+    await this.afterRelease(payment);
     return payment;
+  }
+
+  /**
+   * Razorpay webhook (raw body + X-Razorpay-Signature, HMAC-SHA256 with RAZORPAY_WEBHOOK_SECRET).
+   * Handles payment.captured, payment.failed and refund.processed; every branch is idempotent.
+   * Returns false when the signature is invalid.
+   */
+  async handleWebhook(rawBody: Buffer, signature: string | undefined): Promise<boolean> {
+    const secret = getRazorpayKeys()?.webhookSecret;
+    if (!secret) throw new HttpError(503, 'Webhook secret not configured');
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+    if (!signature || !safeEqualHex(expected, signature)) return false;
+
+    const event = JSON.parse(rawBody.toString('utf8')) as WebhookEvent;
+    const entity = event.payload.payment?.entity;
+
+    if (event.event === 'payment.captured' && entity) {
+      const payment = await Payment.findOne({ razorpayOrderId: entity.order_id });
+      if (payment) await this.markEscrowed(payment, entity.id);
+    } else if (event.event === 'payment.failed' && entity) {
+      await Payment.updateOne(
+        { razorpayOrderId: entity.order_id, status: PaymentStatus.PENDING },
+        { $set: { status: PaymentStatus.FAILED, failureReason: entity.error_description ?? 'Payment failed' } }
+      );
+    } else if (event.event === 'refund.processed' && event.payload.refund) {
+      // Refunds we start are already marked; this catches ones issued from the Razorpay dashboard.
+      await Payment.updateOne(
+        { razorpayPaymentId: event.payload.refund.entity.payment_id, status: { $in: [PaymentStatus.ESCROW, PaymentStatus.DISPUTED] } },
+        { $set: { status: PaymentStatus.REFUNDED, refundedAt: new Date(), refundReason: 'Refunded via Razorpay' } }
+      );
+    }
+    return true;
+  }
+
+  /**
+   * Processes queued payouts. Test mode has no real payout rail (RazorpayX/Route need KYC), so a
+   * payout is *simulated*: it gets a reference and is marked processed. Returns how many were processed.
+   */
+  async processPayouts(limit = 100): Promise<number> {
+    const queued = await Payment.find({ status: PaymentStatus.RELEASED, 'payout.status': 'queued' }).limit(limit);
+    for (const payment of queued) {
+      const reference = `sim_payout_${crypto.randomBytes(6).toString('hex')}`;
+      const done = await Payment.updateOne(
+        { _id: payment._id, 'payout.status': 'queued' },
+        { $set: { 'payout.status': 'processed', 'payout.processedAt': new Date(), 'payout.reference': reference } }
+      );
+      if (!done.modifiedCount) continue;
+      await notificationService.create({
+        recipient: payment.freelancer.toString(),
+        type: NotificationType.PAYOUT_PROCESSED,
+        title: 'Payout sent',
+        message: `${formatCurrency(payment.freelancerAmount)} was paid out to your account (ref ${reference}).`,
+        data: { paymentId: payment._id.toString(), reference },
+        link: paymentLink,
+        category: 'payments',
+      });
+    }
+    return queued.length;
   }
 
   async getPaymentsForUser(userId: Types.ObjectId | string): Promise<IPayment[]> {

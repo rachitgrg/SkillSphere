@@ -7,6 +7,8 @@ import {
   getPayments,
   getPaymentSummary,
   getPaymentConfig,
+  simulatePayment,
+  exportPayments,
 } from '../controllers/paymentController';
 import { protect } from '../middleware/auth';
 import { authorize, requireVerified } from '../middleware/rbac';
@@ -30,9 +32,11 @@ router.use(protect);
 
 router.get('/', getPayments);
 router.get('/summary', getPaymentSummary);
+router.get('/export', exportPayments);
 router.get('/config', getPaymentConfig);
 router.post('/orders', requirePayments, authorize(UserRole.CLIENT), requireVerified, validate(createPaymentSchema), createOrder);
 router.post('/verify', requirePayments, authorize(UserRole.CLIENT), validate(verifyPaymentSchema), verifyPayment);
+router.post('/:id/simulate', authorize(UserRole.CLIENT), simulatePayment);
 router.post('/:id/release', authorize(UserRole.CLIENT), releasePayment);
 router.post('/:id/refund', requirePayments, authorize(UserRole.CLIENT), validate(refundPaymentSchema), refundPayment);
 

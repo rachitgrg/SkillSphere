@@ -227,6 +227,25 @@ export const respondInvitationSchema = z.object({
   }),
 });
 
+export const progressLogSchema = z.object({
+  body: z.object({
+    message: z.string().trim().min(1, 'Write an update').max(2000),
+    milestoneId: z.union([z.string().regex(/^[a-f\d]{24}$/i), z.literal('')]).optional(),
+  }),
+});
+
+export const milestonePercentSchema = z.object({
+  body: z.object({ percent: z.coerce.number().int().min(0).max(100) }),
+});
+
+export const submitMilestoneSchema = z.object({
+  body: z.object({ note: z.string().trim().max(2000).optional() }),
+});
+
+export const requestChangesSchema = z.object({
+  body: z.object({ note: z.string().trim().min(3, 'Say what needs to change').max(2000) }),
+});
+
 // ───────────────────────── Proposal Schemas ─────────────────────────
 
 export const createProposalSchema = z.object({

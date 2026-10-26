@@ -56,6 +56,13 @@ const paymentSchema = new Schema<IPayment>(
     refundReason: String,
     // Portion refunded to the client in a split dispute resolution (amount is reduced by it).
     refundedAmount: { type: Number, min: 0 },
+    failureReason: String,
+    payout: {
+      status: { type: String, enum: ['queued', 'processed', 'failed'] },
+      queuedAt: Date,
+      processedAt: Date,
+      reference: String,
+    },
     description: String,
   },
   {
@@ -72,6 +79,7 @@ paymentSchema.index({ freelancer: 1 });
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ razorpayOrderId: 1 });
 paymentSchema.index({ createdAt: -1 });
+paymentSchema.index({ 'payout.status': 1 });
 
 // Platform fee + freelancer share, computed before validation (both fields are required).
 paymentSchema.pre('validate', function () {

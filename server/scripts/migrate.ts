@@ -4,6 +4,7 @@
  *   npm run db:migrate            # uses MONGO_URI from the root .env
  *
  * - Gig.attachments: plain URL strings → { url, name } objects (plan 4.4).
+ * - Gig.milestones: status "completed" → "submitted" (plan 4.14 status flow).
  */
 import { env } from '../src/config/env';
 import mongoose from 'mongoose';
@@ -22,6 +23,13 @@ async function main() {
     converted += 1;
   }
   console.log(`Gig attachments: converted ${converted} gig(s).`);
+
+  const milestones = await gigs.updateMany(
+    { 'milestones.status': 'completed' },
+    { $set: { 'milestones.$[m].status': 'submitted' } },
+    { arrayFilters: [{ 'm.status': 'completed' }] }
+  );
+  console.log(`Milestones: ${milestones.modifiedCount} gig(s) moved from "completed" to "submitted".`);
 }
 
 main()

@@ -92,6 +92,14 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/gigs/:id/invite', tag: 'Gigs', summary: 'Invite a freelancer to an open gig (in-app + email)', access: 'client', body: bodyOf(v.inviteFreelancerSchema) },
   { method: 'get', path: '/gigs/invitations', tag: 'Gigs', summary: 'Freelancer: open gigs I was invited to', access: 'freelancer' },
   { method: 'put', path: '/gigs/:id/invitation', tag: 'Gigs', summary: 'Freelancer: decline an invitation (applying accepts it)', access: 'freelancer', body: bodyOf(v.respondInvitationSchema) },
+  { method: 'get', path: '/gigs/:id/progress', tag: 'Projects', summary: 'Milestones, completion %, progress logs and payments', access: 'auth', description: 'Gig client, hired freelancer or admin.' },
+  { method: 'post', path: '/gigs/:id/progress-logs', tag: 'Projects', summary: 'Post a progress update (optional files)', access: 'client|freelancer', multipart: { message: 'Update text', milestoneId: 'Optional milestone', 'files[]': 'Up to 5 files' } },
+  { method: 'put', path: '/gigs/:id/milestones/:mid/start', tag: 'Projects', summary: 'Freelancer starts a funded milestone', access: 'freelancer' },
+  { method: 'put', path: '/gigs/:id/milestones/:mid/progress', tag: 'Projects', summary: "Freelancer's progress estimate (0–100)", access: 'freelancer', body: bodyOf(v.milestonePercentSchema) },
+  { method: 'put', path: '/gigs/:id/milestones/:mid/submit', tag: 'Projects', summary: 'Freelancer delivers a milestone (note + files)', access: 'freelancer', multipart: { note: 'Delivery note', 'files[]': 'Up to 5 files' } },
+  { method: 'put', path: '/gigs/:id/milestones/:mid/approve', tag: 'Projects', summary: "Client approves; releases the milestone's escrow", access: 'client' },
+  { method: 'put', path: '/gigs/:id/milestones/:mid/request-changes', tag: 'Projects', summary: 'Client sends a submitted milestone back', access: 'client', body: bodyOf(v.requestChangesSchema) },
+  { method: 'put', path: '/gigs/:id/complete', tag: 'Projects', summary: 'Client completes the project (all milestones approved)', access: 'client' },
   { method: 'delete', path: '/gigs/:id', tag: 'Gigs', summary: 'Delete a gig that has not started', access: 'client|admin' },
 
   // Proposals
@@ -117,6 +125,9 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/payments/verify', tag: 'Payments', summary: 'Verify the Checkout signature; payment → escrow', access: 'client', body: bodyOf(v.verifyPaymentSchema) },
   { method: 'post', path: '/payments/:id/release', tag: 'Payments', summary: 'Release escrow to the freelancer', access: 'client' },
   { method: 'post', path: '/payments/:id/refund', tag: 'Payments', summary: 'Refund escrow before work starts (Razorpay test refund)', access: 'client', body: bodyOf(v.refundPaymentSchema) },
+  { method: 'post', path: '/payments/:id/simulate', tag: 'Payments', summary: 'Simulated mode only: confirm a test checkout (pending → escrow)', access: 'client', description: 'Only when SIMULATE_PAYMENTS=true and Razorpay is not configured (never in production).' },
+  { method: 'get', path: '/payments/export', tag: 'Payments', summary: 'Transaction history as CSV', access: 'auth', query: { status: 'Optional status filter' } },
+  { method: 'post', path: '/payments/webhook', tag: 'Payments', summary: 'Razorpay webhook (payment.captured, payment.failed, refund.processed)', access: 'public', description: 'Raw JSON body signed with X-Razorpay-Signature (HMAC-SHA256, RAZORPAY_WEBHOOK_SECRET).' },
 
   // Reviews
   { method: 'post', path: '/reviews/', tag: 'Reviews', summary: 'Review the other party of a completed gig', access: 'auth', body: bodyOf(v.createReviewSchema) },

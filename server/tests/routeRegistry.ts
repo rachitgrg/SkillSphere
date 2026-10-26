@@ -34,8 +34,13 @@ export const MOUNTS: [string, Router][] = [
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } };
 
+/** Routes mounted directly on the app (outside the routers above). */
+export const APP_ROUTES = ['POST /api/v1/payments/webhook'];
+
 /** Every registered route as "METHOD /full/path/:param". */
-export const registeredRoutes = (): string[] =>
+export const registeredRoutes = (): string[] => [...APP_ROUTES, ...routerRoutes()];
+
+const routerRoutes = (): string[] =>
   MOUNTS.flatMap(([base, router]) =>
     (router.stack as unknown as Layer[])
       .filter((layer) => layer.route)

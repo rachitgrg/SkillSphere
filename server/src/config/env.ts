@@ -66,6 +66,12 @@ const schema = z.object({
     z.boolean().default(true)
   ),
 
+  // Dev/demo only: complete checkout without Razorpay (money never moves). Refused in production.
+  SIMULATE_PAYMENTS: booleanFlag,
+  // Escrow for a submitted milestone is released automatically after this many days without a client response.
+  AUTO_RELEASE_DAYS: z.coerce.number().positive().default(7),
+  PAYOUT_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(59).default(5),
+
   ADMIN_EMAIL: optionalString,
   PLATFORM_FEE_PERCENTAGE: z.coerce.number().min(0).max(100).default(10),
 });
@@ -93,6 +99,9 @@ if (env.NODE_ENV === 'production') {
     if (KNOWN_PLACEHOLDER_SECRETS.has(env[key]) || PLACEHOLDER.test(env[key])) {
       throw new Error(`${key} is still a placeholder value; refusing to start in production.`);
     }
+  }
+  if (env.SIMULATE_PAYMENTS) {
+    throw new Error('SIMULATE_PAYMENTS must not be enabled in production.');
   }
   if (env.JWT_SECRET === env.JWT_REFRESH_SECRET) {
     throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must differ in production.');

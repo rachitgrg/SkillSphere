@@ -74,6 +74,14 @@ const CASES: Record<string, Case> = {
   'DELETE /api/v1/gigs/:id/attachments/:attachmentId': { role: 'client', path: (i) => `/api/v1/gigs/${i.openGigId}/attachments/${i.attachmentId}` },
   'POST /api/v1/gigs/:id/invite': { role: 'client', path: (i) => `/api/v1/gigs/${i.applyGigId}/invite`, body: (i) => ({ freelancerId: i.spareUserId }) },
   'GET /api/v1/gigs/invitations': { role: 'freelancer' },
+  'GET /api/v1/gigs/:id/progress': { role: 'client', path: (i) => `/api/v1/gigs/${i.workGigId}/progress` },
+  'POST /api/v1/gigs/:id/progress-logs': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.workGigId}/progress-logs`, body: () => ({ message: 'Day 1 done' }) },
+  'PUT /api/v1/gigs/:id/milestones/:mid/start': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.workGigId}/milestones/${i.milestoneId}/start` },
+  'PUT /api/v1/gigs/:id/milestones/:mid/progress': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.workGigId}/milestones/${i.milestoneId}/progress`, body: () => ({ percent: 40 }) },
+  'PUT /api/v1/gigs/:id/milestones/:mid/submit': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.workGigId}/milestones/${i.milestoneId}/submit`, body: () => ({ note: 'Done' }) },
+  'PUT /api/v1/gigs/:id/milestones/:mid/approve': { role: 'client', path: (i) => `/api/v1/gigs/${i.workGigId}/milestones/${i.milestoneId}/approve` },
+  'PUT /api/v1/gigs/:id/milestones/:mid/request-changes': { role: 'client', path: (i) => `/api/v1/gigs/${i.workGigId}/milestones/${i.milestoneId}/request-changes`, body: () => ({ note: 'Please fix the header' }) },
+  'PUT /api/v1/gigs/:id/complete': { role: 'client', path: (i) => `/api/v1/gigs/${i.workGigId}/complete` },
   'PUT /api/v1/gigs/:id/invitation': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.inviteGigId}/invitation`, body: () => ({ status: 'declined' }) },
 
   // Proposals
@@ -98,6 +106,9 @@ const CASES: Record<string, Case> = {
   'POST /api/v1/payments/orders': { role: 'client', body: (i) => ({ gigId: i.workGigId, milestoneId: i.milestoneId }) },
   'POST /api/v1/payments/verify': { role: 'client', body: () => ({ razorpay_order_id: 'o', razorpay_payment_id: 'p', razorpay_signature: 's' }) },
   'POST /api/v1/payments/:id/release': { role: 'client', path: (i) => `/api/v1/payments/${i.paymentId}/release` },
+  'POST /api/v1/payments/:id/simulate': { role: 'client', path: (i) => `/api/v1/payments/${i.paymentId}/simulate` },
+  'GET /api/v1/payments/export': { role: 'client' },
+  'POST /api/v1/payments/webhook': { role: 'public' }, // 400/503: unsigned
   'POST /api/v1/payments/:id/refund': { role: 'client', path: (i) => `/api/v1/payments/${i.paymentId}/refund`, body: () => ({}) },
 
   // Reviews
