@@ -29,4 +29,11 @@ export const paymentApi = {
     paginated(axiosInstance.get<ApiResponse<Payment[]>>('/payments', { params: toParams(params) })),
 
   getSummary: () => data(axiosInstance.get<ApiResponse<PaymentSummary>>('/payments/summary')),
+
+  /** Simulated mode only: confirms the in-app test checkout. */
+  simulate: (paymentId: string) => data(axiosInstance.post<ApiResponse<Payment>>(`/payments/${paymentId}/simulate`)),
+
+  /** CSV of the caller's transactions (server-generated). */
+  exportCsv: (status?: PaymentStatus) =>
+    axiosInstance.get<Blob>('/payments/export', { params: toParams({ status }), responseType: 'blob' }).then((res) => res.data),
 };

@@ -9,26 +9,11 @@ import { TransactionCard } from '../../components/payments/TransactionCard';
 import { usePaymentHistory, usePaymentSummary } from '../../hooks/queries/useDashboard';
 import { useAppSelector } from '../../hooks/useRedux';
 import { paymentApi } from '../../api/paymentApi';
-import type { Payment, PaymentStatus, UserSummary } from '../../types';
-import { downloadCsv, formatCurrency, fullName, getErrorMessage, populated } from '../../utils/helpers';
+import type { PaymentStatus } from '../../types';
+import { formatCurrency, getErrorMessage } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 type Filter = 'all' | PaymentStatus;
-
-const csvRow = (p: Payment) => {
-  const gig = populated<{ _id: string; title: string }>(p.gig as { _id: string; title: string });
-  return [
-    new Date(p.createdAt).toISOString().slice(0, 10),
-    gig?.title ?? '',
-    fullName(populated<UserSummary>(p.client as UserSummary)),
-    fullName(populated<UserSummary>(p.freelancer as UserSummary)),
-    p.status,
-    p.amount,
-    p.platformFee,
-    p.freelancerAmount,
-    p.razorpayPaymentId ?? '',
-  ];
-};
 
 /** Transaction history for clients (/client/payments) and freelancers (/freelancer/earnings). */
 export function TransactionHistoryPage() {
@@ -44,13 +29,13 @@ export function TransactionHistoryPage() {
   const exportCsv = async () => {
     setExporting(true);
     try {
-      const rows: (string | number)[][] = [['Date', 'Gig', 'Client', 'Freelancer', 'Status', 'Amount', 'Platform fee', 'Freelancer amount', 'Razorpay payment']];
-      for (let p = 1; ; p++) {
-        const res = await paymentApi.getHistory({ status: filter === 'all' ? undefined : filter, page: p, limit: 50 });
-        rows.push(...res.items.map(csvRow));
-        if (p >= res.pagination.pages) break;
-      }
-      downloadCsv(`skillsphere-transactions-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+      const blob = await paymentApi.exportCsv(filter === 'all' ? undefined : filter);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `skillsphere-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Export failed'));
     } finally {
@@ -98,6 +83,7 @@ export function TransactionHistoryPage() {
           { value: 'refunded', label: 'Refunded' },
           { value: 'disputed', label: 'Disputed' },
           { value: 'pending', label: 'Pending' },
+          { value: 'failed', label: 'Failed' },
         ]}
       />
 

@@ -9,6 +9,7 @@ export const keys = {
     mine: (params: object) => ['gigs', 'mine', params] as const,
     detail: (id: string) => ['gigs', 'detail', id] as const,
     invitations: ['gigs', 'invitations'] as const,
+    progress: (id: string) => ['gigs', 'progress', id] as const,
   },
   proposals: {
     all: ['proposals'] as const,

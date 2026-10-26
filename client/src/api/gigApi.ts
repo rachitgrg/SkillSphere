@@ -1,6 +1,15 @@
 import axiosInstance from './axiosInstance';
 import { data, paginated, toParams } from './request';
-import type { ApiResponse, Gig, GigFilters, GigInput, GigInvitation, GigStatus, MyInvitation } from '../types';
+import type { ApiResponse, Gig, GigFilters, GigInput, GigInvitation, GigStatus, MyInvitation, ProgressLog, ProjectProgress } from '../types';
+
+/** JSON when there are no files, multipart (field `files`) otherwise. */
+const withFiles = ({ files = [], ...fields }: { files?: File[]; [key: string]: string | File[] | undefined }) => {
+  if (!files.length) return fields;
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) if (typeof value === 'string' && value) form.append(key, value);
+  files.forEach((f) => form.append('files', f));
+  return form;
+};
 
 export const gigApi = {
   /** Public marketplace: open, public gigs only. */
@@ -37,6 +46,25 @@ export const gigApi = {
 
   /** Freelancer: open gigs I was invited to. */
   getInvitations: () => data(axiosInstance.get<ApiResponse<MyInvitation[]>>('/gigs/invitations')),
+
+  getProgress: (id: string) => data(axiosInstance.get<ApiResponse<ProjectProgress>>(`/gigs/${id}/progress`)),
+
+  addProgressLog: (id: string, input: { message: string; milestoneId?: string; files?: File[] }) =>
+    data(axiosInstance.post<ApiResponse<ProgressLog>>(`/gigs/${id}/progress-logs`, withFiles(input))),
+
+  milestoneAction: (id: string, milestoneId: string, action: 'start' | 'approve') =>
+    data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/milestones/${milestoneId}/${action}`)),
+
+  setMilestoneProgress: (id: string, milestoneId: string, percent: number) =>
+    data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/milestones/${milestoneId}/progress`, { percent })),
+
+  submitMilestone: (id: string, milestoneId: string, input: { note?: string; files?: File[] }) =>
+    data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/milestones/${milestoneId}/submit`, withFiles(input))),
+
+  requestChanges: (id: string, milestoneId: string, note: string) =>
+    data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/milestones/${milestoneId}/request-changes`, { note })),
+
+  completeGig: (id: string) => data(axiosInstance.put<ApiResponse<Gig>>(`/gigs/${id}/complete`)),
 
   declineInvitation: (id: string) => data(axiosInstance.put<ApiResponse<void>>(`/gigs/${id}/invitation`, { status: 'declined' })),
 };

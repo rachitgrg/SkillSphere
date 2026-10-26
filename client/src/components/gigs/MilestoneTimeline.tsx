@@ -5,8 +5,10 @@ import { formatCurrency, formatDate } from '../../utils/helpers';
 
 const STATUS_STYLES: Record<Milestone['status'], string> = {
   pending: 'bg-slate-800 text-slate-400',
+  funded: 'bg-cyan-500/10 text-cyan-300',
   in_progress: 'bg-indigo-500/10 text-indigo-400',
-  completed: 'bg-amber-500/10 text-amber-400',
+  submitted: 'bg-amber-500/10 text-amber-400',
+  changes_requested: 'bg-rose-500/10 text-rose-300',
   approved: 'bg-emerald-500/10 text-emerald-400',
 };
 
@@ -45,12 +47,20 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ milestones
                   </h4>
                   {milestone.description && <p className="text-xs text-slate-400 mt-1">{milestone.description}</p>}
                   <p className="text-xs text-slate-500 mt-1">Due {formatDate(milestone.dueDate)}</p>
+                  {!done && (milestone.percent ?? 0) > 0 && (
+                    <div className="mt-2 flex items-center gap-2" aria-label={`${milestone.percent}% done`}>
+                      <div className="h-1.5 w-32 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="h-full bg-indigo-500" style={{ width: `${milestone.percent}%` }} />
+                      </div>
+                      <span className="text-[10px] text-slate-500">{milestone.percent}%</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <span className="font-semibold text-emerald-400">{formatCurrency(milestone.amount)}</span>
                   <div>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block capitalize ${STATUS_STYLES[milestone.status]}`}>
-                      {milestone.status.replace('_', ' ')}
+                      {milestone.status.replace(/_/g, ' ')}
                     </span>
                   </div>
                 </div>

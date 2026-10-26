@@ -153,7 +153,7 @@ export const GIG_STATUS_META: Record<
 };
 
 export const PAYMENT_STATUS_META: Record<
-  'pending' | 'escrow' | 'released' | 'refunded' | 'disputed',
+  'pending' | 'escrow' | 'released' | 'refunded' | 'disputed' | 'failed',
   { label: string; variant: 'primary' | 'success' | 'warning' | 'error' | 'secondary' }
 > = {
   pending: { label: 'Awaiting payment', variant: 'secondary' },
@@ -161,6 +161,7 @@ export const PAYMENT_STATUS_META: Record<
   released: { label: 'Released', variant: 'success' },
   refunded: { label: 'Refunded', variant: 'warning' },
   disputed: { label: 'Disputed', variant: 'error' },
+  failed: { label: 'Failed', variant: 'error' },
 };
 
 /** Downloads rows as a CSV file (values are quoted; first row is the header). */

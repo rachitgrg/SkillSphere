@@ -238,7 +238,8 @@ export type GigBudgetType = 'fixed' | 'hourly';
 export type ExperienceLevel = 'entry' | 'intermediate' | 'expert';
 export type LocationType = 'remote' | 'onsite' | 'hybrid';
 export type GigVisibility = 'public' | 'private' | 'invite_only';
-export type MilestoneStatus = 'pending' | 'in_progress' | 'completed' | 'approved';
+/** pending → funded → in_progress → submitted → approved | changes_requested */
+export type MilestoneStatus = 'pending' | 'funded' | 'in_progress' | 'submitted' | 'changes_requested' | 'approved';
 
 export interface Milestone {
   _id?: ID;
@@ -247,7 +248,30 @@ export interface Milestone {
   amount: number;
   dueDate: string;
   status: MilestoneStatus;
+  percent?: number;
+  startedAt?: string;
+  submittedAt?: string;
+  submission?: { note?: string; attachments: Attachment[] };
+  changeRequest?: { note: string; requestedAt: string };
+  approvedAt?: string;
   completedAt?: string;
+}
+
+export interface ProgressLog {
+  _id: ID;
+  author: UserSummary;
+  message: string;
+  attachments: Attachment[];
+  milestone?: ID;
+  createdAt: string;
+}
+
+/** GET /gigs/:id/progress */
+export interface ProjectProgress {
+  gig: Omit<Gig, 'client' | 'selectedFreelancer'> & { client: UserSummary; selectedFreelancer: UserSummary; progressLogs: ProgressLog[] };
+  party: 'client' | 'freelancer' | 'admin';
+  progress: { total: number; approvedAmount: number; paidPercent: number; progressPercent: number };
+  payments: Payment[];
 }
 
 export interface Gig {
@@ -427,7 +451,7 @@ export interface MessagePage {
 }
 
 // ========== PAYMENTS ==========
-export type PaymentStatus = 'pending' | 'escrow' | 'released' | 'refunded' | 'disputed';
+export type PaymentStatus = 'pending' | 'escrow' | 'released' | 'refunded' | 'disputed' | 'failed';
 
 export interface Payment {
   _id: ID;
@@ -447,6 +471,8 @@ export interface Payment {
   refundedAt?: string;
   refundReason?: string;
   refundedAmount?: number;
+  failureReason?: string;
+  payout?: { status: 'queued' | 'processed' | 'failed'; queuedAt?: string; processedAt?: string; reference?: string };
   description?: string;
   createdAt: string;
 }
@@ -462,8 +488,11 @@ export interface PaymentSummary {
 
 export interface PaymentConfig {
   enabled: boolean;
+  /** Dev/demo checkout without a gateway (SIMULATE_PAYMENTS). */
+  simulated: boolean;
   keyId: string | null;
   currency: 'INR';
+  autoReleaseDays: number;
 }
 
 /** POST /payments/orders */
@@ -477,7 +506,8 @@ export interface CreateOrderInput {
 export interface OrderResult {
   payment: Payment;
   order: { id: string; amount: number; currency: string };
-  keyId: string;
+  keyId: string | null;
+  simulated: boolean;
 }
 
 /** Razorpay Checkout success handler payload → POST /payments/verify */

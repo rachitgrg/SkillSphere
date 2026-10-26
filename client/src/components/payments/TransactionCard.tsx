@@ -31,6 +31,13 @@ export const TransactionCard: React.FC<{ payment: Payment; viewerRole: UserRole 
             <span className="flex items-center"><Clock className="w-3 h-3 mr-1" />{formatDate(payment.createdAt)}</span>
             {counterparty && <span>· {incoming ? 'from' : 'to'} {fullName(counterparty)}</span>}
             {payment.razorpayPaymentId && <span>· {payment.razorpayPaymentId}</span>}
+            {incoming && payment.payout && (
+              <span className={payment.payout.status === 'processed' ? 'text-emerald-400' : 'text-amber-300'}>
+                · payout {payment.payout.status}{payment.payout.reference ? ` (${payment.payout.reference})` : ''}
+              </span>
+            )}
+            {payment.status === 'failed' && payment.failureReason && <span className="text-rose-300">· {payment.failureReason}</span>}
+            {payment.refundedAmount !== undefined && payment.status === 'released' && <span>· {formatCurrency(payment.refundedAmount)} refunded</span>}
           </div>
         </div>
       </div>

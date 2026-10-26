@@ -380,12 +380,12 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Video call (optional):** WebRTC 1:1 using the existing socket for signaling (`call:offer`, `call:answer`, `call:ice`, `call:end`) and Google's public STUN. Use a `VideoCallModal` with the `Phone`/`Video` buttons already in the chat header. If you skip it, remove those buttons and mark it optional in the README.
 
 ### 4.7 Payments (module 7) — Razorpay test mode
-- [ ] **Escrow per milestone.** The client clicks "Fund milestone" and the server creates an order (`POST /payments/orders {gigId, milestoneId}`). The client opens Razorpay Checkout: load `https://checkout.razorpay.com/v1/checkout.js` dynamically, with `key_id` from `GET /payments/config`. Then `POST /payments/verify` → status `escrow`, the milestone becomes fundable/started, and the freelancer is notified.
-- [ ] **Release:** when the client approves a milestone (4.14), the payment becomes `released`. Update `FreelancerProfile.totalEarnings`, `ClientProfile.totalSpent` and notify both.
-- [ ] **Automatic freelancer payout:** add a `Payout` record (or a `payout` subdocument on Payment) `{status: 'queued'|'processed'|'failed', processedAt, reference}`. A `node-cron` job processes released payments every N minutes. In test mode this is a **simulated payout** (no real money movement; Razorpay Route/RazorpayX need KYC); document it clearly in the README. Also auto‑release escrow if the client doesn't respond **7 days** after a milestone is submitted (configurable).
-- [ ] **Refunds:** `POST /payments/:id/refund` (client before work started, or admin via dispute) uses the existing `paymentService.refundPayment` (real Razorpay test refund).
-- [ ] **Webhook:** `POST /payments/webhook`, mounted **before** `express.json` with `express.raw()`, verifies `X-Razorpay-Signature` with `RAZORPAY_WEBHOOK_SECRET`, and handles `payment.captured`, `payment.failed` and `refund.processed` idempotently.
-- [ ] **Transaction history** page for clients and freelancers using `TransactionCard`, with filters, a CSV export, and a summary (in escrow, released, refunded, fees).
+- [x] **Escrow per milestone.** The client clicks "Fund milestone" and the server creates an order (`POST /payments/orders {gigId, milestoneId}`). The client opens Razorpay Checkout: load `https://checkout.razorpay.com/v1/checkout.js` dynamically, with `key_id` from `GET /payments/config`. Then `POST /payments/verify` → status `escrow`, the milestone becomes fundable/started, and the freelancer is notified.
+- [x] **Release:** when the client approves a milestone (4.14), the payment becomes `released`. Update `FreelancerProfile.totalEarnings`, `ClientProfile.totalSpent` and notify both.
+- [x] **Automatic freelancer payout:** add a `Payout` record (or a `payout` subdocument on Payment) `{status: 'queued'|'processed'|'failed', processedAt, reference}`. A `node-cron` job processes released payments every N minutes. In test mode this is a **simulated payout** (no real money movement; Razorpay Route/RazorpayX need KYC); document it clearly in the README. Also auto‑release escrow if the client doesn't respond **7 days** after a milestone is submitted (configurable).
+- [x] **Refunds:** `POST /payments/:id/refund` (client before work started, or admin via dispute) uses the existing `paymentService.refundPayment` (real Razorpay test refund).
+- [x] **Webhook:** `POST /payments/webhook`, mounted **before** `express.json` with `express.raw()`, verifies `X-Razorpay-Signature` with `RAZORPAY_WEBHOOK_SECRET`, and handles `payment.captured`, `payment.failed` and `refund.processed` idempotently.
+- [x] **Transaction history** page for clients and freelancers using `TransactionCard`, with filters, a CSV export, and a summary (in escrow, released, refunded, fees).
 
 ### 4.8 Reputation & reviews (module 8)
 - [ ] **Weighted reputation score** (store as `reputationScore` 0–100 on both profiles, and document it):
@@ -458,12 +458,12 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [ ] Admin `DisputeManagement` page: review evidence and messages, then resolve with refund / release / split (calls payment service from 1.14) and notes. Notify both parties and write an `AdminLog`.
 
 ### 4.14 Project progress tracker (module 14)
-- [ ] Extend the milestone status flow: `pending → funded → in_progress → submitted → approved | changes_requested`.
-- [ ] Add `Gig.progressLogs: [{ author, message, attachments, milestone?, createdAt }]`. The freelancer posts updates with files; the client comments.
-- [ ] **Task completion %** = approved milestone amount / total, plus an optional per‑milestone `percent` the freelancer updates.
-- [ ] **Deadline reminders:** a daily `node-cron` job notifies (socket + email) for milestones due in 48h and for overdue ones. Store `remindersSent` to avoid duplicates.
-- [ ] **UI:** `ProjectProgressPage` at `/projects/:gigId` for both parties. It shows a progress bar, `MilestoneTimeline` with action buttons per role (fund, start, submit with files, approve or request changes), progress logs, files, and links to chat and dispute.
-- [ ] When the client approves the last milestone, the gig becomes `completed`, both parties are prompted to review, and counters are updated.
+- [x] Extend the milestone status flow: `pending → funded → in_progress → submitted → approved | changes_requested`.
+- [x] Add `Gig.progressLogs: [{ author, message, attachments, milestone?, createdAt }]`. The freelancer posts updates with files; the client comments.
+- [x] **Task completion %** = approved milestone amount / total, plus an optional per‑milestone `percent` the freelancer updates.
+- [x] **Deadline reminders:** a daily `node-cron` job notifies (socket + email) for milestones due in 48h and for overdue ones. Store `remindersSent` to avoid duplicates.
+- [x] **UI:** `ProjectProgressPage` at `/projects/:gigId` for both parties. It shows a progress bar, `MilestoneTimeline` with action buttons per role (fund, start, submit with files, approve or request changes), progress logs, files, and links to chat and dispute.
+- [x] When the client approves the last milestone, the gig becomes `completed`, both parties are prompted to review, and counters are updated.
 
 ### 4.15 Freelancer analytics (module 15)
 - [ ] **Profile views:** a `ProfileView { freelancer, viewer?, date (day), count }` collection or a daily counter subdocument. Increment on public profile view (dedupe the same viewer per day).
