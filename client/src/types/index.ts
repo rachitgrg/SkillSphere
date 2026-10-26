@@ -775,12 +775,15 @@ export interface AdminPayments {
   payments: Payment[];
   totals: { _id: PaymentStatus; amount: number; fees: number; count: number }[];
   revenue: { totalRevenue: number; totalTransactions: number };
+  payouts: { _id: 'queued' | 'processed' | 'failed'; amount: number; count: number }[];
 }
 
 export interface FraudReport {
   flaggedReviews: Review[];
   disputedUsers: { _id: ID; disputes: number; user: UserSummary & { email: string; isBanned: boolean } }[];
   refundHeavyClients: { _id: ID; refunds: number; amount: number; user: UserSummary & { email: string; isBanned: boolean } }[];
+  sharedIps: { ip: string; users: (UserSummary & { email: string; role: UserRole; isBanned: boolean })[] }[];
+  failedPayers: { _id: ID; failures: number; amount: number; user: UserSummary & { email: string; isBanned: boolean } }[];
 }
 
 export interface AdminLog {

@@ -456,11 +456,15 @@ export const getPayments = async (req: AuthRequest, res: Response, next: NextFun
       Payment.aggregate([{ $group: { _id: '$status', amount: { $sum: '$amount' }, fees: { $sum: '$platformFee' }, count: { $sum: 1 } } }]),
       paymentService.calculatePlatformRevenue(),
     ]);
+    const payouts = await Payment.aggregate([
+      { $match: { 'payout.status': { $exists: true } } },
+      { $group: { _id: '$payout.status', amount: { $sum: '$freelancerAmount' }, count: { $sum: 1 } } },
+    ]);
 
     res.status(200).json({
       success: true,
       message: 'Payments retrieved',
-      data: { payments, totals, revenue },
+      data: { payments, totals, revenue, payouts },
       pagination: buildPaginationResponse(total, page, limit),
     });
   } catch (error) {
@@ -483,11 +487,12 @@ const userLookup = [
 
 /**
  * GET /admin/fraud — flagged/reported reviews, users with repeated disputes against them,
- * and clients with many refunds. (IP-sharing signals arrive with plan 4.8.)
+ * clients with many refunds, accounts that last logged in from the same IP, and clients with
+ * repeated failed payments.
  */
 export const getFraudReport = async (_req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const [flaggedReviews, disputedUsers, refundHeavyClients] = await Promise.all([
+    const [flaggedReviews, disputedUsers, refundHeavyClients, sharedIps, failedPayers] = await Promise.all([
       Review.find({ isFlagged: true })
         .populate('reviewer', 'firstName lastName email createdAt')
         .populate('reviewee', 'firstName lastName email')
@@ -509,9 +514,35 @@ export const getFraudReport = async (_req: AuthRequest, res: Response, next: Nex
         { $limit: 20 },
         ...userLookup,
       ]),
+      User.aggregate<{ ip: string; users: { _id: Types.ObjectId; firstName: string; lastName: string; email: string; role: UserRole; isBanned: boolean }[] }>([
+        { $match: { lastLoginIp: { $nin: [null, ''] }, role: { $ne: UserRole.ADMIN } } },
+        {
+          $group: {
+            _id: '$lastLoginIp',
+            users: { $push: { _id: '$_id', firstName: '$firstName', lastName: '$lastName', email: '$email', role: '$role', isBanned: '$isBanned' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $match: { count: { $gte: 2 } } },
+        { $sort: { count: -1 } },
+        { $limit: 20 },
+        { $project: { _id: 0, ip: '$_id', users: 1 } },
+      ]),
+      Payment.aggregate([
+        { $match: { status: PaymentStatus.FAILED } },
+        { $group: { _id: '$client', failures: { $sum: 1 }, amount: { $sum: '$amount' } } },
+        { $match: { failures: { $gte: 3 } } },
+        { $sort: { failures: -1 } },
+        { $limit: 20 },
+        ...userLookup,
+      ]),
     ]);
 
-    res.status(200).json({ success: true, message: 'Fraud report', data: { flaggedReviews, disputedUsers, refundHeavyClients } });
+    res.status(200).json({
+      success: true,
+      message: 'Fraud report',
+      data: { flaggedReviews, disputedUsers, refundHeavyClients, sharedIps, failedPayers },
+    });
   } catch (error) {
     next(error);
   }

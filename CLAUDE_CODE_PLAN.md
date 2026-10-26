@@ -402,24 +402,24 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] Write‑review modal on completed gigs for both parties, using the existing `StarRating` per category; show the reply.
 
 ### 4.9 Admin (module 9)
-- [ ] **Users:**
+- [x] **Users:**
   - paginated search
   - suspend with reason and optional duration (`suspendedUntil`)
   - unsuspend
   - view details: gigs, payments, reviews, disputes
   
   Suspension must also kick live sockets (`io.in('user:'+id).disconnectSockets()`).
-- [ ] **Verify freelancers:** queue from 4.3.
-- [ ] **Approve gigs:** queue of `pending_approval` gigs with approve/reject + reason; notify the client.
-- [ ] **Payment monitoring:** table of all payments with status filters, escrow totals, failed payments, and refunds.
-- [ ] **Fraud detection:** flagged reviews, users with many disputes, accounts sharing an IP, abnormal payment patterns (many refunds). Actions: hide review, suspend user.
-- [ ] **Analytics** (Recharts, already installed):
+- [x] **Verify freelancers:** queue from 4.3.
+- [x] **Approve gigs:** queue of `pending_approval` gigs with approve/reject + reason; notify the client.
+- [x] **Payment monitoring:** table of all payments with status filters, escrow totals, failed payments, and refunds.
+- [x] **Fraud detection:** flagged reviews, users with many disputes, accounts sharing an IP, abnormal payment patterns (many refunds). Actions: hide review, suspend user.
+- [x] **Analytics** (Recharts, already installed):
   - platform revenue = sum of `platformFee` on released payments, by month (`paymentService.getRevenueByMonth` exists)
   - active freelancers = freelancers with activity in the last 30 days
   - top categories = gig counts and GMV by category
   - job success rate = completed / (completed + cancelled + disputed)
   - user growth
-- [ ] **Admin logs** viewer (`AdminLog`).
+- [x] **Admin logs** viewer (`AdminLog`).
 
 ### 4.10 Advanced search (module 10)
 - [ ] Store GeoJSON `location` on `User` / `FreelancerProfile` and `Gig` (coordinates `[lng, lat]`).

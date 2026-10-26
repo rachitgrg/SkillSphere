@@ -21,6 +21,7 @@ import {
   usePendingGigs,
   useRejectGig,
   useSetReviewVisibility,
+  useSuspendUser,
   useReviewVerification,
   useVerifications,
 } from '../../hooks/queries/useAdmin';
@@ -269,6 +270,7 @@ export function PaymentMonitoring() {
   const [page, setPage] = useState(1);
   const payments = useAdminPayments({ status: status === 'all' ? undefined : status, page });
   const totals = Object.fromEntries((payments.data?.items.totals ?? []).map((t) => [t._id, t]));
+  const payouts = Object.fromEntries((payments.data?.items.payouts ?? []).map((p) => [p._id, p]));
 
   return (
     <div className="max-w-6xl">
@@ -279,6 +281,10 @@ export function PaymentMonitoring() {
           ['In escrow', formatCurrency((totals.escrow?.amount ?? 0) + (totals.disputed?.amount ?? 0))],
           ['Released', formatCurrency(totals.released?.amount ?? 0)],
           ['Refunds', `${totals.refunded?.count ?? 0} · ${formatCurrency(totals.refunded?.amount ?? 0)}`],
+          ['Payouts processed', `${payouts.processed?.count ?? 0} · ${formatCurrency(payouts.processed?.amount ?? 0)}`],
+          ['Payouts queued', `${payouts.queued?.count ?? 0} · ${formatCurrency(payouts.queued?.amount ?? 0)}`],
+          ['Failed payments', String(totals.failed?.count ?? 0)],
+          ['Disputed', `${totals.disputed?.count ?? 0} · ${formatCurrency(totals.disputed?.amount ?? 0)}`],
         ].map(([label, value]) => (
           <div key={label} className="glass-card rounded-2xl border border-slate-800 p-4">
             <div className="text-xs text-slate-400">{label}</div>
@@ -293,6 +299,7 @@ export function PaymentMonitoring() {
         { value: 'disputed', label: 'Disputed', count: totals.disputed?.count },
         { value: 'refunded', label: 'Refunded', count: totals.refunded?.count },
         { value: 'pending', label: 'Pending', count: totals.pending?.count },
+        { value: 'failed', label: 'Failed', count: totals.failed?.count },
       ]} />
       <QueryState isLoading={payments.isLoading} isError={payments.isError} error={payments.error} onRetry={() => payments.refetch()} isEmpty={!payments.data?.items.payments.length} empty={{ title: 'No payments', description: 'Nothing in this status.' }}>
         <div className="glass-card rounded-2xl border border-slate-800 overflow-x-auto">
@@ -442,6 +449,27 @@ export function AnalyticsPage() {
   );
 }
 
+/** Quick suspend from the fraud report (indefinite, with a fixed reason; adjust from Users). */
+function SuspendLink({ user }: { user: { _id: string; isBanned: boolean } }) {
+  const suspend = useSuspendUser();
+  if (user.isBanned) return <span className="text-xs text-rose-300">suspended</span>;
+  return (
+    <button
+      type="button"
+      disabled={suspend.isPending}
+      onClick={() =>
+        suspend.mutate(
+          { id: user._id, reason: 'Suspended after fraud review' },
+          { onSuccess: () => toast.success('User suspended'), onError: (e) => toast.error(getErrorMessage(e)) }
+        )
+      }
+      className="text-xs text-rose-400 hover:underline"
+    >
+      Suspend
+    </button>
+  );
+}
+
 function FraudSection() {
   const fraud = useFraudReport();
   const visibility = useSetReviewVisibility();
@@ -478,13 +506,36 @@ function FraudSection() {
               <div>
                 <h3 className="text-sm font-semibold text-slate-300 mb-2">Users with repeated disputes</h3>
                 {f.disputedUsers.length ? (
-                  <ul className="text-sm space-y-1">{f.disputedUsers.map((u) => <li key={u._id} className="text-slate-300">{fullName(u.user)} ({u.user.email}) · {u.disputes} disputes{u.user.isBanned ? ' · suspended' : ''}</li>)}</ul>
+                  <ul className="text-sm space-y-1">{f.disputedUsers.map((u) => <li key={u._id} className="text-slate-300 flex gap-2 items-center flex-wrap">{fullName(u.user)} ({u.user.email}) · {u.disputes} disputes <SuspendLink user={{ _id: u._id, isBanned: u.user.isBanned }} /></li>)}</ul>
                 ) : <p className="text-sm text-slate-500">None.</p>}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-300 mb-2">Clients with many refunds</h3>
                 {f.refundHeavyClients.length ? (
-                  <ul className="text-sm space-y-1">{f.refundHeavyClients.map((u) => <li key={u._id} className="text-slate-300">{fullName(u.user)} · {u.refunds} refunds · {formatCurrency(u.amount)}</li>)}</ul>
+                  <ul className="text-sm space-y-1">{f.refundHeavyClients.map((u) => <li key={u._id} className="text-slate-300 flex gap-2 items-center flex-wrap">{fullName(u.user)} · {u.refunds} refunds · {formatCurrency(u.amount)} <SuspendLink user={{ _id: u._id, isBanned: u.user.isBanned }} /></li>)}</ul>
+                ) : <p className="text-sm text-slate-500">None.</p>}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-300 mb-2">Accounts sharing an IP address</h3>
+                {f.sharedIps.length ? (
+                  <ul className="text-sm space-y-2">
+                    {f.sharedIps.map((group) => (
+                      <li key={group.ip} className="rounded-lg border border-slate-800 p-2">
+                        <p className="text-xs text-slate-500 mb-1 font-mono">{group.ip}</p>
+                        {group.users.map((u) => (
+                          <p key={u._id} className="text-slate-300 flex gap-2 items-center flex-wrap">
+                            {fullName(u)} <span className="text-xs text-slate-500">({u.role}, {u.email})</span> <SuspendLink user={u} />
+                          </p>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-slate-500">None.</p>}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-300 mb-2">Repeated failed payments</h3>
+                {f.failedPayers.length ? (
+                  <ul className="text-sm space-y-1">{f.failedPayers.map((u) => <li key={u._id} className="text-slate-300 flex gap-2 items-center flex-wrap">{fullName(u.user)} · {u.failures} failures · {formatCurrency(u.amount)} <SuspendLink user={{ _id: u._id, isBanned: u.user.isBanned }} /></li>)}</ul>
                 ) : <p className="text-sm text-slate-500">None.</p>}
               </div>
             </div>
