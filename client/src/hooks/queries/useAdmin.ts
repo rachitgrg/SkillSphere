@@ -57,3 +57,16 @@ export const useSetReviewVisibility = () =>
   useAdminMutation(({ id, isVisible }: { id: string; isVisible: boolean }) => adminApi.setReviewVisibility(id, isVisible));
 export const useResolveDispute = () =>
   useAdminMutation(({ id, input }: { id: string; input: ResolveDisputeInput }) => disputeApi.resolve(id, input));
+
+export const useVerifications = (params: { status?: 'pending' | 'verified' | 'rejected'; page?: number }) =>
+  useQuery({ queryKey: keys.admin.verifications(params), queryFn: () => adminApi.getVerifications({ ...params, limit: 10 }), placeholderData: keepPreviousData });
+
+/** Approve (`reason` omitted) or reject a verification request. */
+export const useReviewVerification = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
+      reason === undefined ? adminApi.verifyFreelancer(userId) : adminApi.rejectVerification(userId, reason),
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: keys.admin.all }), queryClient.invalidateQueries({ queryKey: ['users'] })]),
+  });
+};

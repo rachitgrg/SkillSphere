@@ -9,11 +9,13 @@ import type {
   AnalyticsPeriod,
   ApiResponse,
   FraudReport,
+  FreelancerProfile,
   Gig,
   PaymentStatus,
   Review,
   User,
   UserRole,
+  VerificationRequest,
 } from '../types';
 
 export const adminApi = {
@@ -35,6 +37,14 @@ export const adminApi = {
 
   getPendingGigs: (params?: { page?: number; limit?: number }) =>
     paginated(axiosInstance.get<ApiResponse<Gig[]>>('/admin/gigs/pending', { params: toParams(params) })),
+
+  getVerifications: (params?: { status?: 'pending' | 'verified' | 'rejected'; page?: number; limit?: number }) =>
+    paginated(axiosInstance.get<ApiResponse<VerificationRequest[]>>('/admin/verifications', { params: toParams(params) })),
+
+  verifyFreelancer: (userId: string) => data(axiosInstance.put<ApiResponse<FreelancerProfile>>(`/admin/freelancers/${userId}/verify`)),
+
+  rejectVerification: (userId: string, reason: string) =>
+    data(axiosInstance.put<ApiResponse<FreelancerProfile>>(`/admin/freelancers/${userId}/reject-verification`, { reason })),
 
   approveGig: (id: string) => data(axiosInstance.put<ApiResponse<Gig>>(`/admin/gigs/${id}/approve`)),
 

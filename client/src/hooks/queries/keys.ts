@@ -2,6 +2,7 @@ import type { FreelancerFilters, GigFilters } from '../../types';
 
 /** React Query keys. Invalidate a prefix (e.g. `keys.gigs.all`) to refresh everything under it. */
 export const keys = {
+  config: ['config'] as const,
   gigs: {
     all: ['gigs'] as const,
     list: (filters: GigFilters) => ['gigs', 'list', filters] as const,
@@ -68,6 +69,7 @@ export const keys = {
     pendingGigs: (params: object) => ['admin', 'pendingGigs', params] as const,
     payments: (params: object) => ['admin', 'payments', params] as const,
     fraud: ['admin', 'fraud'] as const,
+    verifications: (params: object) => ['admin', 'verifications', params] as const,
     logs: (params: object) => ['admin', 'logs', params] as const,
   },
 };

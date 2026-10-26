@@ -13,4 +13,11 @@ export const aiApi = {
 
   analyzeCareer: (resumeText: string) =>
     data(axiosInstance.post<ApiResponse<CareerReport>>('/ai/career-analysis', { resumeText })),
+
+  /** Analyses an uploaded PDF/TXT, or the resume stored on the profile when `file` is omitted. */
+  analyzeResume: (file?: File) => {
+    const form = new FormData();
+    if (file) form.append('resume', file);
+    return data(axiosInstance.post<ApiResponse<CareerReport>>('/ai/resume-analysis', form));
+  },
 };

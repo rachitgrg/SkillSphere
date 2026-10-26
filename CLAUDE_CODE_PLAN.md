@@ -348,16 +348,16 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Career analysis:** keep the endpoint. Response = `{ ...report, source: 'ai' | 'fallback' }`, and the UI shows a small "AI‑generated" or "Basic analysis (AI unavailable)" label. Verify the chosen chat model is actually served by HF Inference Providers. If not, switch to one that is and document it. Raise the body limit (done in 1.16).
 
 ### 4.3 Freelancer profiles (module 3)
-- [ ] **Uploads (shared infrastructure, needed by 4.4, 4.6, 4.13, 4.14).**
+- [x] **Uploads (shared infrastructure, needed by 4.4, 4.6, 4.13, 4.14).**
   - Add a `services/uploadService.ts` wrapping `middleware/upload.ts` → `uploadToCloudinary`. Call `configureCloudinary()` at boot.
   - Images go to `image` resources; PDF/DOC/ZIP go to `raw`.
   - Return `{url, publicId, name, size, mimeType}`.
   - 503 when Cloudinary is not configured.
   - Apply `uploadLimiter`.
-- [ ] **Resume upload:** `FreelancerProfile.resume: {url, publicId, name, uploadedAt}`. PDF/DOC only, 5 MB. Show a download button on the public profile. Also offer "Analyze my resume" (extract text from the PDF with `pdf-parse` → career analysis).
-- [ ] **Portfolio gallery** with multiple images per item and a lightbox. **Certifications** and **work‑experience timeline** use the existing `WorkTimeline` component. **Availability calendar** links to the scheduler (4.12).
-- [ ] **Hourly & milestone pricing:** `FreelancerProfile.milestonePricing: [{ title, description, price, deliveryDays }]` (packages). Show both on the profile.
-- [ ] **Verification badge:** `FreelancerProfile.verification: { status: 'none'|'pending'|'verified'|'rejected', documents: [url], requestedAt, reviewedAt, reviewedBy, note }`.
+- [x] **Resume upload:** `FreelancerProfile.resume: {url, publicId, name, uploadedAt}`. PDF/DOC only, 5 MB. Show a download button on the public profile. Also offer "Analyze my resume" (extract text from the PDF with `pdf-parse` → career analysis).
+- [x] **Portfolio gallery** with multiple images per item and a lightbox. **Certifications** and **work‑experience timeline** use the existing `WorkTimeline` component. **Availability calendar** links to the scheduler (4.12).
+- [x] **Hourly & milestone pricing:** `FreelancerProfile.milestonePricing: [{ title, description, price, deliveryDays }]` (packages). Show both on the profile.
+- [x] **Verification badge:** `FreelancerProfile.verification: { status: 'none'|'pending'|'verified'|'rejected', documents: [url], requestedAt, reviewedAt, reviewedBy, note }`.
   - Freelancer requests with ID or portfolio proof; admin approves or rejects (4.9).
   - The badge (ShieldCheck icon) shows on cards, profiles and search results.
   - Verified freelancers get a small ranking boost in search.

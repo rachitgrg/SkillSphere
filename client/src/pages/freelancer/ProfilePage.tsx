@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import toast from 'react-hot-toast';
-import { Award, Briefcase, Calendar, ChevronLeft, ChevronRight, Edit, Github, Globe, IndianRupee, Linkedin, MapPin, MessageSquare, Star } from 'lucide-react';
+import { Award, Briefcase, Calendar, ChevronLeft, ChevronRight, Download, Edit, Github, Globe, IndianRupee, Linkedin, MapPin, MessageSquare, Star } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
 import { Modal } from '../../components/common/Modal';
 import { QueryState } from '../../components/common/QueryState';
@@ -9,6 +9,7 @@ import { SkillBadge } from '../../components/profile/SkillBadge';
 import { PortfolioCard } from '../../components/profile/PortfolioCard';
 import { WorkTimeline } from '../../components/profile/WorkTimeline';
 import { AvailabilityCalendar } from '../../components/profile/AvailabilityCalendar';
+import { VerifiedBadge } from '../../components/profile/VerifiedBadge';
 import { ReviewCard } from '../../components/reviews/ReviewCard';
 import { ReviewBreakdownChart } from '../../components/reviews/ReviewBreakdownChart';
 import { Navbar } from '../../components/layout/Navbar';
@@ -84,7 +85,9 @@ function FreelancerProfileContent({ userId, isOwn }: { userId?: string; isOwn: b
                 <Avatar src={profile.user.avatar} firstName={profile.user.firstName} lastName={profile.user.lastName} size="xl" className="rounded-full border-4 border-slate-900 ring-2 ring-slate-800" />
               </div>
               <div className="flex-1 text-center md:text-left md:pt-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">{fullName(profile.user)}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center justify-center md:justify-start gap-2 flex-wrap">
+                  {fullName(profile.user)} <VerifiedBadge status={profile.verification?.status} />
+                </h1>
                 <p className="text-indigo-400 font-medium">{profile.title}</p>
                 {profile.headline && <p className="text-sm text-slate-300 mt-1">{profile.headline}</p>}
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 mt-2 text-sm text-slate-400">
@@ -95,6 +98,11 @@ function FreelancerProfileContent({ userId, isOwn }: { userId?: string; isOwn: b
                 </div>
               </div>
               <div className="flex gap-3 w-full md:w-auto md:pt-4">
+                {profile.resume && (
+                  <a href={profile.resume.url} target="_blank" rel="noopener noreferrer" className="btn-secondary flex-1 md:flex-none justify-center px-4 py-2 flex items-center gap-2">
+                    <Download className="w-4 h-4" /> <span>Resume</span>
+                  </a>
+                )}
                 {isOwn ? (
                   <Link to="/freelancer/profile/edit" className="btn-secondary flex-1 md:flex-none justify-center px-4 py-2 flex items-center">
                     <Edit className="w-4 h-4 mr-2" /> Edit profile

@@ -8,6 +8,8 @@ import { QueryState } from '../../components/common/QueryState';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useMe, useUpdateFreelancerProfile, useUpdateMe } from '../../hooks/queries/useProfiles';
+import { useConfig } from '../../hooks/queries/useConfig';
+import { AvatarUploader, PortfolioManager, ResumePanel, VerificationPanel } from '../../components/profile/ProfileMedia';
 import type { FreelancerProfile, ProficiencyLevel } from '../../types';
 import { CITIES } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/helpers';
@@ -27,7 +29,6 @@ interface FormValues {
   workExperience: { title: string; company: string; startDate: string; endDate: string; current: boolean; description: string }[];
   certifications: { name: string; issuer: string; issueDate: string; credentialUrl: string }[];
   education: { degree: string; institution: string; year: number }[];
-  portfolio: { title: string; description: string; url: string; images: string; technologies: string }[];
   milestonePricing: { title: string; description: string; price: number; deliveryDays: number }[];
   languages: { language: string; proficiency: string }[];
   availabilitySlots: { dayOfWeek: number; startTime: string; endTime: string }[];
@@ -47,7 +48,6 @@ const toForm = (user: NonNullable<ReturnType<typeof useMe>['data']>['user'], p: 
   workExperience: p.workExperience.map((w) => ({ ...w, startDate: dateOnly(w.startDate), endDate: dateOnly(w.endDate) })),
   certifications: p.certifications.map((c) => ({ name: c.name, issuer: c.issuer, issueDate: dateOnly(c.issueDate), credentialUrl: c.credentialUrl ?? '' })),
   education: p.education,
-  portfolio: p.portfolio.map((i) => ({ title: i.title, description: i.description, url: i.url ?? '', images: i.images.join('\n'), technologies: i.technologies.join(', ') })),
   milestonePricing: (p.milestonePricing ?? []).map((m) => ({ ...m, description: m.description ?? '' })),
   languages: p.languages,
   availabilitySlots: p.availabilitySlots,
@@ -98,6 +98,8 @@ function ListSection<K extends FieldArrayPath<FormValues>>({
 export function EditProfilePage() {
   const navigate = useNavigate();
   const me = useMe();
+  const config = useConfig();
+  const uploadsEnabled = config.data?.uploads ?? false;
   const updateMe = useUpdateMe();
   const updateProfile = useUpdateFreelancerProfile();
   const { register, control, handleSubmit, reset } = useForm<FormValues>();
@@ -125,13 +127,6 @@ export function EditProfilePage() {
         workExperience: v.workExperience.map((w) => ({ ...w, endDate: w.current || !w.endDate ? undefined : w.endDate })),
         certifications: v.certifications.map((c) => ({ ...c, credentialUrl: c.credentialUrl || undefined })),
         education: v.education.map((e) => ({ ...e, year: Number(e.year) })),
-        portfolio: v.portfolio.map((p) => ({
-          title: p.title,
-          description: p.description,
-          url: p.url || undefined,
-          images: p.images.split(/\s+/).filter(Boolean),
-          technologies: p.technologies.split(',').map((t) => t.trim()).filter(Boolean),
-        })),
         milestonePricing: v.milestonePricing.map((m) => ({ ...m, price: Number(m.price), deliveryDays: Number(m.deliveryDays) })),
         languages: v.languages.filter((l) => l.language.trim()),
         availabilitySlots: v.availabilitySlots.map((s) => ({ ...s, dayOfWeek: Number(s.dayOfWeek) })),
@@ -149,6 +144,16 @@ export function EditProfilePage() {
     <div className="max-w-4xl">
       <PageHeader title="Edit profile" description="A complete profile ranks higher in AI matching and search." />
       <QueryState isLoading={me.isLoading} isError={me.isError} error={me.error} onRetry={() => me.refetch()}>
+        {me.data && profile && (
+          <div className="grid gap-6 mb-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <AvatarUploader user={me.data.user} uploadsEnabled={uploadsEnabled} />
+              <ResumePanel profile={profile} uploadsEnabled={uploadsEnabled} />
+            </div>
+            <PortfolioManager profile={profile} uploadsEnabled={uploadsEnabled} />
+            <VerificationPanel profile={profile} uploadsEnabled={uploadsEnabled} />
+          </div>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-white">Basics</h2>
@@ -199,16 +204,6 @@ export function EditProfilePage() {
               <input aria-label="End date" type="date" className={fieldClass} {...r(`workExperience.${i}.endDate`)} />
               <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" {...r(`workExperience.${i}.current`)} /> I work here now</label>
               <textarea aria-label="Description" rows={2} placeholder="What you did" className={`${fieldClass} sm:col-span-2`} {...r(`workExperience.${i}.description`)} />
-            </div>
-          )} />
-
-          <ListSection title="Portfolio" hint="Image URLs one per line (file uploads arrive with Cloudinary)." control={control} name="portfolio" empty={{ title: '', description: '', url: '', images: '', technologies: '' }} render={(i) => (
-            <div className="grid sm:grid-cols-2 gap-3">
-              <input aria-label="Project title" placeholder="Project title" className={fieldClass} {...r(`portfolio.${i}.title`)} />
-              <input aria-label="Project link" placeholder="https://…" className={fieldClass} {...r(`portfolio.${i}.url`)} />
-              <textarea aria-label="Description" rows={2} placeholder="What it is and your role" className={`${fieldClass} sm:col-span-2`} {...r(`portfolio.${i}.description`)} />
-              <textarea aria-label="Image URLs" rows={2} placeholder="Image URLs, one per line" className={fieldClass} {...r(`portfolio.${i}.images`)} />
-              <input aria-label="Technologies" placeholder="Technologies, comma separated" className={fieldClass} {...r(`portfolio.${i}.technologies`)} />
             </div>
           )} />
 

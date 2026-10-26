@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import toast from 'react-hot-toast';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, ScrollText, Shield } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, CheckCircle2, Eye, EyeOff, FileText, ScrollText, Shield } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QueryState } from '../../components/common/QueryState';
 import { StatusTabs } from '../../components/common/StatusTabs';
@@ -21,8 +21,10 @@ import {
   usePendingGigs,
   useRejectGig,
   useSetReviewVisibility,
+  useReviewVerification,
+  useVerifications,
 } from '../../hooks/queries/useAdmin';
-import type { AnalyticsPeriod, DisputeStatus, Gig, PaymentStatus, UserSummary } from '../../types';
+import type { AnalyticsPeriod, DisputeStatus, Gig, PaymentStatus, UserSummary, VerificationRequest } from '../../types';
 import {
   formatBudget,
   formatCurrency,
@@ -111,6 +113,150 @@ function RejectGigModal({ gig, onClose }: { gig: Gig; onClose: () => void }) {
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
         <Button variant="danger" onClick={submit} isLoading={reject.isPending}>Reject</Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ───────────────────────── Freelancer verification ─────────────────────────
+
+type VerificationTab = 'pending' | 'verified' | 'rejected';
+
+export function FreelancerVerification() {
+  const [status, setStatus] = useState<VerificationTab>('pending');
+  const [page, setPage] = useState(1);
+  const queue = useVerifications({ status, page });
+  const review = useReviewVerification();
+  const [rejecting, setRejecting] = useState<VerificationRequest | null>(null);
+
+  return (
+    <div className="max-w-5xl">
+      <PageHeader title="Freelancer verification" description="Check the ID or portfolio proof, then grant or refuse the verified badge. Oldest first." />
+      <StatusTabs
+        label="Verification status"
+        value={status}
+        onChange={(s) => {
+          setStatus(s);
+          setPage(1);
+        }}
+        tabs={[
+          { value: 'pending', label: 'Pending' },
+          { value: 'verified', label: 'Verified' },
+          { value: 'rejected', label: 'Rejected' },
+        ]}
+      />
+      <QueryState
+        isLoading={queue.isLoading}
+        isError={queue.isError}
+        error={queue.error}
+        onRetry={() => queue.refetch()}
+        isEmpty={!queue.data?.items.length}
+        empty={{
+          icon: <BadgeCheck className="w-8 h-8" />,
+          title: 'Nothing here',
+          description: status === 'pending' ? 'New verification requests will appear here.' : 'No freelancers in this state.',
+        }}
+      >
+        <div className="space-y-4">
+          {queue.data?.items.map((p) => (
+            <article key={p._id} className="glass-card rounded-2xl border border-slate-800 p-5">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <Link to={`/freelancers/${p.user._id}`} className="font-semibold text-white hover:text-indigo-400">{fullName(p.user)}</Link>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {p.title} · {p.user.email} · joined {formatDay(p.user.createdAt)} · {p.completedGigs} jobs ·{' '}
+                    {p.totalReviews ? `${p.averageRating.toFixed(1)}★` : 'no reviews'}
+                  </p>
+                  {p.verification.requestedAt && <p className="text-xs text-slate-500">Requested {formatTimeAgo(p.verification.requestedAt)}</p>}
+                </div>
+                {status !== 'verified' && (
+                  <div className="flex gap-2 shrink-0">
+                    {status === 'pending' && (
+                      <Button size="sm" variant="secondary" onClick={() => setRejecting(p)}>
+                        Reject
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      icon={<CheckCircle2 className="w-4 h-4" />}
+                      isLoading={review.isPending && review.variables?.userId === p.user._id}
+                      onClick={() =>
+                        review.mutate(
+                          { userId: p.user._id },
+                          { onSuccess: () => toast.success('Freelancer verified'), onError: (e) => toast.error(getErrorMessage(e)) }
+                        )
+                      }
+                    >
+                      Verify
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {p.verification.message && <p className="text-sm text-slate-300 mt-3 whitespace-pre-line">“{p.verification.message}”</p>}
+              {p.verification.note && <p className="text-sm text-red-300 mt-2">Rejected: {p.verification.note}</p>}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {(p.verification.documents ?? []).map((d) =>
+                  d.mimeType.startsWith('image/') ? (
+                    <a key={d.url} href={d.url} target="_blank" rel="noopener noreferrer" className="block focus-ring rounded-lg">
+                      <img src={d.url} alt={d.name} className="h-24 w-36 object-cover rounded-lg border border-slate-700" />
+                    </a>
+                  ) : (
+                    <a
+                      key={d.url}
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500"
+                    >
+                      <FileText className="w-4 h-4" /> {d.name}
+                    </a>
+                  )
+                )}
+                {p.portfolio.length > 0 && <span className="text-xs text-slate-500 self-center">{p.portfolio.length} portfolio items on profile</span>}
+              </div>
+            </article>
+          ))}
+        </div>
+        {queue.data && (
+          <div className="mt-6">
+            <Pagination currentPage={page} totalPages={queue.data.pagination.pages} onPageChange={setPage} />
+          </div>
+        )}
+      </QueryState>
+      {rejecting && <RejectVerificationModal request={rejecting} onClose={() => setRejecting(null)} />}
+    </div>
+  );
+}
+
+function RejectVerificationModal({ request, onClose }: { request: VerificationRequest; onClose: () => void }) {
+  const review = useReviewVerification();
+  const [reason, setReason] = useState('');
+  const submit = async () => {
+    if (reason.trim().length < 3) return toast.error('Tell the freelancer why');
+    try {
+      await review.mutateAsync({ userId: request.user._id, reason: reason.trim() });
+      toast.success('Request rejected; the freelancer was notified');
+      onClose();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+  return (
+    <Modal isOpen onClose={onClose} title="Reject verification" size="sm">
+      <p className="text-sm text-slate-400 mb-3">{fullName(request.user)}</p>
+      <label htmlFor="reject-verification" className="block text-sm font-medium text-dark-300 mb-1.5">
+        Reason (shown to the freelancer)
+      </label>
+      <textarea
+        id="reject-verification"
+        rows={3}
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mb-4"
+      />
+      <div className="flex justify-end gap-3">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="danger" onClick={submit} isLoading={review.isPending}>Reject</Button>
       </div>
     </Modal>
   );

@@ -62,6 +62,7 @@ const EditProfilePage = page(() => import('./pages/freelancer/EditProfilePage'),
 const AdminDashboard = page(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard');
 const UserManagement = page(() => import('./pages/admin/UserManagement'), 'UserManagement');
 const GigApproval = page(() => import('./pages/admin/AdminPages'), 'GigApproval');
+const FreelancerVerification = page(() => import('./pages/admin/AdminPages'), 'FreelancerVerification');
 const PaymentMonitoring = page(() => import('./pages/admin/AdminPages'), 'PaymentMonitoring');
 const DisputeManagement = page(() => import('./pages/admin/AdminPages'), 'DisputeManagement');
 const AdminAnalytics = page(() => import('./pages/admin/AdminPages'), 'AnalyticsPage');
@@ -174,6 +175,7 @@ export default function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="gigs" element={<GigApproval />} />
+            <Route path="verifications" element={<FreelancerVerification />} />
             <Route path="payments" element={<PaymentMonitoring />} />
             <Route path="disputes" element={<DisputeManagement />} />
             <Route path="disputes/:id" element={<DisputeDetailPage />} />

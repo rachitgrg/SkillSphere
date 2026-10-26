@@ -4,9 +4,7 @@ const axiosInstance = axios.create({
   baseURL: '/api/v1',
   timeout: 30000,
   withCredentials: true, // sends the httpOnly refresh cookie to /auth/*
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // No default Content-Type: axios sends JSON for objects and multipart (with boundary) for FormData.
 });
 
 /**

@@ -123,6 +123,43 @@ export interface MilestonePackage {
   deliveryDays: number;
 }
 
+export interface StoredResume {
+  url: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  uploadedAt: string;
+}
+
+export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
+
+export interface FreelancerVerification {
+  status: VerificationStatus;
+  /** Admin queue only. */
+  documents?: { url: string; name: string; mimeType: string }[];
+  message?: string;
+  requestedAt?: string;
+  reviewedAt?: string;
+  /** Rejection reason. */
+  note?: string;
+}
+
+/** GET /admin/verifications */
+export type VerificationRequest = FreelancerProfile & {
+  user: UserSummary & Pick<User, 'email' | 'createdAt' | 'isVerified'>;
+  verification: FreelancerVerification;
+};
+
+/** GET /config */
+export interface PlatformConfig {
+  uploads: boolean;
+  payments: boolean;
+  ai: boolean;
+  google: boolean;
+  emailVerification: boolean;
+  platformFeePercentage: number;
+}
+
 export interface FreelancerProfile {
   _id: ID;
   user: UserSummary | ID;
@@ -137,6 +174,8 @@ export interface FreelancerProfile {
   availability: AvailabilityStatus;
   availabilitySlots: AvailabilitySlot[];
   milestonePricing?: MilestonePackage[];
+  resume?: StoredResume;
+  verification?: FreelancerVerification;
   totalEarnings: number;
   completedGigs: number;
   averageRating: number;
@@ -541,6 +580,7 @@ export interface FreelancerFilters {
   minRating?: number;
   experience?: ExperienceLevel | number;
   sort?: FreelancerSort;
+  verified?: boolean;
   page?: number;
   limit?: number;
 }

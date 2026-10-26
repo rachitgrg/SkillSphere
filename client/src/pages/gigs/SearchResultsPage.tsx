@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Search, ShieldCheck, Star, Users } from 'lucide-react';
+import { Search, Star, Users } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { StatusTabs } from '../../components/common/StatusTabs';
@@ -9,6 +9,7 @@ import { QueryState } from '../../components/common/QueryState';
 import { Pagination } from '../../components/common/Pagination';
 import { Avatar } from '../../components/common/Avatar';
 import { GigCard } from '../../components/gigs/GigCard';
+import { VerifiedBadge } from '../../components/profile/VerifiedBadge';
 import { SkillBadge } from '../../components/profile/SkillBadge';
 import { searchApi } from '../../api/searchApi';
 import { keys } from '../../hooks/queries/keys';
@@ -89,6 +90,7 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
     minRating: params.get('minRating') ? Number(params.get('minRating')) : undefined,
     experience: (params.get('experience') as FreelancerFilters['experience']) || undefined,
     sort: (params.get('sort') as FreelancerSort) || undefined,
+    verified: params.get('verified') === 'true' || undefined,
     page,
     limit: 12,
   }), [params, page]);
@@ -120,6 +122,10 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
             <option value="">Any</option><option value="intermediate">2+ years</option><option value="expert">5+ years</option>
           </select>
         </div>
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          <input type="checkbox" checked={params.get('verified') === 'true'} onChange={(e) => set({ verified: e.target.checked ? 'true' : undefined })} />
+          Verified only
+        </label>
         <div>
           <label htmlFor="f-sort" className="block text-xs text-slate-400 mb-1">Sort by</label>
           <select id="f-sort" value={params.get('sort') ?? ''} onChange={(e) => set({ sort: e.target.value || undefined })} className={`${selectClass} w-full`}>
@@ -135,7 +141,7 @@ function FreelancerResults({ params, page, set }: { params: URLSearchParams; pag
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar src={f.user.avatar} firstName={f.user.firstName} lastName={f.user.lastName} size="md" />
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate flex items-center gap-1">{fullName(f.user)}{f.user.isVerified && <ShieldCheck className="w-4 h-4 text-emerald-400" aria-label="Verified" />}</p>
+                    <p className="font-semibold text-white truncate flex items-center gap-1">{fullName(f.user)} <VerifiedBadge status={f.verification?.status} compact /></p>
                     <p className="text-xs text-slate-400 truncate">{f.title}{f.user.address?.city ? ` · ${f.user.address.city}` : ''}</p>
                   </div>
                 </div>

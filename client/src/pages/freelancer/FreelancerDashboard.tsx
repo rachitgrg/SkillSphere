@@ -7,7 +7,8 @@ import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
 import { ResumeMatcher } from '../../components/freelancer/ResumeMatcher';
 import { useFreelancerAnalytics, useMyGigs, useRecommendations } from '../../hooks/queries/useDashboard';
 import { useAppSelector } from '../../hooks/useRedux';
-import type { UserSummary } from '../../types';
+import { useMe } from '../../hooks/queries/useProfiles';
+import type { FreelancerProfile, UserSummary } from '../../types';
 import { formatBudget, formatCurrency, fullName, populated } from '../../utils/helpers';
 
 export function FreelancerDashboard() {
@@ -15,6 +16,7 @@ export function FreelancerDashboard() {
   const analytics = useFreelancerAnalytics('12m');
   const projects = useMyGigs({ status: ['in_progress'], limit: 3 });
   const recommendations = useRecommendations();
+  const me = useMe();
   const a = analytics.data;
 
   return (
@@ -64,7 +66,7 @@ export function FreelancerDashboard() {
             </QueryState>
           </section>
 
-          <ResumeMatcher />
+          <ResumeMatcher hasStoredResume={Boolean((me.data?.profile as FreelancerProfile | null | undefined)?.resume)} />
         </div>
 
         <section className="glass-card p-6 rounded-2xl border border-slate-800 h-fit">

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Briefcase, FileText, MessageSquare, CreditCard,
   Star, BarChart3, Users, Shield, AlertTriangle, ScrollText, Settings,
-  ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap,
+  ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap, BadgeCheck,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
 import { toggleSidebarCollapsed } from '../../store/slices/uiSlice';
@@ -45,6 +45,7 @@ const adminLinks: SidebarLink[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Users', href: '/admin/users', icon: <Users className="w-5 h-5" /> },
   { label: 'Gig Approval', href: '/admin/gigs', icon: <Shield className="w-5 h-5" /> },
+  { label: 'Verifications', href: '/admin/verifications', icon: <BadgeCheck className="w-5 h-5" /> },
   { label: 'Payments', href: '/admin/payments', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Disputes', href: '/admin/disputes', icon: <AlertTriangle className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
