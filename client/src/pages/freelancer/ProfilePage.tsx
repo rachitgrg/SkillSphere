@@ -12,6 +12,7 @@ import { AvailabilityCalendar } from '../../components/profile/AvailabilityCalen
 import { VerifiedBadge } from '../../components/profile/VerifiedBadge';
 import { ReviewCard } from '../../components/reviews/ReviewCard';
 import { ReviewBreakdownChart } from '../../components/reviews/ReviewBreakdownChart';
+import { ReportReviewButton } from '../../components/reviews/ReportReviewButton';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useFreelancerProfile, useReviewBreakdown, useUserReviews } from '../../hooks/queries/useProfiles';
@@ -165,7 +166,7 @@ function FreelancerProfileContent({ userId, isOwn }: { userId?: string; isOwn: b
 
               <Section title={`Reviews${profile.totalReviews ? ` (${profile.totalReviews})` : ''}`}>
                 {reviews.data?.length ? (
-                  <div className="space-y-4">{reviews.data.map((r) => <ReviewCard key={r._id} review={r} />)}</div>
+                  <div className="space-y-4">{reviews.data.map((r) => <ReviewCard key={r._id} review={r} footer={me && !isOwn && <ReportReviewButton reviewId={r._id} />} />)}</div>
                 ) : (
                   <p className="text-sm text-slate-500">No reviews yet.</p>
                 )}

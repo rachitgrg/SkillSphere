@@ -3,7 +3,9 @@ import Review from '../models/Review';
 import Gig from '../models/Gig';
 import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
-import { AuthRequest, GigStatus } from '../types';
+import Payment from '../models/Payment';
+import { Types } from 'mongoose';
+import { AuthRequest, GigStatus, PaymentStatus } from '../types';
 
 /**
  * Only the two parties of a completed gig can review each other; the reviewee is derived
@@ -32,20 +34,16 @@ export const createReview = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     const revieweeId = reviewerId === clientId ? freelancerId : clientId;
-    const fraud = await reputationService.detectFraudulentReview(reviewerId, revieweeId, gig._id.toString());
+    // Validating computes the weighted rating, which the outlier check needs.
+    const review = new Review({ gig: gig._id, reviewer: reviewerId, reviewee: revieweeId, categories, comment });
+    await review.validate();
+    const fraud = await reputationService.detectFraudulentReview(reviewerId, revieweeId, gig._id.toString(), { rating: review.rating, comment });
+    review.isFlagged = fraud.isSuspicious;
+    review.flagReason = fraud.isSuspicious ? fraud.reasons.join('; ') : undefined;
+    review.isVisible = !fraud.isSuspicious;
 
-    let review;
     try {
-      review = await Review.create({
-        gig: gig._id,
-        reviewer: reviewerId,
-        reviewee: revieweeId,
-        categories,
-        comment,
-        isFlagged: fraud.isSuspicious,
-        flagReason: fraud.isSuspicious ? fraud.reasons.join('; ') : undefined,
-        isVisible: !fraud.isSuspicious,
-      });
+      await review.save();
     } catch (error) {
       if ((error as { code?: number }).code === 11000) {
         res.status(409).json({ success: false, message: 'You have already reviewed this gig' });
@@ -71,15 +69,41 @@ export const createReview = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+/** Bucketed contract value shown on "Verified hire" tags (exact amounts stay private). */
+const AMOUNT_BUCKETS: [number, string][] = [
+  [5_000, 'Under ₹5k'],
+  [25_000, '₹5k–₹25k'],
+  [1_00_000, '₹25k–₹1L'],
+  [5_00_000, '₹1L–₹5L'],
+  [Infinity, '₹5L+'],
+];
+export const amountRange = (amount: number) => AMOUNT_BUCKETS.find(([max]) => amount < max)![1];
+
+/**
+ * GET /reviews/user/:userId — visible reviews. Every review comes from a party to a completed gig,
+ * so each carries a "Verified hire" tag with the contract value range (released payments).
+ */
 export const getReviews = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId } = req.params;
     const reviews = await Review.find({ reviewee: userId, isVisible: true })
       .populate('reviewer', 'firstName lastName avatar')
       .populate('gig', 'title')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.status(200).json({ success: true, message: 'Reviews retrieved', data: reviews });
+    const gigIds = reviews.map((r) => (r.gig as unknown as { _id: Types.ObjectId })?._id).filter(Boolean);
+    const totals = await Payment.aggregate<{ _id: Types.ObjectId; total: number }>([
+      { $match: { gig: { $in: gigIds }, status: PaymentStatus.RELEASED } },
+      { $group: { _id: '$gig', total: { $sum: '$amount' } } },
+    ]);
+    const byGig = new Map(totals.map((t) => [t._id.toString(), t.total]));
+    const data = reviews.map((r) => {
+      const total = byGig.get(String((r.gig as unknown as { _id: Types.ObjectId })?._id));
+      return { ...r, verifiedHire: { amountRange: total ? amountRange(total) : undefined } };
+    });
+
+    res.status(200).json({ success: true, message: 'Reviews retrieved', data });
   } catch (error) {
     next(error);
   }

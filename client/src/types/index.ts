@@ -189,6 +189,7 @@ export interface FreelancerProfile {
   completedGigs: number;
   averageRating: number;
   totalReviews: number;
+  reputationScore?: number;
   responseTime: number;
   languages: { language: string; proficiency: string }[];
   socialLinks: { github?: string; linkedin?: string; website?: string; twitter?: string };
@@ -272,6 +273,8 @@ export interface ProjectProgress {
   party: 'client' | 'freelancer' | 'admin';
   progress: { total: number; approvedAmount: number; paidPercent: number; progressPercent: number };
   payments: Payment[];
+  /** Whether the viewer already reviewed this gig. */
+  reviewed: boolean;
 }
 
 export interface Gig {
@@ -539,6 +542,8 @@ export interface Review {
   isFlagged: boolean;
   flagReason?: string;
   isVisible: boolean;
+  /** Present on public lists: contract value range of the reviewed gig. */
+  verifiedHire?: { amountRange?: string };
   createdAt: string;
 }
 
@@ -547,6 +552,8 @@ export interface ReviewBreakdown {
   categories: ReviewCategories;
   totalReviews: number;
   distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+  /** 0–100 */
+  reputationScore: number;
 }
 
 // ========== NOTIFICATIONS ==========

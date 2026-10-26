@@ -3,6 +3,9 @@ import app from '../src/app';
 import FreelancerProfile from '../src/models/FreelancerProfile';
 import Review from '../src/models/Review';
 import Notification from '../src/models/Notification';
+import User from '../src/models/User';
+import { computeReputation } from '../src/services/reputationService';
+import { amountRange } from '../src/controllers/reviewController';
 import { GigStatus, UserRole } from '../src/types';
 import { createGig, createUser } from './helpers';
 
@@ -23,7 +26,7 @@ const setup = async (status = GigStatus.COMPLETED) => {
 describe('POST /api/v1/reviews (1.13)', () => {
   it('client reviews the freelancer; reviewee is derived and reputation is recomputed', async () => {
     const { client, freelancer, outsider, gig } = await setup();
-    const res = await review(client.auth, { gigId: gig.id, categories, comment: 'Great work', revieweeId: outsider.user.id });
+    const res = await review(client.auth, { gigId: gig.id, categories, comment: 'Great work, delivered ahead of schedule.', revieweeId: outsider.user.id });
     expect(res.status).toBe(201);
     expect(res.body.data.reviewee).toBe(freelancer.user.id);
     expect(res.body.data.rating).toBe(expectedRating);
@@ -73,14 +76,14 @@ describe('POST /api/v1/reviews (1.13)', () => {
     const gigs = await Promise.all(
       [1, 2, 3].map(() => createGig(client.user._id, { status: GigStatus.COMPLETED, selectedFreelancer: freelancer.user._id }))
     );
-    for (const gig of gigs.slice(0, 3)) {
-      await review(client.auth, { gigId: gig.id, categories, comment: 'ok' });
+    for (const [i, gig] of gigs.entries()) {
+      await review(client.auth, { gigId: gig.id, categories, comment: `Solid delivery on project number ${i + 1}.` });
     }
     const fourth = await createGig(client.user._id, { status: GigStatus.COMPLETED, selectedFreelancer: freelancer.user._id });
     const res = await review(client.auth, {
       gigId: fourth.id,
       categories: { quality: 1, communication: 1, timeliness: 1, professionalism: 1, value: 1 },
-      comment: 'bad',
+      comment: 'Terrible experience, would not hire again.',
     });
     expect(res.status).toBe(201);
     expect(res.body.data.isFlagged).toBe(true);
@@ -117,5 +120,51 @@ describe('POST /api/v1/reviews/:id/reply', () => {
       .set(client.auth)
       .send({ response: 'Self reply' });
     expect(res.status).toBe(403);
+  });
+});
+
+describe('reputation score and extra fraud signals (4.8)', () => {
+  it('flags same-IP pairs and copied comments, and two weak signals together', async () => {
+    const { client, freelancer, gig } = await setup();
+    await User.updateMany({ _id: { $in: [client.user._id, freelancer.user._id] } }, { $set: { lastLoginIp: '10.0.0.7' } });
+    const sameIp = await review(client.auth, { gigId: gig.id, categories, comment: 'Excellent collaboration throughout.' });
+    expect(sameIp.body.data.isFlagged).toBe(true);
+    expect(sameIp.body.data.flagReason).toMatch(/share an IP/);
+
+    const other = await setup();
+    const weak = await review(other.client.auth, { gigId: other.gig.id, categories, comment: 'ok' }); // new account + short
+    expect(weak.body.data.flagReason).toMatch(/Brand-new.*Very short/);
+
+    const established = await setup();
+    await User.collection.updateOne({ _id: established.client.user._id }, { $set: { createdAt: new Date(Date.now() - 30 * 86_400_000) } });
+    const short = await review(established.client.auth, { gigId: established.gig.id, categories, comment: 'ok' }); // one weak signal
+    expect(short.body.data.isFlagged).toBe(false);
+  });
+
+  it('stores a 0–100 reputation score with the documented formula', async () => {
+    const { client, freelancer, gig } = await setup();
+    await review(client.auth, { gigId: gig.id, categories, comment: 'Great work, delivered ahead of schedule.' }).expect(201);
+    const profile = await FreelancerProfile.findOne({ user: freelancer.user._id });
+    // platform mean = this one review; Bayesian = rating; completion = (1 + 1.6) / (1 + 2)
+    const expected = computeReputation({ reviews: [{ rating: expectedRating, createdAt: new Date() }], platformMean: expectedRating, completed: 1, failed: 0 });
+    expect(profile!.reputationScore).toBe(expected.score);
+
+    const breakdown = await request(app).get(`/api/v1/reviews/user/${freelancer.user.id}/breakdown`).expect(200);
+    expect(breakdown.body.data.reputationScore).toBe(expected.score);
+    const list = await request(app).get(`/api/v1/reviews/user/${freelancer.user.id}`).expect(200);
+    expect(list.body.data[0].verifiedHire).toEqual({});
+  });
+
+  it('weights old reviews at 50 %, penalises failed jobs and rewards verification', () => {
+    const now = new Date('2026-10-27');
+    const fresh = computeReputation({ reviews: [{ rating: 5, createdAt: now }, { rating: 1, createdAt: new Date('2024-01-01') }], platformMean: 4, completed: 2, failed: 0, now });
+    const flat = computeReputation({ reviews: [{ rating: 5, createdAt: now }, { rating: 1, createdAt: now }], platformMean: 4, completed: 2, failed: 0, now });
+    expect(fresh.bayesianRating).toBeGreaterThan(flat.bayesianRating);
+
+    const failing = computeReputation({ reviews: [], platformMean: 4, completed: 2, failed: 3, now });
+    const clean = computeReputation({ reviews: [], platformMean: 4, completed: 2, failed: 0, now });
+    expect(failing.score).toBeLessThan(clean.score);
+    expect(computeReputation({ reviews: [], platformMean: 4, completed: 2, failed: 0, verified: true, now }).score).toBe(Math.min(100, clean.score + 5));
+    expect(amountRange(12_000)).toBe('₹5k–₹25k');
   });
 });

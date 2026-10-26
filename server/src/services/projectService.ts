@@ -5,6 +5,7 @@ import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
 import notificationService from './notificationService';
 import paymentService from './paymentService';
+import reputationService from './reputationService';
 import { StoredFile } from './uploadService';
 import { env } from '../config/env';
 import { GigStatus, IGig, IMilestone, IUser, MilestoneStatus, NotificationType, PaymentStatus, UserRole } from '../types';
@@ -199,6 +200,7 @@ class ProjectService {
       ClientProfile.updateOne({ user: done.client }, { $inc: { completedGigs: 1 } }),
       FreelancerProfile.updateOne({ user: done.selectedFreelancer }, { $inc: { completedGigs: 1 } }),
     ]);
+    await Promise.all([done.client, done.selectedFreelancer!].map((id) => reputationService.updateUserReputation(id)));
     await Promise.all(
       (['client', 'freelancer'] as const).map((to) =>
         notificationService.create({

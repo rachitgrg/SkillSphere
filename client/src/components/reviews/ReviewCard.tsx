@@ -28,6 +28,7 @@ export const ReviewCard: React.FC<{ review: Review; footer?: React.ReactNode }> 
       {gig && (
         <p className="text-xs text-emerald-400 flex items-center gap-1 mb-2">
           <BadgeCheck className="w-3.5 h-3.5" /> Verified hire · {gig.title}
+          {review.verifiedHire?.amountRange && <span className="text-slate-500">· {review.verifiedHire.amountRange}</span>}
         </p>
       )}
       <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{review.comment}</p>

@@ -36,6 +36,8 @@ const clientProfileSchema = new Schema<IClientProfile>(
     completedGigs: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0 },
+    // 0–100, see reputationService.
+    reputationScore: { type: Number, default: 0, min: 0, max: 100 },
     paymentVerified: { type: Boolean, default: false },
   },
   {

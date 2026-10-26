@@ -49,6 +49,8 @@ const disputeSchema = new Schema<IDispute>(
       default: DisputeStatus.OPEN,
     },
     resolution: String,
+    // How the escrowed money was settled; feeds the reputation completion rate (lost disputes).
+    paymentAction: { type: String, enum: ['refund', 'release', 'split'] },
     resolvedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',

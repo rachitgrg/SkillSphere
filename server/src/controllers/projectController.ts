@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import Gig from '../models/Gig';
 import Payment from '../models/Payment';
+import Review from '../models/Review';
 import projectService, { computeProgress, Party } from '../services/projectService';
 import uploadService from '../services/uploadService';
 import { uploadedFiles } from '../middleware/upload';
@@ -20,18 +21,19 @@ const load = async (req: AuthRequest, allowed: Party[]) => {
 export const getProgress = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { gig, party } = await projectService.loadForParty(param(req, 'id'), req.user!);
-    const [populated, payments] = await Promise.all([
+    const [populated, payments, reviewed] = await Promise.all([
       Gig.findById(gig._id)
         .populate('client', 'firstName lastName avatar')
         .populate('selectedFreelancer', 'firstName lastName avatar')
         .populate('progressLogs.author', 'firstName lastName avatar')
         .lean(),
       Payment.find({ gig: gig._id }).select('-razorpaySignature').sort({ createdAt: 1 }).lean(),
+      Review.exists({ gig: gig._id, reviewer: req.user!._id }),
     ]);
     res.status(200).json({
       success: true,
       message: 'Project progress',
-      data: { gig: populated, party, progress: computeProgress(gig.milestones), payments },
+      data: { gig: populated, party, progress: computeProgress(gig.milestones), payments, reviewed: Boolean(reviewed) },
     });
   } catch (error) {
     next(error);

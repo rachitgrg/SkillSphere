@@ -315,6 +315,7 @@ export interface IFreelancerProfile extends Document {
   completedGigs: number;
   averageRating: number;
   totalReviews: number;
+  reputationScore: number;
   responseTime: number; // in hours
   milestonePricing: { title: string; description?: string; price: number; deliveryDays: number }[];
   location?: IGeoLocation;
@@ -346,6 +347,7 @@ export interface IClientProfile extends Document {
   completedGigs: number;
   averageRating: number;
   totalReviews: number;
+  reputationScore: number;
   paymentVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -505,6 +507,7 @@ export interface IDispute extends Document {
   evidence: IEvidence[];
   status: DisputeStatus;
   resolution?: string;
+  paymentAction?: 'refund' | 'release' | 'split';
   resolvedBy?: Types.ObjectId;
   resolvedAt?: Date;
   adminNotes?: string;

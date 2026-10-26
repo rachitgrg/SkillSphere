@@ -9,6 +9,7 @@ import notificationService from '../services/notificationService';
 import uploadService from '../services/uploadService';
 import { uploadedFiles } from '../middleware/upload';
 import embeddingService from '../services/embeddingService';
+import reputationService from '../services/reputationService';
 import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
 import { buildPublicGigFilter, gigSort, isInvited, toStringList } from '../services/gigQuery';
@@ -251,6 +252,8 @@ export const cancelGig = async (req: AuthRequest, res: Response, next: NextFunct
     const wasActive = gig.status === GigStatus.IN_PROGRESS;
     gig.status = GigStatus.CANCELLED;
     await gig.save();
+    // Cancelled hires lower both parties' completion rate.
+    if (wasActive) await Promise.all([gig.client, gig.selectedFreelancer!].map((id) => reputationService.updateUserReputation(id)));
     if (wasActive) await ClientProfile.updateOne({ user: gig.client, activeGigs: { $gt: 0 } }, { $inc: { activeGigs: -1 } });
 
     const open = await Proposal.find({ gig: gig._id, status: { $in: [ProposalStatus.PENDING, ProposalStatus.NEGOTIATING] } });

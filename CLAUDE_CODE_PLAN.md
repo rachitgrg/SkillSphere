@@ -388,7 +388,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Transaction history** page for clients and freelancers using `TransactionCard`, with filters, a CSV export, and a summary (in escrow, released, refunded, fees).
 
 ### 4.8 Reputation & reviews (module 8)
-- [ ] **Weighted reputation score** (store as `reputationScore` 0–100 on both profiles, and document it):
+- [x] **Weighted reputation score** (store as `reputationScore` 0–100 on both profiles, and document it):
   - Bayesian average rating (prior m=5 reviews at the platform mean)
   - category weights already in `Review` (quality 30 %, communication 20 %, timeliness 20 %, professionalism 15 %, value 15 %)
   - recency weighting (reviews older than 12 months count 50 %)
@@ -396,10 +396,10 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - verified badge bonus
   
   Recalculate in `reputationService` after each review, dispute and completion.
-- [ ] **Verified reviews:** only gig participants after completion, shown with a "Verified hire" tag including the amount range.
-- [ ] **Fraud detection:** use `detectFraudulentReview` (already written), plus extra signals: same IP or device for reviewer and reviewee (store `lastLoginIp`), brand‑new account, very short or duplicate comment text, and rating outliers. Flagged reviews are hidden until an admin decides. Users can `POST /reviews/:id/report`.
-- [ ] **Review analytics:** `GET /reviews/user/:id/breakdown` (already in `reputationService.getReputationBreakdown`). UI: a star distribution bar chart and category averages on the profile page and the freelancer analytics page.
-- [ ] Write‑review modal on completed gigs for both parties, using the existing `StarRating` per category; show the reply.
+- [x] **Verified reviews:** only gig participants after completion, shown with a "Verified hire" tag including the amount range.
+- [x] **Fraud detection:** use `detectFraudulentReview` (already written), plus extra signals: same IP or device for reviewer and reviewee (store `lastLoginIp`), brand‑new account, very short or duplicate comment text, and rating outliers. Flagged reviews are hidden until an admin decides. Users can `POST /reviews/:id/report`.
+- [x] **Review analytics:** `GET /reviews/user/:id/breakdown` (already in `reputationService.getReputationBreakdown`). UI: a star distribution bar chart and category averages on the profile page and the freelancer analytics page.
+- [x] Write‑review modal on completed gigs for both parties, using the existing `StarRating` per category; show the reply.
 
 ### 4.9 Admin (module 9)
 - [ ] **Users:**

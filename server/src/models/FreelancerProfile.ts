@@ -112,6 +112,8 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
     completedGigs: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0 },
+    // 0–100, see reputationService (Bayesian rating, recency, completion rate, verified bonus).
+    reputationScore: { type: Number, default: 0, min: 0, max: 100 },
     responseTime: { type: Number, default: 0 },
     languages: [
       {

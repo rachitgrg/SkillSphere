@@ -4,6 +4,7 @@ import Dispute from '../models/Dispute';
 import Gig from '../models/Gig';
 import Payment from '../models/Payment';
 import paymentService from '../services/paymentService';
+import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
 import { AdminAction, AuthRequest, DisputeStatus, IDispute, PaymentStatus, UserRole } from '../types';
 import { logAdminAction } from '../utils/adminLog';
@@ -171,10 +172,13 @@ export const resolveDispute = async (req: AuthRequest, res: Response, next: Next
 
     dispute.status = DisputeStatus.RESOLVED;
     dispute.resolution = resolution;
+    dispute.paymentAction = paymentAction;
     dispute.adminNotes = adminNotes;
     dispute.resolvedBy = req.user!._id;
     dispute.resolvedAt = new Date();
     await dispute.save();
+
+    await Promise.all([dispute.raisedBy, dispute.against].map((id) => reputationService.updateUserReputation(id)));
 
     await logAdminAction(req, {
       action: AdminAction.DISPUTE_RESOLVE,

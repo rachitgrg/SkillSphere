@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle2, Clock, FileText, MessageSquare, Paperclip, Play, Send, Undo2 } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
@@ -11,6 +11,7 @@ import { FileUpload } from '../../components/common/FileUpload';
 import { MilestoneTimeline } from '../../components/gigs/MilestoneTimeline';
 import { TransactionCard } from '../../components/payments/TransactionCard';
 import { FundButton } from '../../components/payments/FundButton';
+import { WriteReviewModal } from '../../components/reviews/WriteReviewModal';
 import { usePaymentConfig, useProjectMutation, useProjectProgress } from '../../hooks/queries/useProject';
 import { useConfig } from '../../hooks/queries/useConfig';
 import { useStartConversation } from '../../hooks/queries/useChat';
@@ -54,6 +55,8 @@ export function ProjectProgressPage() {
   const project = useProjectProgress(gigId);
   const startConversation = useStartConversation();
   const complete = useProjectMutation(() => gigApi.completeGig(gigId!));
+  const [params] = useSearchParams();
+  const [reviewing, setReviewing] = useState(params.get('review') === '1');
 
   const openChat = async (data: ProjectProgress) => {
     const other = data.party === 'client' ? data.gig.selectedFreelancer : data.gig.client;
@@ -98,9 +101,10 @@ export function ProjectProgressPage() {
               <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 flex flex-wrap items-center gap-3">
                 <CheckCircle2 className="w-4 h-4" />
                 <span className="flex-1">Project completed {data.gig.completedAt && formatDate(data.gig.completedAt)}.</span>
-                {data.party !== 'admin' && (
-                  <Link to={`/reviews?gig=${data.gig._id}`} className="btn-primary px-3 py-1.5 text-xs"><span>Leave a review</span></Link>
+                {data.party !== 'admin' && !data.reviewed && (
+                  <Button size="sm" onClick={() => setReviewing(true)}>Leave a review</Button>
                 )}
+                {data.reviewed && <span className="text-xs text-emerald-300">You reviewed this project</span>}
               </div>
             )}
 
@@ -140,6 +144,14 @@ export function ProjectProgressPage() {
                 </section>
               </aside>
             </div>
+            {data.party !== 'admin' && data.gig.status === 'completed' && !data.reviewed && (
+              <WriteReviewModal
+                isOpen={reviewing}
+                onClose={() => setReviewing(false)}
+                gigId={data.gig._id}
+                revieweeName={fullName(data.party === 'client' ? data.gig.selectedFreelancer : data.gig.client)}
+              />
+            )}
           </>
         )}
       </QueryState>

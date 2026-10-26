@@ -19,6 +19,12 @@ export function ReviewBreakdownChart({ breakdown }: { breakdown: ReviewBreakdown
       <div className="flex items-end gap-2">
         <span className="text-4xl font-bold text-white">{breakdown.overall.toFixed(1)}</span>
         <span className="text-sm text-slate-400 mb-1">/ 5 · {breakdown.totalReviews} {breakdown.totalReviews === 1 ? 'review' : 'reviews'}</span>
+        {breakdown.reputationScore > 0 && (
+          <span className="ml-auto text-right" title="Reputation score: Bayesian rating, recent reviews weighted higher, job completion rate and verification">
+            <span className="block text-2xl font-bold text-indigo-300">{Math.round(breakdown.reputationScore)}</span>
+            <span className="block text-[10px] uppercase tracking-wide text-slate-500">Reputation</span>
+          </span>
+        )}
       </div>
 
       <ul className="space-y-1.5" aria-label="Rating distribution">
