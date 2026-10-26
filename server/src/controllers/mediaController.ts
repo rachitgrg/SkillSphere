@@ -44,11 +44,20 @@ export const deleteResume = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-/** POST /users/freelancers/me/portfolio — multipart: title, description, url?, technologies?, `images` (up to 6). */
+/**
+ * POST /users/freelancers/me/portfolio — multipart: title, description, url?, technologies?, `images` (up to 6);
+ * or JSON with `imageUrls` instead of files.
+ */
 export const addPortfolioItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const stored = await uploadService.uploadFiles(uploadedFiles(req), 'portfolio');
-    const { title, description, url, technologies } = req.body as { title: string; description: string; url?: string; technologies?: string[] };
+    const { title, description, url, technologies, imageUrls = [] } = req.body as {
+      title: string;
+      description: string;
+      url?: string;
+      technologies?: string[];
+      imageUrls?: string[];
+    };
     const profile = await FreelancerProfile.findOneAndUpdate(
       { user: req.user!._id },
       {
@@ -58,7 +67,7 @@ export const addPortfolioItem = async (req: AuthRequest, res: Response, next: Ne
             description,
             url: url || undefined,
             technologies: technologies ?? [],
-            images: stored.map((f) => f.url),
+            images: [...stored.map((f) => f.url), ...imageUrls].slice(0, 6),
             imagePublicIds: stored.map((f) => f.publicId),
             completedAt: new Date(),
           },

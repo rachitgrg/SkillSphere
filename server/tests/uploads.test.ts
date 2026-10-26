@@ -54,6 +54,21 @@ describe('uploads without Cloudinary', () => {
   });
 });
 
+describe('portfolio without Cloudinary', () => {
+  it('accepts JSON items with image URLs and is not editable through PUT', async () => {
+    const f = await createUser(UserRole.FREELANCER);
+    const res = await request(app)
+      .post('/api/v1/users/freelancers/me/portfolio')
+      .set(f.auth)
+      .send({ title: 'Shop', description: 'Online shop', imageUrls: ['https://example.com/a.png'], technologies: 'React' })
+      .expect(201);
+    expect(res.body.data.portfolio[0]).toMatchObject({ images: ['https://example.com/a.png'], technologies: ['React'] });
+
+    await request(app).put('/api/v1/users/freelancers/me').set(f.auth).send({ portfolio: [] }).expect(200);
+    expect((await FreelancerProfile.findOne({ user: f.user._id }))!.portfolio).toHaveLength(1);
+  });
+});
+
 describe('uploads with Cloudinary (mocked)', () => {
   let upload: jest.SpyInstance;
   let remove: jest.SpyInstance;

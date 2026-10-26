@@ -87,6 +87,11 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/gigs/', tag: 'Gigs', summary: 'Create a gig (goes to the admin approval queue)', access: 'client', body: bodyOf(v.createGigSchema) },
   { method: 'put', path: '/gigs/:id', tag: 'Gigs', summary: 'Edit a gig before work starts', access: 'client', body: bodyOf(v.updateGigSchema) },
   { method: 'put', path: '/gigs/:id/cancel', tag: 'Gigs', summary: 'Cancel a gig (no escrowed money)', access: 'client' },
+  { method: 'post', path: '/gigs/:id/attachments', tag: 'Gigs', summary: 'Attach documents (up to 5 per request, 10 per gig)', access: 'client', multipart: { 'files[]': 'Images, PDF, DOC/DOCX, TXT or ZIP — 10 MB each' }, description: '503 when Cloudinary is not configured.' },
+  { method: 'delete', path: '/gigs/:id/attachments/:attachmentId', tag: 'Gigs', summary: 'Remove an attachment', access: 'client' },
+  { method: 'post', path: '/gigs/:id/invite', tag: 'Gigs', summary: 'Invite a freelancer to an open gig (in-app + email)', access: 'client', body: bodyOf(v.inviteFreelancerSchema) },
+  { method: 'get', path: '/gigs/invitations', tag: 'Gigs', summary: 'Freelancer: open gigs I was invited to', access: 'freelancer' },
+  { method: 'put', path: '/gigs/:id/invitation', tag: 'Gigs', summary: 'Freelancer: decline an invitation (applying accepts it)', access: 'freelancer', body: bodyOf(v.respondInvitationSchema) },
   { method: 'delete', path: '/gigs/:id', tag: 'Gigs', summary: 'Delete a gig that has not started', access: 'client|admin' },
 
   // Proposals

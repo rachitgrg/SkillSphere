@@ -70,6 +70,11 @@ const CASES: Record<string, Case> = {
   'PUT /api/v1/gigs/:id': { role: 'client', path: (i) => `/api/v1/gigs/${i.openGigId}`, body: () => ({ title: 'Renamed' }) },
   'PUT /api/v1/gigs/:id/cancel': { role: 'client', path: (i) => `/api/v1/gigs/${i.spareGigId}/cancel` },
   'DELETE /api/v1/gigs/:id': { role: 'client', path: (i) => `/api/v1/gigs/${i.deletableGigId}` },
+  'POST /api/v1/gigs/:id/attachments': { role: 'client', path: (i) => `/api/v1/gigs/${i.openGigId}/attachments` },
+  'DELETE /api/v1/gigs/:id/attachments/:attachmentId': { role: 'client', path: (i) => `/api/v1/gigs/${i.openGigId}/attachments/${i.attachmentId}` },
+  'POST /api/v1/gigs/:id/invite': { role: 'client', path: (i) => `/api/v1/gigs/${i.applyGigId}/invite`, body: (i) => ({ freelancerId: i.spareUserId }) },
+  'GET /api/v1/gigs/invitations': { role: 'freelancer' },
+  'PUT /api/v1/gigs/:id/invitation': { role: 'freelancer', path: (i) => `/api/v1/gigs/${i.inviteGigId}/invitation`, body: () => ({ status: 'declined' }) },
 
   // Proposals
   'POST /api/v1/proposals/': { role: 'freelancer', path: () => '/api/v1/proposals', body: (i) => ({ gigId: i.applyGigId, coverLetter: 'Hi', proposedAmount: 10, estimatedDuration: '1 week' }) },
@@ -161,7 +166,8 @@ const fixtures = async () => {
   const other = await createUser(UserRole.FREELANCER);
   const spare = await createUser(UserRole.FREELANCER);
 
-  const openGig = await createGig(client.user._id);
+  const openGig = await createGig(client.user._id, { attachments: [{ url: 'https://example.com/brief.pdf', name: 'brief.pdf', mimeType: 'application/pdf' }] });
+  const inviteGig = await createGig(client.user._id, { visibility: 'invite_only', invitations: [{ freelancer: freelancer.user._id }] });
   const applyGig = await createGig(client.user._id);
   const spareGig = await createGig(client.user._id);
   const deletableGig = await createGig(client.user._id);
@@ -217,6 +223,8 @@ const fixtures = async () => {
     notificationId: notification.id as string,
     disputeId: dispute.id as string,
     portfolioItemId: withPortfolio!.portfolio[0]._id!.toString(),
+    attachmentId: openGig.attachments[0]._id!.toString(),
+    inviteGigId: inviteGig.id as string,
   };
 };
 

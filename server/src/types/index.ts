@@ -60,6 +60,8 @@ export enum NotificationType {
   GIG_REJECTED = 'gig_rejected',
   PROPOSAL_COUNTERED = 'proposal_countered',
   VERIFICATION_UPDATE = 'verification_update',
+  GIG_INVITATION = 'gig_invitation',
+  GIG_MATCH = 'gig_match',
   SYSTEM = 'system',
 }
 
@@ -164,6 +166,23 @@ export interface IMilestone {
   completedAt?: Date;
 }
 
+export interface IAttachment {
+  _id?: Types.ObjectId;
+  url: string;
+  publicId?: string;
+  name: string;
+  size?: number;
+  mimeType?: string;
+  uploadedAt?: Date;
+}
+
+export interface IGigInvitation {
+  freelancer: Types.ObjectId;
+  invitedAt: Date;
+  status: 'pending' | 'accepted' | 'declined';
+  respondedAt?: Date;
+}
+
 export interface INegotiationEntry {
   proposedBy: Types.ObjectId;
   amount: number;
@@ -198,6 +217,11 @@ export interface IReviewCategory {
   value: number;
 }
 
+/** Groups of notifications a user can switch on or off per channel. */
+export const NOTIFICATION_CATEGORIES = ['proposals', 'gigs', 'payments', 'reviews', 'messages', 'disputes', 'projects'] as const;
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+export type NotificationPreferences = Record<'email' | 'inApp', Record<NotificationCategory, boolean>>;
+
 // ───────────────────────── Document Interfaces ─────────────────────────
 
 export interface IUser extends Document {
@@ -228,6 +252,7 @@ export interface IUser extends Document {
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
   needsRoleSelection?: boolean;
+  notificationPreferences?: NotificationPreferences;
   lastLoginIp?: string;
   refreshToken?: string;
   passwordResetToken?: string;
@@ -312,7 +337,8 @@ export interface IGig extends Document {
   duration: string;
   experienceLevel: 'entry' | 'intermediate' | 'expert';
   milestones: IMilestone[];
-  attachments: string[];
+  attachments: IAttachment[];
+  invitations: IGigInvitation[];
   location?: IGeoLocation;
   locationType: 'remote' | 'onsite' | 'hybrid';
   status: GigStatus;

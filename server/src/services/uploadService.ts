@@ -12,9 +12,12 @@ export interface StoredFile {
   resourceType: 'image' | 'raw';
 }
 
-/** 503 before multer buffers anything when Cloudinary has no credentials. */
-export const requireUploads = (_req: Request, res: Response, next: NextFunction): void => {
-  if (!features.cloudinary) {
+/**
+ * 503 before multer buffers anything when Cloudinary has no credentials. Only multipart requests
+ * carry files, so JSON requests to the same route (e.g. a portfolio item with image URLs) pass.
+ */
+export const requireUploads = (req: Request, res: Response, next: NextFunction): void => {
+  if (!features.cloudinary && req.is('multipart/form-data')) {
     res.status(503).json({ success: false, message: 'File uploads are not configured', code: 'UPLOADS_DISABLED' });
     return;
   }

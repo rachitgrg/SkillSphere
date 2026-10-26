@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "seed": "ts-node --transpile-only scripts/seed.ts",
-    "db:sync-indexes": "ts-node --transpile-only scripts/syncIndexes.ts"
+    "db:sync-indexes": "ts-node --transpile-only scripts/syncIndexes.ts",
+    "db:migrate": "ts-node --transpile-only scripts/migrate.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^3.13.2",

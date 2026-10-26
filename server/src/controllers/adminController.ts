@@ -11,9 +11,10 @@ import AdminLog from '../models/AdminLog';
 import paymentService from '../services/paymentService';
 import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
+import aiMatchingService from '../services/aiMatchingService';
 import { getIOOrNull } from '../config/socket';
 import { userRoom } from '../services/chatService';
-import { AdminAction, AuthRequest, DisputeStatus, GigStatus, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
+import { AdminAction, AuthRequest, DisputeStatus, GigStatus, IGig, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
 import { logAdminAction } from '../utils/adminLog';
 import { buildPaginationResponse, containsRegex, parsePaginationParams } from '../utils/helpers';
 
@@ -357,6 +358,32 @@ const reviewVerification = (approve: boolean) => async (req: AuthRequest, res: R
 export const verifyFreelancer = reviewVerification(true);
 export const rejectFreelancerVerification = reviewVerification(false);
 
+/** Number of best-matching freelancers told about a newly approved public gig. */
+const NEW_GIG_MATCH_LIMIT = 20;
+
+/** "New gig posted" (in-app + email per preferences) to the top matches from the AI ranking. */
+const notifyMatchingFreelancers = async (gig: IGig): Promise<void> => {
+  try {
+    const matches = await aiMatchingService.matchFreelancersToGig(gig._id, NEW_GIG_MATCH_LIMIT);
+    await Promise.all(
+      matches.map((m) =>
+        notificationService.create({
+          recipient: m.freelancerId._id.toString(),
+          type: NotificationType.GIG_MATCH,
+          title: 'New gig matching your skills',
+          message: `"${gig.title}" (${Math.round(m.score)}% match) was just posted${m.matchedSkills.length ? ` — ${m.matchedSkills.join(', ')}` : ''}`,
+          data: { gigId: gig._id.toString(), score: m.score },
+          link: `/gigs/${gig._id}`,
+          category: 'gigs',
+        })
+      )
+    );
+  } catch (error) {
+    // Approval already succeeded; a matching failure must not turn it into an error.
+    console.error('New-gig match notifications failed:', error);
+  }
+};
+
 const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const reason: string | undefined = req.body?.reason;
@@ -387,6 +414,8 @@ const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, 
       data: { gigId: gig._id.toString() },
       link: `/gigs/${gig._id}`,
     });
+
+    if (approve && gig.visibility === 'public') await notifyMatchingFreelancers(gig);
 
     res.status(200).json({ success: true, message: approve ? 'Gig approved' : 'Gig rejected', data: gig });
   } catch (error) {

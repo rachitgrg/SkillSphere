@@ -77,7 +77,26 @@ const gigSchema = new Schema<IGig>(
       required: true,
     },
     milestones: [milestoneSchema],
-    attachments: [String],
+    // Uploaded via POST /gigs/:id/attachments (Cloudinary).
+    attachments: [
+      {
+        url: { type: String, required: true },
+        publicId: String,
+        name: { type: String, required: true },
+        size: Number,
+        mimeType: String,
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+    invitations: [
+      {
+        _id: false,
+        freelancer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        invitedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
+        respondedAt: Date,
+      },
+    ],
     location: {
       type: {
         type: String,
@@ -142,12 +161,23 @@ gigSchema.index({ experienceLevel: 1 });
 gigSchema.index({ locationType: 1 });
 gigSchema.index({ location: '2dsphere' });
 gigSchema.index({ createdAt: -1 });
+gigSchema.index({ 'invitations.freelancer': 1 });
 gigSchema.index({ title: 'text', description: 'text', tags: 'text' });
 
 // Pre-validate: budgetMax >= budgetMin
+// While the gig is being written (before anyone is hired) milestones must fit the budget;
+// after hiring, the accepted (possibly negotiated) amount governs instead.
+const BUDGETED_STATUSES = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
+
 gigSchema.pre('validate', function () {
   if (this.budgetMax < this.budgetMin) {
     this.invalidate('budgetMax', 'Maximum budget must be >= minimum budget');
+  }
+  if (this.budgetType === 'fixed' && BUDGETED_STATUSES.includes(this.status) && (this.isModified('milestones') || this.isModified('budgetMax'))) {
+    const total = this.milestones.reduce((sum, m) => sum + (m.amount || 0), 0);
+    if (total > this.budgetMax) {
+      this.invalidate('milestones', `Milestones add up to ₹${total}, more than the ₹${this.budgetMax} budget`);
+    }
   }
 });
 

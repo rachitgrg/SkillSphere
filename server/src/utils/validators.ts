@@ -134,14 +134,6 @@ export const updateFreelancerProfileSchema = z.object({
       startTime: z.string().regex(HH_MM, 'Use HH:mm'),
       endTime: z.string().regex(HH_MM, 'Use HH:mm'),
     })).max(50).optional(),
-    portfolio: z.array(z.object({
-      title: z.string().trim().min(1).max(200),
-      description: z.string().trim().min(1).max(2000),
-      url: optionalUrl,
-      images: z.array(z.string().url()).max(10).optional(),
-      technologies: z.array(z.string().max(50)).max(20).optional(),
-      completedAt: optionalDate,
-    })).max(30).optional(),
     certifications: z.array(z.object({
       name: z.string().trim().min(1).max(200),
       issuer: z.string().trim().min(1).max(200),
@@ -192,7 +184,6 @@ export const createGigSchema = z.object({
     duration: z.string().min(1),
     experienceLevel: z.enum(['entry', 'intermediate', 'expert']),
     milestones: z.array(milestoneInput).max(20).optional(),
-    attachments: z.array(z.string().url()).max(10).optional(),
     locationType: z.enum(['remote', 'onsite', 'hybrid']).optional(),
     visibility: z.enum(['public', 'private', 'invite_only']).optional(),
     tags: z.array(z.string().max(50)).max(20).optional(),
@@ -214,13 +205,25 @@ export const updateGigSchema = z.object({
     duration: z.string().optional(),
     experienceLevel: z.enum(['entry', 'intermediate', 'expert']).optional(),
     milestones: z.array(milestoneInput).max(20).optional(),
-    attachments: z.array(z.string().url()).max(10).optional(),
     locationType: z.enum(['remote', 'onsite', 'hybrid']).optional(),
     visibility: z.enum(['public', 'private', 'invite_only']).optional(),
     tags: z.array(z.string().max(50)).max(20).optional(),
     deadline: optionalDate,
     location: geoPointSchema.optional(),
     // status, views, client and selectedFreelancer are server-controlled.
+  }),
+});
+
+export const inviteFreelancerSchema = z.object({
+  body: z.object({
+    freelancerId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid freelancer id'),
+    message: z.string().trim().max(500).optional(),
+  }),
+});
+
+export const respondInvitationSchema = z.object({
+  body: z.object({
+    status: z.enum(['declined']),
   }),
 });
 
@@ -410,6 +413,8 @@ export const portfolioItemSchema = z.object({
         return t ? t.split(',').map((x) => x.trim()).filter(Boolean) : [];
       }, z.array(z.string().max(50)).max(20))
       .optional(),
+    /** JSON requests only: images hosted elsewhere (used when uploads are not configured). */
+    imageUrls: z.array(z.string().url()).max(6).optional(),
   }),
 });
 

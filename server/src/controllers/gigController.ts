@@ -4,33 +4,53 @@ import ClientProfile from '../models/ClientProfile';
 import { Types } from 'mongoose';
 import Payment from '../models/Payment';
 import Proposal from '../models/Proposal';
+import User from '../models/User';
 import notificationService from '../services/notificationService';
+import uploadService from '../services/uploadService';
+import { uploadedFiles } from '../middleware/upload';
 import embeddingService from '../services/embeddingService';
-import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
+import { AuthRequest, UserRole, GigStatus, IGig, NotificationType, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
-import { buildPublicGigFilter, gigSort, toStringList } from '../services/gigQuery';
+import { buildPublicGigFilter, gigSort, isInvited, toStringList } from '../services/gigQuery';
 
 /** Fields a client may set on a gig; status, views, proposals and the hired freelancer are server-controlled. */
 export const GIG_EDITABLE = [
   'title', 'description', 'category', 'subCategory', 'skills', 'budgetType', 'budgetMin', 'budgetMax',
-  'duration', 'experienceLevel', 'milestones', 'attachments', 'location', 'locationType', 'visibility', 'tags', 'deadline',
+  'duration', 'experienceLevel', 'milestones', 'location', 'locationType', 'visibility', 'tags', 'deadline',
 ] as const;
 
 /** A gig can only be edited before work starts. */
 const EDITABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
 
+const MAX_ATTACHMENTS = 10;
+
 /**
- * Open public gigs are visible to everyone; anything else only to its owner, the hired
- * freelancer and admins (invitees are added with invitations in plan 4.4).
+ * Open public gigs are visible to everyone; open invite-only gigs to their invitees; anything
+ * else only to its owner, the hired freelancer and admins.
  */
 const canViewGig = (
-  gig: Pick<IGig, 'client' | 'selectedFreelancer' | 'status' | 'visibility'>,
+  gig: Pick<IGig, 'client' | 'selectedFreelancer' | 'status' | 'visibility' | 'invitations'>,
   user?: { _id: Types.ObjectId; role: string }
 ): boolean => {
   if (gig.status === GigStatus.OPEN && (gig.visibility ?? 'public') === 'public') return true;
   if (!user) return false;
   const id = user._id.toString();
+  if (gig.status === GigStatus.OPEN && isInvited(gig, id)) return true;
   return user.role === UserRole.ADMIN || gig.client.toString() === id || gig.selectedFreelancer?.toString() === id;
+};
+
+/** Loads a gig the caller owns, or answers 404/403 and returns null. */
+const loadOwnGig = async (req: AuthRequest, res: Response) => {
+  const gig = await Gig.findById(req.params.id);
+  if (!gig) {
+    res.status(404).json({ success: false, message: 'Gig not found' });
+    return null;
+  }
+  if (gig.client.toString() !== req.user!._id.toString()) {
+    res.status(403).json({ success: false, message: 'Only the gig owner can do this' });
+    return null;
+  }
+  return gig;
 };
 
 /** A gig can only be deleted before anyone is hired; afterwards it must be cancelled. */
@@ -116,7 +136,7 @@ export const getGigs = async (req: AuthRequest, res: Response, next: NextFunctio
 
 export const getGigById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const existing = await Gig.findById(req.params.id).select('client selectedFreelancer status visibility').lean();
+    const existing = await Gig.findById(req.params.id).select('client selectedFreelancer status visibility invitations').lean();
     if (!existing || !canViewGig(existing, req.user)) {
       // 404 (not 403) so private gigs don't reveal that they exist.
       res.status(404).json({ success: false, message: 'Gig not found' });
@@ -130,6 +150,12 @@ export const getGigById = async (req: AuthRequest, res: Response, next: NextFunc
       .populate('client', 'firstName lastName avatar address')
       .populate('selectedFreelancer', 'firstName lastName avatar')
       .lean();
+
+    // Only the owner and admins see who else was invited; an invitee sees their own invitation.
+    const viewer = req.user?._id.toString();
+    if (gig && viewer !== gig.client._id.toString() && req.user?.role !== UserRole.ADMIN) {
+      gig.invitations = (gig.invitations ?? []).filter((i) => i.freelancer.toString() === viewer);
+    }
 
     res.status(200).json({ success: true, message: 'Gig retrieved', data: gig });
   } catch (error) {
@@ -239,6 +265,132 @@ export const cancelGig = async (req: AuthRequest, res: Response, next: NextFunct
     );
 
     res.status(200).json({ success: true, message: 'Gig cancelled', data: gig });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /gigs/:id/attachments — `files` (up to 5 per request, 10 in total): images, PDF, DOC, TXT, ZIP. */
+export const addAttachments = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const gig = await loadOwnGig(req, res);
+    if (!gig) return;
+    const files = uploadedFiles(req);
+    if (gig.attachments.length + files.length > MAX_ATTACHMENTS) {
+      res.status(400).json({ success: false, message: `A gig can have at most ${MAX_ATTACHMENTS} attachments` });
+      return;
+    }
+    const stored = await uploadService.uploadFiles(files, 'gig-attachments');
+    const updated = await Gig.findByIdAndUpdate(
+      gig._id,
+      { $push: { attachments: { $each: stored.map(({ url, publicId, name, size, mimeType }) => ({ url, publicId, name, size, mimeType })) } } },
+      { returnDocument: 'after' }
+    );
+    res.status(201).json({ success: true, message: 'Attachments added', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** DELETE /gigs/:id/attachments/:attachmentId */
+export const removeAttachment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const gig = await loadOwnGig(req, res);
+    if (!gig) return;
+    const attachment = gig.attachments.find((a) => a._id?.toString() === req.params.attachmentId);
+    if (!attachment) {
+      res.status(404).json({ success: false, message: 'Attachment not found' });
+      return;
+    }
+    const updated = await Gig.findByIdAndUpdate(gig._id, { $pull: { attachments: { _id: attachment._id } } }, { returnDocument: 'after' });
+    const isImage = attachment.mimeType?.startsWith('image/');
+    await uploadService.deleteFile(attachment.publicId, isImage ? 'image' : 'raw');
+    res.status(200).json({ success: true, message: 'Attachment removed', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /gigs/:id/invite { freelancerId, message? } — invites a freelancer to an open gig
+ * (in-app + email). Invite-only gigs are visible to invitees only.
+ */
+export const inviteFreelancer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const gig = await loadOwnGig(req, res);
+    if (!gig) return;
+    if (gig.status !== GigStatus.OPEN) {
+      res.status(409).json({ success: false, message: 'Freelancers can be invited once the gig is approved and open' });
+      return;
+    }
+    const { freelancerId, message } = req.body as { freelancerId: string; message?: string };
+    const freelancer = await User.findOne({ _id: freelancerId, role: UserRole.FREELANCER, isActive: true, isBanned: false }).select('_id');
+    if (!freelancer) {
+      res.status(404).json({ success: false, message: 'Freelancer not found' });
+      return;
+    }
+    if (await Proposal.exists({ gig: gig._id, freelancer: freelancer._id })) {
+      res.status(409).json({ success: false, message: 'This freelancer has already applied' });
+      return;
+    }
+    // Guarded push: the invite is recorded at most once even under concurrent requests.
+    const updated = await Gig.findOneAndUpdate(
+      { _id: gig._id, 'invitations.freelancer': { $ne: freelancer._id } },
+      { $push: { invitations: { freelancer: freelancer._id, invitedAt: new Date(), status: 'pending' } } },
+      { returnDocument: 'after' }
+    );
+    if (!updated) {
+      res.status(409).json({ success: false, message: 'This freelancer is already invited' });
+      return;
+    }
+
+    const client = req.user!;
+    await notificationService.create({
+      recipient: freelancer._id.toString(),
+      sender: client._id.toString(),
+      type: NotificationType.GIG_INVITATION,
+      title: 'You are invited to a gig',
+      message: `${client.firstName} ${client.lastName} invited you to apply to "${gig.title}"${message ? `: ${message}` : ''}`,
+      data: { gigId: gig._id.toString() },
+      link: `/gigs/${gig._id}`,
+      category: 'gigs',
+    });
+
+    res.status(200).json({ success: true, message: 'Freelancer invited', data: updated.invitations });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** GET /gigs/invitations — freelancer: open gigs they were invited to, newest first. */
+export const getMyInvitations = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const me = req.user!._id;
+    const gigs = await Gig.find({ status: GigStatus.OPEN, 'invitations.freelancer': me })
+      .populate('client', 'firstName lastName avatar address')
+      .sort({ 'invitations.invitedAt': -1 })
+      .limit(50)
+      .lean();
+    const data = gigs.map(({ invitations, ...gig }) => ({ gig, invitation: invitations.find((i) => i.freelancer.toString() === me.toString()) }));
+    res.status(200).json({ success: true, message: 'Invitations', data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** PUT /gigs/:id/invitation { status: 'declined' } — freelancer declines an invitation (applying accepts it). */
+export const respondToInvitation = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const gig = await Gig.findOneAndUpdate(
+      { _id: req.params.id, invitations: { $elemMatch: { freelancer: req.user!._id, status: 'pending' } } },
+      { $set: { 'invitations.$.status': 'declined', 'invitations.$.respondedAt': new Date() } },
+      { returnDocument: 'after' }
+    );
+    if (!gig) {
+      res.status(404).json({ success: false, message: 'No pending invitation for this gig' });
+      return;
+    }
+    res.status(200).json({ success: true, message: 'Invitation declined' });
   } catch (error) {
     next(error);
   }

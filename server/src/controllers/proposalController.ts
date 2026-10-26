@@ -4,7 +4,7 @@ import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import ClientProfile from '../models/ClientProfile';
 import notificationService from '../services/notificationService';
-import { toStringList } from '../services/gigQuery';
+import { isInvited, toStringList } from '../services/gigQuery';
 import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
 import { AuthRequest, UserRole, ProposalStatus, IGig, GigStatus, MilestoneStatus, NotificationType } from '../types';
 
@@ -24,6 +24,10 @@ export const createProposal = async (req: AuthRequest, res: Response, next: Next
     }
     if (gig.client.toString() === freelancer._id.toString()) {
       res.status(403).json({ success: false, message: 'You cannot apply to your own gig' });
+      return;
+    }
+    if (gig.visibility !== 'public' && !isInvited(gig, freelancer._id)) {
+      res.status(404).json({ success: false, message: 'Gig not found' });
       return;
     }
 
@@ -50,6 +54,10 @@ export const createProposal = async (req: AuthRequest, res: Response, next: Next
     }
 
     await Gig.updateOne({ _id: gig._id }, { $push: { proposals: proposal._id }, $inc: { totalProposals: 1 } });
+    await Gig.updateOne(
+      { _id: gig._id, 'invitations.freelancer': freelancer._id },
+      { $set: { 'invitations.$.status': 'accepted', 'invitations.$.respondedAt': new Date() } }
+    );
     await notificationService.notifyProposalReceived(
       gig.client.toString(), freelancer._id.toString(), gig.title, gig._id.toString()
     );

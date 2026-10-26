@@ -113,6 +113,27 @@ const userSchema = new Schema<IUser>(
       type: [String],
       select: false,
     },
+    // Per-category delivery switches (see NOTIFICATION_CATEGORIES). Message emails are opt-in.
+    notificationPreferences: {
+      email: {
+        proposals: { type: Boolean, default: true },
+        gigs: { type: Boolean, default: true },
+        payments: { type: Boolean, default: true },
+        reviews: { type: Boolean, default: true },
+        messages: { type: Boolean, default: false },
+        disputes: { type: Boolean, default: true },
+        projects: { type: Boolean, default: true },
+      },
+      inApp: {
+        proposals: { type: Boolean, default: true },
+        gigs: { type: Boolean, default: true },
+        payments: { type: Boolean, default: true },
+        reviews: { type: Boolean, default: true },
+        messages: { type: Boolean, default: true },
+        disputes: { type: Boolean, default: true },
+        projects: { type: Boolean, default: true },
+      },
+    },
     // Google sign-ups pick client/freelancer on first login.
     needsRoleSelection: { type: Boolean, default: false },
     // Used for fraud signals (same IP for reviewer and reviewee).

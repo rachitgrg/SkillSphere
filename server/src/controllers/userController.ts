@@ -7,9 +7,12 @@ import { AuthRequest, UserRole } from '../types';
 import { pick } from '../utils/helpers';
 import embeddingService from '../services/embeddingService';
 
-/** Fields users may edit; ratings, earnings and counters are server-controlled. */
+/**
+ * Fields users may edit; ratings, earnings and counters are server-controlled. The portfolio, resume
+ * and verification have their own endpoints (they own uploaded files).
+ */
 export const FREELANCER_EDITABLE = [
-  'title', 'headline', 'skills', 'portfolio', 'certifications', 'workExperience', 'education',
+  'title', 'headline', 'skills', 'certifications', 'workExperience', 'education',
   'hourlyRate', 'availability', 'availabilitySlots', 'languages', 'socialLinks', 'location', 'milestonePricing',
 ] as const;
 export const CLIENT_EDITABLE = ['companyName', 'companyWebsite', 'companySize', 'industry', 'description'] as const;

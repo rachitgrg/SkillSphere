@@ -1,9 +1,15 @@
 import Notification from '../models/Notification';
-import { NotificationType } from '../types';
+import User from '../models/User';
+import emailService from './emailService';
+import { NotificationCategory, NotificationType } from '../types';
 import { getIO } from '../config/socket';
 
 class NotificationService {
-  async create(data: {
+  /**
+   * Stores an in-app notification and pushes it over the socket. With a `category`, the recipient's
+   * preferences decide whether the in-app copy is kept and whether an email goes out too.
+   */
+  async create({ category, ...data }: {
     recipient: string;
     sender?: string;
     type: NotificationType;
@@ -11,8 +17,18 @@ class NotificationService {
     message: string;
     data?: Record<string, unknown>;
     link?: string;
+    category?: NotificationCategory;
   }): Promise<void> {
     try {
+      if (category) {
+        const user = await User.findById(data.recipient).select('email firstName notificationPreferences').lean();
+        if (!user) return;
+        if (user.notificationPreferences?.email?.[category] ?? category !== 'messages') {
+          await emailService.sendNotificationEmail(user, data.title, data.message, data.link);
+        }
+        if (user.notificationPreferences?.inApp?.[category] === false) return;
+      }
+
       const notification = await Notification.create(data);
 
       // Send real-time notification via Socket.IO

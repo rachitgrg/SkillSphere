@@ -1,4 +1,4 @@
-import { QueryFilter, SortOrder } from 'mongoose';
+import { QueryFilter, SortOrder, Types } from 'mongoose';
 import { GigStatus, IGig } from '../types';
 
 /** Accepts `?skills=a,b`, `?skills=a&skills=b` or a JSON-less array and returns trimmed, non-empty values. */
@@ -6,6 +6,10 @@ export const toStringList = (value: unknown): string[] => {
   const raw = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
   return raw.filter((v): v is string => typeof v === 'string').map((v) => v.trim()).filter(Boolean);
 };
+
+/** True when `userId` has been invited to the gig. */
+export const isInvited = (gig: Pick<IGig, 'invitations'>, userId: Types.ObjectId | string): boolean =>
+  (gig.invitations ?? []).some((i) => i.freelancer.toString() === userId.toString());
 
 const toNumber = (value: unknown): number | undefined => {
   if (typeof value !== 'string' || value.trim() === '') return undefined;
