@@ -9,6 +9,7 @@ import { configureAuth } from './api/axiosInstance';
 import { bootstrapSession, logout, setCredentials } from './store/slices/authSlice';
 import type { User } from './types';
 import { SocketProvider } from './contexts/SocketContext';
+import { CallProvider } from './contexts/CallContext';
 import App from './App';
 import './index.css';
 
@@ -36,10 +37,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SocketProvider>
+          <CallProvider>
           <BrowserRouter>
             <App />
             <Toaster position="top-right" toastOptions={{ className: 'glass-card border border-slate-700 bg-slate-900 text-white' }} />
           </BrowserRouter>
+          </CallProvider>
         </SocketProvider>
       </QueryClientProvider>
     </Provider>

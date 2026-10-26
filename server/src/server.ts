@@ -7,6 +7,7 @@ import connectDB from './config/db';
 import { configureCloudinary } from './config/cloudinary';
 import { initializeSocket } from './config/socket';
 import { registerChatHandlers } from './sockets/chatSocket';
+import { registerCallHandlers } from './sockets/callSocket';
 import embeddingService from './services/embeddingService';
 
 logMissingIntegrations();
@@ -16,7 +17,7 @@ configureCloudinary();
 const server = http.createServer(app);
 
 // Single Socket.IO instance (auth + personal rooms in config/socket.ts)
-initializeSocket(server, [registerChatHandlers]);
+initializeSocket(server, [registerChatHandlers, registerCallHandlers]);
 
 // Connect to Database and start server
 const PORT = env.PORT;

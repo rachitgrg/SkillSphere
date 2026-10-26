@@ -3,6 +3,7 @@ import { AddressInfo } from 'net';
 import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
 import { initializeSocket, getIO, resetSocketState } from '../src/config/socket';
 import { registerChatHandlers } from '../src/sockets/chatSocket';
+import { registerCallHandlers } from '../src/sockets/callSocket';
 import Conversation from '../src/models/Conversation';
 import Message from '../src/models/Message';
 import User from '../src/models/User';
@@ -15,7 +16,7 @@ const sockets: ClientSocket[] = [];
 
 beforeAll(async () => {
   server = http.createServer();
-  initializeSocket(server, [registerChatHandlers]);
+  initializeSocket(server, [registerChatHandlers, registerCallHandlers]);
   await new Promise<void>((resolve) => server.listen(0, resolve));
   url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -194,5 +195,42 @@ describe('file messages (4.6)', () => {
     expect((await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://evil.example/x.exe' })).ok).toBe(false);
     expect((await emitAck(socket, 'send_message', { ...base, type: 'file' })).ok).toBe(false);
     expect((await emitAck(socket, 'send_message', { ...base, fileUrl: 'https://res.cloudinary.com/demo/raw/upload/spec.pdf' })).ok).toBe(false);
+  });
+});
+
+describe('call signalling (4.6)', () => {
+  it('relays offer/answer/ice/end between participants only', async () => {
+    const { client, freelancer, outsider, conversationId } = await setup();
+    const caller = await connect(client.token);
+    const callee = await connect(freelancer.token);
+    const intruder = await connect(outsider.token);
+
+    const offers = collect<{ from: { _id: string }; video: boolean }>(callee, 'call:offer');
+    const sdp = { type: 'offer', sdp: 'v=0' };
+    expect((await emitAck(caller, 'call:offer', { conversationId, sdp, video: true })).ok).toBe(true);
+    const [offer] = await offers;
+    expect(offer.from._id).toBe(client.user._id.toString());
+
+    const answers = collect(caller, 'call:answer');
+    await emitAck(callee, 'call:answer', { conversationId, sdp: { type: 'answer', sdp: 'v=0' } });
+    expect(await answers).toHaveLength(1);
+
+    const ices = collect(callee, 'call:ice');
+    await emitAck(caller, 'call:ice', { conversationId, candidate: { candidate: 'candidate:1 1 udp 1 1.2.3.4 5 typ host', sdpMid: '0', sdpMLineIndex: 0 } });
+    expect(await ices).toHaveLength(1);
+
+    expect((await emitAck(intruder, 'call:offer', { conversationId, sdp })).ok).toBe(false);
+    expect((await emitAck(caller, 'call:offer', { conversationId, sdp: 'bad' })).ok).toBe(false);
+
+    const ends = collect<{ reason: string }>(caller, 'call:end');
+    await emitAck(callee, 'call:end', { conversationId, reason: 'declined' });
+    expect((await ends)[0].reason).toBe('declined');
+  });
+
+  it('reports an offline callee as unavailable', async () => {
+    const { client, conversationId } = await setup();
+    const caller = await connect(client.token);
+    const res = await emitAck(caller, 'call:offer', { conversationId, sdp: { type: 'offer', sdp: 'v=0' } });
+    expect(res).toEqual({ ok: false, error: 'unavailable' });
   });
 });

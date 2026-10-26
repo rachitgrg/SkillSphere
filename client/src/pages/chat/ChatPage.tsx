@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ArrowLeft, MessageSquare, Paperclip, Send } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Paperclip, Phone, Send, Video } from 'lucide-react';
 import { ConversationList } from '../../components/chat/ConversationList';
 import { MessageBubble } from '../../components/chat/MessageBubble';
 import { TypingIndicator } from '../../components/chat/TypingIndicator';
@@ -14,6 +14,7 @@ import { useConfig } from '../../hooks/queries/useConfig';
 import { keys } from '../../hooks/queries/keys';
 import { chatApi } from '../../api/chatApi';
 import { useSocket } from '../../contexts/SocketContext';
+import { useCall } from '../../contexts/CallContext';
 import { useAppSelector } from '../../hooks/useRedux';
 import type { Conversation, Message, MessagePage } from '../../types';
 import { fullName, getErrorMessage } from '../../utils/helpers';
@@ -72,6 +73,7 @@ function Thread({ conversation, meId, onBack }: { conversation: Conversation; me
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const fileInput = useRef<HTMLInputElement>(null);
+  const { startCall, inCall } = useCall();
   const uploadsEnabled = useConfig().data?.uploads ?? false;
   const stickToBottom = useRef(true);
   const key = keys.chat.messages(conversation._id);
@@ -240,6 +242,22 @@ function Thread({ conversation, meId, onBack }: { conversation: Conversation; me
             )}
           </p>
         </div>
+        {other && (
+          <div className="ml-auto flex gap-1">
+            {([false, true] as const).map((video) => (
+              <button
+                key={String(video)}
+                onClick={() => startCall(conversation._id, other, video)}
+                disabled={!isOnline || inCall}
+                title={isOnline ? (video ? 'Video call' : 'Voice call') : `${fullName(other)} is offline`}
+                aria-label={video ? 'Start video call' : 'Start voice call'}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40 focus-ring"
+              >
+                {video ? <Video className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto p-4 sm:p-6" aria-live="polite">

@@ -376,8 +376,8 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] Freelancer withdraw (only while `pending|negotiating`).
 
 ### 4.6 Chat extras (module 6)
-- [ ] File sharing (images inline, other files as a download chip), typing, read receipts and presence (done in 3.6).
-- [ ] **Video call (optional):** WebRTC 1:1 using the existing socket for signaling (`call:offer`, `call:answer`, `call:ice`, `call:end`) and Google's public STUN. Use a `VideoCallModal` with the `Phone`/`Video` buttons already in the chat header. If you skip it, remove those buttons and mark it optional in the README.
+- [x] File sharing (images inline, other files as a download chip), typing, read receipts and presence (done in 3.6).
+- [x] **Video call (optional):** WebRTC 1:1 using the existing socket for signaling (`call:offer`, `call:answer`, `call:ice`, `call:end`) and Google's public STUN. Use a `VideoCallModal` with the `Phone`/`Video` buttons already in the chat header. If you skip it, remove those buttons and mark it optional in the README.
 
 ### 4.7 Payments (module 7) — Razorpay test mode
 - [ ] **Escrow per milestone.** The client clicks "Fund milestone" and the server creates an order (`POST /payments/orders {gigId, milestoneId}`). The client opens Razorpay Checkout: load `https://checkout.razorpay.com/v1/checkout.js` dynamically, with `key_id` from `GET /payments/config`. Then `POST /payments/verify` → status `escrow`, the milestone becomes fundable/started, and the freelancer is notified.
