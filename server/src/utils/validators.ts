@@ -390,6 +390,41 @@ export const idParamSchema = z.object({
 
 // ───────────────────────── AI Schemas ─────────────────────────
 
+/** Multipart text fields arrive as strings; technologies may be a comma list or JSON array. */
+export const portfolioItemSchema = z.object({
+  body: z.object({
+    title: z.string().trim().min(1, 'Title is required').max(120),
+    description: z.string().trim().min(1, 'Description is required').max(2000),
+    url: z.union([z.string().trim().url('Enter a valid URL'), z.literal('')]).optional(),
+    technologies: z
+      .preprocess((v) => {
+        if (typeof v !== 'string') return v;
+        const t = v.trim();
+        if (t.startsWith('[')) {
+          try {
+            return JSON.parse(t);
+          } catch {
+            return t;
+          }
+        }
+        return t ? t.split(',').map((x) => x.trim()).filter(Boolean) : [];
+      }, z.array(z.string().max(50)).max(20))
+      .optional(),
+  }),
+});
+
+export const verificationRequestSchema = z.object({
+  body: z.object({
+    message: z.string().trim().max(1000).optional(),
+  }),
+});
+
+export const rejectVerificationSchema = z.object({
+  body: z.object({
+    reason: z.string().trim().min(3, 'Tell the freelancer why').max(1000),
+  }),
+});
+
 export const careerAnalysisSchema = z.object({
   body: z.object({
     resumeText: z.string().trim().min(50, 'Paste at least a few lines of your resume').max(20000),

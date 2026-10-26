@@ -7,6 +7,9 @@ import {
   suspendUser,
   unsuspendUser,
   getPendingGigs,
+  getVerifications,
+  verifyFreelancer,
+  rejectFreelancerVerification,
   approveGig,
   rejectGig,
   getPayments,
@@ -17,7 +20,7 @@ import {
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/rbac';
 import { validate } from '../middleware/validate';
-import { suspendUserSchema, rejectGigSchema, reviewVisibilitySchema } from '../utils/validators';
+import { suspendUserSchema, rejectGigSchema, reviewVisibilitySchema, rejectVerificationSchema } from '../utils/validators';
 import { UserRole } from '../types';
 
 const router = Router();
@@ -35,6 +38,10 @@ router.put('/users/:id/unsuspend', unsuspendUser);
 router.get('/gigs/pending', getPendingGigs);
 router.put('/gigs/:id/approve', approveGig);
 router.put('/gigs/:id/reject', validate(rejectGigSchema), rejectGig);
+
+router.get('/verifications', getVerifications);
+router.put('/freelancers/:id/verify', verifyFreelancer);
+router.put('/freelancers/:id/reject-verification', validate(rejectVerificationSchema), rejectFreelancerVerification);
 
 router.get('/payments', getPayments);
 router.get('/fraud', getFraudReport);

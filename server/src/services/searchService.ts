@@ -15,7 +15,7 @@ const toNumber = (value: unknown): number | undefined => {
 const EXPERIENCE_YEARS: Record<string, number> = { entry: 0, intermediate: 2, expert: 5 };
 
 const FREELANCER_SORTS: Record<string, Record<string, 1 | -1>> = {
-  rating: { averageRating: -1, totalReviews: -1 },
+  rating: { rank: -1, totalReviews: -1 },
   rate_low: { hourlyRate: 1 },
   rate_high: { hourlyRate: -1 },
   experience: { completedGigs: -1 },
@@ -38,6 +38,7 @@ class SearchService {
    * Freelancer search over profiles joined with their (active, non-banned) users.
    * Filters: q (text), skills, minRate/maxRate, minRating, experience.
    * Sort: relevance (default with q) | rating | rate_low | rate_high | experience | newest.
+   * `verified=true` limits results to verified freelancers.
    */
   async searchFreelancers(query: Record<string, unknown>, page: number, limit: number) {
     const match: Record<string, unknown> = {};
@@ -63,12 +64,19 @@ class SearchService {
     const minYears = EXPERIENCE_YEARS[experience] ?? toNumber(experience);
     if (minYears) match.skills = { $elemMatch: { yearsOfExperience: { $gte: minYears } } };
 
+    if (query.verified === 'true') match['verification.status'] = 'verified';
+
+    // Relevance and rating sorts give verified freelancers a small boost (10% text score, +0.25 stars).
     const sortKey = typeof query.sort === 'string' ? query.sort : '';
-    const sort: Record<string, 1 | -1> = FREELANCER_SORTS[sortKey] ?? (q ? { score: -1 } : FREELANCER_SORTS.rating);
+    const sort: Record<string, 1 | -1> = FREELANCER_SORTS[sortKey] ?? (q ? { rank: -1 } : { rank: -1, totalReviews: -1 });
+    const isVerified = { $eq: ['$verification.status', 'verified'] };
+    const rank = q
+      ? { $multiply: [{ $meta: 'textScore' }, { $cond: [isVerified, 1.1, 1] }] }
+      : { $add: ['$averageRating', { $cond: [isVerified, 0.25, 0] }] };
 
     const pipeline: PipelineStage[] = [
       { $match: match },
-      ...(q ? [{ $addFields: { score: { $meta: 'textScore' } } } as PipelineStage] : []),
+      { $addFields: { rank } },
       { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
       { $unwind: '$user' },
       { $match: { 'user.isActive': true, 'user.isBanned': false } },
@@ -85,6 +93,12 @@ class SearchService {
           'user.emailVerificationExpires': 0,
           'user.googleId': 0,
           'user.__v': 0,
+          'user.twoFactorBackupCodes': 0,
+          'user.lastLoginIp': 0,
+          // Aggregations ignore select:false, so private profile fields are dropped explicitly.
+          embedding: 0,
+          'verification.documents': 0,
+          'portfolio.imagePublicIds': 0,
           __v: 0,
         },
       },

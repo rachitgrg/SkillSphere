@@ -18,8 +18,22 @@ interface RouteDoc {
   access: Access;
   body?: ZodType;
   query?: Record<string, string>; // name → description
+  /** multipart/form-data fields: name → description; names ending in [] are file arrays, `file:` prefix = single file. */
+  multipart?: Record<string, string>;
   description?: string;
 }
+
+const multipartSchema = (fields: Record<string, string>) => ({
+  type: 'object',
+  properties: Object.fromEntries(
+    Object.entries(fields).map(([name, description]) => {
+      const binary = { type: 'string', format: 'binary' };
+      if (name.endsWith('[]')) return [name.slice(0, -2), { type: 'array', items: binary, description }];
+      if (description.startsWith('file:')) return [name, { ...binary, description: description.slice(5).trim() }];
+      return [name, { type: 'string', description }];
+    })
+  ),
+});
 
 /** The `body` part of a `{ body, params, query }` validator schema. */
 const bodyOf = (schema: ZodObject) => schema.shape.body as ZodType;
@@ -47,6 +61,8 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/auth/choose-role', tag: 'Auth', summary: 'First Google login: pick client or freelancer', access: 'auth', body: bodyOf(v.chooseRoleSchema) },
   { method: 'put', path: '/auth/change-password', tag: 'Auth', summary: 'Change password (revokes other sessions)', access: 'auth', body: bodyOf(v.changePasswordSchema) },
 
+  { method: 'get', path: '/config/', tag: 'Config', summary: 'Which optional integrations (uploads, payments, AI, Google) are live', access: 'public' },
+
   // Users
   { method: 'get', path: '/users/me', tag: 'Users', summary: 'Current user and role profile', access: 'auth' },
   { method: 'put', path: '/users/me', tag: 'Users', summary: 'Update name, bio, address or GeoJSON location', access: 'auth', body: bodyOf(v.updateProfileSchema) },
@@ -54,6 +70,12 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/users/freelancers/:userId', tag: 'Users', summary: 'Public freelancer profile', access: 'public' },
   { method: 'put', path: '/users/clients/me', tag: 'Users', summary: 'Update the client profile', access: 'client', body: bodyOf(v.updateClientProfileSchema) },
   { method: 'get', path: '/users/clients/:userId', tag: 'Users', summary: 'Public client profile', access: 'public' },
+  { method: 'post', path: '/users/me/avatar', tag: 'Uploads', summary: 'Upload an avatar (image, 5 MB)', access: 'auth', multipart: { avatar: 'file: JPEG/PNG/GIF/WebP' }, description: '503 when Cloudinary is not configured.' },
+  { method: 'post', path: '/users/freelancers/me/resume', tag: 'Uploads', summary: 'Upload or replace the resume (PDF/DOC/DOCX, 5 MB)', access: 'freelancer', multipart: { resume: 'file: PDF, DOC or DOCX' } },
+  { method: 'delete', path: '/users/freelancers/me/resume', tag: 'Uploads', summary: 'Remove the resume', access: 'freelancer' },
+  { method: 'post', path: '/users/freelancers/me/portfolio', tag: 'Uploads', summary: 'Add a portfolio item with up to 6 images', access: 'freelancer', multipart: { title: 'Title', description: 'Description', url: 'Optional link', technologies: 'Comma list', 'images[]': 'Images, 5 MB each' } },
+  { method: 'delete', path: '/users/freelancers/me/portfolio/:itemId', tag: 'Uploads', summary: 'Delete a portfolio item and its images', access: 'freelancer' },
+  { method: 'post', path: '/users/freelancers/me/verification-request', tag: 'Uploads', summary: 'Request the verified badge with ID or portfolio proof', access: 'freelancer', multipart: { message: 'Optional note to the admin', 'documents[]': 'Up to 3 images or PDFs' }, description: 'Documents are visible to admins only.' },
 
   // Gigs
   {
@@ -117,7 +139,8 @@ export const ROUTES: RouteDoc[] = [
   // AI
   { method: 'get', path: '/ai/gigs/:gigId/matches', tag: 'AI', summary: 'Ranked freelancers for my gig', access: 'client', query: { limit: 'Default 10' } },
   { method: 'get', path: '/ai/recommendations', tag: 'AI', summary: 'Open gigs ranked for me', access: 'freelancer', query: { limit: 'Default 10' } },
-  { method: 'post', path: '/ai/career-analysis', tag: 'AI', summary: 'Resume → career report', access: 'freelancer', body: bodyOf(v.careerAnalysisSchema) },
+  { method: 'post', path: '/ai/career-analysis', tag: 'AI', summary: 'Resume text → career report (source: ai | fallback)', access: 'freelancer', body: bodyOf(v.careerAnalysisSchema) },
+  { method: 'post', path: '/ai/resume-analysis', tag: 'AI', summary: 'Career report from an uploaded PDF/TXT, or the stored resume', access: 'freelancer', multipart: { resume: 'file: optional PDF or TXT; omitted = stored resume' } },
 
   // Analytics
   { method: 'get', path: '/analytics/freelancer', tag: 'Analytics', summary: 'Proposals, earnings, monthly revenue, feedback', access: 'freelancer', query: { period: '30d | 90d | 12m' } },
@@ -139,6 +162,9 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/admin/gigs/pending', tag: 'Admin', summary: 'Gig approval queue', access: 'admin', query: pageQuery },
   { method: 'put', path: '/admin/gigs/:id/approve', tag: 'Admin', summary: 'Approve a gig (it goes live)', access: 'admin' },
   { method: 'put', path: '/admin/gigs/:id/reject', tag: 'Admin', summary: 'Reject a gig with a reason', access: 'admin', body: bodyOf(v.rejectGigSchema) },
+  { method: 'get', path: '/admin/verifications', tag: 'Admin', summary: 'Freelancer verification requests with documents', access: 'admin', query: { status: 'pending (default) | verified | rejected', ...pageQuery } },
+  { method: 'put', path: '/admin/freelancers/:id/verify', tag: 'Admin', summary: 'Grant the verified badge (:id = user id)', access: 'admin' },
+  { method: 'put', path: '/admin/freelancers/:id/reject-verification', tag: 'Admin', summary: 'Reject a verification request', access: 'admin', body: bodyOf(v.rejectVerificationSchema) },
   { method: 'get', path: '/admin/payments', tag: 'Admin', summary: 'All payments with totals', access: 'admin', query: { status: 'Payment status', ...pageQuery } },
   { method: 'get', path: '/admin/fraud', tag: 'Admin', summary: 'Flagged reviews and suspicious users', access: 'admin' },
   { method: 'put', path: '/admin/reviews/:id/visibility', tag: 'Admin', summary: 'Show or hide a review', access: 'admin', body: bodyOf(v.reviewVisibilitySchema) },
@@ -191,6 +217,9 @@ export const buildOpenApiDocument = () => {
       ...(params.length + query.length && { parameters: [...params, ...query] }),
       ...(route.body && {
         requestBody: { required: true, content: { 'application/json': { schema: jsonSchema(route.body) } } },
+      }),
+      ...(route.multipart && {
+        requestBody: { required: true, content: { 'multipart/form-data': { schema: multipartSchema(route.multipart) } } },
       }),
       responses: {
         200: { description: 'OK — `{ success, message, data, pagination? }`' },

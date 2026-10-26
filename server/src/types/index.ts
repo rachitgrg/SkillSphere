@@ -59,6 +59,7 @@ export enum NotificationType {
   GIG_APPROVED = 'gig_approved',
   GIG_REJECTED = 'gig_rejected',
   PROPOSAL_COUNTERED = 'proposal_countered',
+  VERIFICATION_UPDATE = 'verification_update',
   SYSTEM = 'system',
 }
 
@@ -120,10 +121,12 @@ export interface ISkill {
 }
 
 export interface IPortfolioItem {
+  _id?: Types.ObjectId;
   title: string;
   description: string;
   url?: string;
   images: string[];
+  imagePublicIds?: string[];
   technologies: string[];
   completedAt?: Date;
 }
@@ -173,6 +176,18 @@ export interface IEvidence {
   fileUrl: string;
   description: string;
   uploadedAt: Date;
+}
+
+export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
+
+export interface IFreelancerVerification {
+  status: VerificationStatus;
+  documents: { url: string; publicId: string; name: string; mimeType: string }[];
+  message?: string;
+  requestedAt?: Date;
+  reviewedAt?: Date;
+  reviewedBy?: Types.ObjectId;
+  note?: string;
 }
 
 export interface IReviewCategory {
@@ -250,6 +265,8 @@ export interface IFreelancerProfile extends Document {
   responseTime: number; // in hours
   milestonePricing: { title: string; description?: string; price: number; deliveryDays: number }[];
   location?: IGeoLocation;
+  resume?: { url: string; publicId: string; name: string; size: number; mimeType: string; uploadedAt: Date };
+  verification: IFreelancerVerification;
   embedding?: number[];
   languages: { language: string; proficiency: string }[];
   socialLinks: {

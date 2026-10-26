@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/app';
 import Conversation from '../src/models/Conversation';
 import Dispute from '../src/models/Dispute';
+import FreelancerProfile from '../src/models/FreelancerProfile';
 import Notification from '../src/models/Notification';
 import Payment from '../src/models/Payment';
 import Proposal from '../src/models/Proposal';
@@ -40,6 +41,8 @@ const CASES: Record<string, Case> = {
   'POST /api/v1/auth/choose-role': { role: 'client', body: () => ({ role: 'client' }) },
   'PUT /api/v1/auth/change-password': { role: 'client', body: () => ({ currentPassword: 'wrong', newPassword: 'N3wPassword!' }) },
 
+  'GET /api/v1/config/': { role: 'public', path: () => '/api/v1/config' },
+
   // Users
   'GET /api/v1/users/me': { role: 'freelancer' },
   'PUT /api/v1/users/me': { role: 'freelancer', body: () => ({ bio: 'Hello' }) },
@@ -47,6 +50,13 @@ const CASES: Record<string, Case> = {
   'GET /api/v1/users/freelancers/:userId': { role: 'public', path: (i) => `/api/v1/users/freelancers/${i.freelancerId}` },
   'PUT /api/v1/users/clients/me': { role: 'client', body: () => ({ companyName: 'Acme' }) },
   'GET /api/v1/users/clients/:userId': { role: 'public', path: (i) => `/api/v1/users/clients/${i.clientId}` },
+  // Uploads answer 503 without Cloudinary (allowed); tests/uploads.test.ts covers the configured path.
+  'POST /api/v1/users/me/avatar': { role: 'client' },
+  'POST /api/v1/users/freelancers/me/resume': { role: 'freelancer' },
+  'DELETE /api/v1/users/freelancers/me/resume': { role: 'freelancer' },
+  'POST /api/v1/users/freelancers/me/portfolio': { role: 'freelancer' },
+  'DELETE /api/v1/users/freelancers/me/portfolio/:itemId': { role: 'freelancer', path: (i) => `/api/v1/users/freelancers/me/portfolio/${i.portfolioItemId}` },
+  'POST /api/v1/users/freelancers/me/verification-request': { role: 'freelancer' },
 
   // Gigs
   'GET /api/v1/gigs/': { role: 'public', path: () => '/api/v1/gigs' },
@@ -112,6 +122,7 @@ const CASES: Record<string, Case> = {
   // AI
   'GET /api/v1/ai/gigs/:gigId/matches': { role: 'client', path: (i) => `/api/v1/ai/gigs/${i.openGigId}/matches` },
   'GET /api/v1/ai/recommendations': { role: 'freelancer' },
+  'POST /api/v1/ai/resume-analysis': { role: 'freelancer' }, // 400: no file and no stored resume
   'POST /api/v1/ai/career-analysis': { role: 'freelancer', body: () => ({ resumeText: 'React and Node.js developer with five years of experience building SaaS dashboards.' }) },
 
   // Analytics
@@ -134,6 +145,9 @@ const CASES: Record<string, Case> = {
   'GET /api/v1/admin/gigs/pending': { role: 'admin' },
   'PUT /api/v1/admin/gigs/:id/approve': { role: 'admin', path: (i) => `/api/v1/admin/gigs/${i.pendingGigId}/approve` },
   'PUT /api/v1/admin/gigs/:id/reject': { role: 'admin', path: (i) => `/api/v1/admin/gigs/${i.pendingGig2Id}/reject`, body: () => ({ reason: 'Not enough detail' }) },
+  'GET /api/v1/admin/verifications': { role: 'admin' },
+  'PUT /api/v1/admin/freelancers/:id/verify': { role: 'admin', path: (i) => `/api/v1/admin/freelancers/${i.freelancerId}/verify` },
+  'PUT /api/v1/admin/freelancers/:id/reject-verification': { role: 'admin', path: (i) => `/api/v1/admin/freelancers/${i.spareUserId}/reject-verification`, body: () => ({ reason: 'Blurry ID' }) },
   'GET /api/v1/admin/payments': { role: 'admin' },
   'GET /api/v1/admin/fraud': { role: 'admin' },
   'PUT /api/v1/admin/reviews/:id/visibility': { role: 'admin', path: (i) => `/api/v1/admin/reviews/${i.reviewId}/visibility`, body: () => ({ isVisible: true }) },
@@ -163,6 +177,13 @@ const fixtures = async () => {
   const proposal = await Proposal.create({ gig: openGig._id, freelancer: freelancer.user._id, coverLetter: 'x', proposedAmount: 5, estimatedDuration: 'x' });
   const withdrawProposal = await Proposal.create({ gig: spareGig._id, freelancer: freelancer.user._id, coverLetter: 'x', proposedAmount: 5, estimatedDuration: 'x' });
   await Proposal.create({ gig: openGig._id, freelancer: other.user._id, coverLetter: 'x', proposedAmount: 5, estimatedDuration: 'x' });
+
+  const withPortfolio = await FreelancerProfile.findOneAndUpdate(
+    { user: freelancer.user._id },
+    { $push: { portfolio: { title: 'Site', description: 'A site', images: [] } } },
+    { returnDocument: 'after' }
+  );
+  await FreelancerProfile.updateOne({ user: spare.user._id }, { $set: { 'verification.status': 'pending', 'verification.requestedAt': new Date() } });
 
   const conversation = await Conversation.create({ participants: [client.user._id, freelancer.user._id] });
   const payment = await Payment.create({ gig: workGig._id, client: client.user._id, freelancer: freelancer.user._id, amount: 100, status: PaymentStatus.ESCROW });
@@ -195,6 +216,7 @@ const fixtures = async () => {
     reviewId: review.id as string,
     notificationId: notification.id as string,
     disputeId: dispute.id as string,
+    portfolioItemId: withPortfolio!.portfolio[0]._id!.toString(),
   };
 };
 

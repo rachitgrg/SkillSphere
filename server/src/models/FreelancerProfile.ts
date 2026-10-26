@@ -20,6 +20,8 @@ const portfolioItemSchema = new Schema(
     description: { type: String, required: true },
     url: String,
     images: [String],
+    // Cloudinary ids of `images`, kept so deleting the item removes the files.
+    imagePublicIds: { type: [String], select: false },
     technologies: [String],
     completedAt: Date,
   },
@@ -131,6 +133,25 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
       type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number], default: undefined },
     },
+    resume: {
+      url: String,
+      publicId: String,
+      name: String,
+      size: Number,
+      mimeType: String,
+      uploadedAt: Date,
+    },
+    // Verification badge: the freelancer sends ID/portfolio proof; an admin approves or rejects.
+    verification: {
+      status: { type: String, enum: ['none', 'pending', 'verified', 'rejected'], default: 'none' },
+      // ID proof: only the admin verification queue selects it (+verification.documents).
+      documents: { type: [{ _id: false, url: String, publicId: String, name: String, mimeType: String }], select: false },
+      message: String,
+      requestedAt: Date,
+      reviewedAt: Date,
+      reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+      note: String,
+    },
     // Sentence embedding of title + headline + skills (embeddingService); never sent to clients.
     embedding: { type: [Number], select: false, default: undefined },
     socialLinks: {
@@ -157,6 +178,7 @@ freelancerProfileSchema.index(
 );
 freelancerProfileSchema.index({ hourlyRate: 1 });
 freelancerProfileSchema.index({ availability: 1 });
+freelancerProfileSchema.index({ 'verification.status': 1 });
 freelancerProfileSchema.index({ averageRating: -1 });
 freelancerProfileSchema.index({ completedGigs: -1 });
 freelancerProfileSchema.index({ totalEarnings: -1 });

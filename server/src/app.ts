@@ -24,6 +24,7 @@ import disputeRoutes from './routes/disputeRoutes';
 import searchRoutes from './routes/searchRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import aiRoutes from './routes/aiRoutes';
+import configRoutes from './routes/configRoutes';
 import swaggerUi from 'swagger-ui-express';
 import passport from 'passport';
 import configurePassport from './config/passport';
@@ -69,6 +70,7 @@ app.use('/api/v1/disputes', disputeRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/config', configRoutes);
 
 // API docs (OpenAPI generated from the route registry + zod validators)
 const openApiDocument = buildOpenApiDocument();

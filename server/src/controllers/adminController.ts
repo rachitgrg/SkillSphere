@@ -6,13 +6,14 @@ import Payment from '../models/Payment';
 import Dispute from '../models/Dispute';
 import Review from '../models/Review';
 import Proposal from '../models/Proposal';
+import FreelancerProfile from '../models/FreelancerProfile';
 import AdminLog from '../models/AdminLog';
 import paymentService from '../services/paymentService';
 import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
 import { getIOOrNull } from '../config/socket';
 import { userRoom } from '../services/chatService';
-import { AdminAction, AuthRequest, DisputeStatus, GigStatus, NotificationType, PaymentStatus, UserRole } from '../types';
+import { AdminAction, AuthRequest, DisputeStatus, GigStatus, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
 import { logAdminAction } from '../utils/adminLog';
 import { buildPaginationResponse, containsRegex, parsePaginationParams } from '../utils/helpers';
 
@@ -281,6 +282,80 @@ export const getPendingGigs = async (req: AuthRequest, res: Response, next: Next
     next(error);
   }
 };
+
+// ───────────────────────── Freelancer verification ─────────────────────────
+
+/** GET /admin/verifications?status=pending — verification requests with their (private) documents. */
+export const getVerifications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { page, limit } = parsePaginationParams(req.query as Record<string, unknown>);
+    const statuses: VerificationStatus[] = ['pending', 'verified', 'rejected'];
+    const status = statuses.find((st) => st === req.query.status) ?? 'pending';
+    const filter = { 'verification.status': status };
+    const [profiles, total] = await Promise.all([
+      FreelancerProfile.find(filter)
+        .select('+verification.documents')
+        .populate('user', 'firstName lastName email avatar createdAt isVerified')
+        .sort({ 'verification.requestedAt': 1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      FreelancerProfile.countDocuments(filter),
+    ]);
+    res.status(200).json({ success: true, message: 'Verification requests', data: profiles, pagination: buildPaginationResponse(total, page, limit) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** PUT /admin/freelancers/:id/verify and /reject-verification { reason }; :id is the freelancer's user id. */
+const reviewVerification = (approve: boolean) => async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const reason: string | undefined = req.body?.reason;
+    const profile = await FreelancerProfile.findOneAndUpdate(
+      { user: req.params.id, 'verification.status': approve ? { $in: ['pending', 'rejected', 'none'] } : 'pending' },
+      {
+        $set: {
+          'verification.status': approve ? 'verified' : 'rejected',
+          'verification.reviewedAt': new Date(),
+          'verification.reviewedBy': req.user!._id,
+          ...(!approve && { 'verification.note': reason }),
+        },
+        ...(approve && { $unset: { 'verification.note': 1 } }),
+      },
+      { returnDocument: 'after' }
+    );
+    if (!profile) {
+      const exists = await FreelancerProfile.exists({ user: req.params.id });
+      res.status(exists ? 409 : 404).json({
+        success: false,
+        message: exists ? (approve ? 'Freelancer is already verified' : 'No pending verification request') : 'Freelancer not found',
+      });
+      return;
+    }
+
+    await logAdminAction(req, {
+      action: approve ? AdminAction.FREELANCER_VERIFY : AdminAction.FREELANCER_REJECT_VERIFICATION,
+      targetType: 'user',
+      targetId: profile.user,
+      details: approve ? 'Verified freelancer' : `Rejected verification: ${reason}`,
+    });
+    await notificationService.create({
+      recipient: profile.user.toString(),
+      type: NotificationType.VERIFICATION_UPDATE,
+      title: approve ? 'You are verified' : 'Verification not approved',
+      message: approve ? 'Your profile now shows the verified badge.' : `Your verification request was not approved: ${reason}`,
+      link: '/freelancer/profile/edit',
+    });
+    await reputationService.updateUserReputation(profile.user.toString());
+
+    res.status(200).json({ success: true, message: approve ? 'Freelancer verified' : 'Verification rejected', data: profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyFreelancer = reviewVerification(true);
+export const rejectFreelancerVerification = reviewVerification(false);
 
 const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
