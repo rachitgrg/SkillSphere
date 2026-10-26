@@ -35,6 +35,7 @@ const clientLinks: SidebarLink[] = [
   { label: 'My Gigs', href: '/client/gigs', icon: <Briefcase className="w-5 h-5" /> },
   { label: 'Find Freelancers', href: '/search?tab=freelancers', icon: <Search className="w-5 h-5" /> },
   { label: 'Messages', href: '/chat', icon: <MessageSquare className="w-5 h-5" /> },
+  { label: 'Meetings', href: '/client/meetings', icon: <Calendar className="w-5 h-5" /> },
   { label: 'Payments', href: '/client/payments', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Reviews', href: '/client/reviews', icon: <Star className="w-5 h-5" /> },
   { label: 'Profile', href: '/client/profile', icon: <User className="w-5 h-5" /> },

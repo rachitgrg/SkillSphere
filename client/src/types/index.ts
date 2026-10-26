@@ -162,6 +162,35 @@ export interface ChatUpload {
 export type NotificationCategory = 'proposals' | 'gigs' | 'payments' | 'reviews' | 'messages' | 'disputes' | 'projects';
 export type NotificationPreferences = Record<'email' | 'inApp', Record<NotificationCategory, boolean>>;
 
+// ========== SCHEDULING ==========
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+
+export interface Booking {
+  _id: ID;
+  freelancer: UserSummary;
+  client: UserSummary;
+  gig?: Pick<Gig, '_id' | 'title'>;
+  start: string;
+  end: string;
+  title: string;
+  notes?: string;
+  status: BookingStatus;
+  meetingLink?: string;
+  createdAt: string;
+}
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+/** GET /schedule/:freelancerId/availability */
+export interface Availability {
+  timezone: string;
+  slotMinutes: number;
+  slots: TimeSlot[];
+}
+
 /** GET /config */
 export interface PlatformConfig {
   uploads: boolean;
@@ -185,6 +214,8 @@ export interface FreelancerProfile {
   hourlyRate: number;
   availability: AvailabilityStatus;
   availabilitySlots: AvailabilitySlot[];
+  timezone?: string;
+  autoConfirmBookings?: boolean;
   milestonePricing?: MilestonePackage[];
   resume?: StoredResume;
   verification?: FreelancerVerification;

@@ -445,12 +445,12 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **Email notifications:** `emailService` (already written) for important events, respecting `User.notificationPreferences: { email: { proposals, payments, reviews, messages }, inApp: {...} }` with a settings UI.
 
 ### 4.12 Availability scheduler (module 12)
-- [ ] Use the `FreelancerProfile.availabilitySlots` weekly template (day, start, end) plus a new `timezone` field (default `Asia/Kolkata`).
-- [ ] New model `Booking { freelancer, client, gig?, start, end, title, notes, status: 'pending'|'confirmed'|'cancelled'|'completed', meetingLink? }`, indexed on `{freelancer, start}`.
-- [ ] Availability API: weekly slots minus existing bookings for a date range (30‑min granularity).
-- [ ] **Booking system:** a client books a slot on the freelancer's public profile; the freelancer confirms or declines (or auto‑confirms if enabled). Prevent overlap with a conflict check in a transaction. Notify both.
-- [ ] **Automatic scheduling:** `POST /schedule/auto-schedule {freelancerId, durationMinutes, earliest, latest}` returns the earliest common free slot. "Find next available" books it.
-- [ ] **UI:** a `SchedulerPage` (freelancer) to edit the weekly template and see bookings in a week/month calendar. Extend `AvailabilityCalendar`; build a simple grid rather than adding a heavy library. Add a booking widget on the public profile.
+- [x] Use the `FreelancerProfile.availabilitySlots` weekly template (day, start, end) plus a new `timezone` field (default `Asia/Kolkata`).
+- [x] New model `Booking { freelancer, client, gig?, start, end, title, notes, status: 'pending'|'confirmed'|'cancelled'|'completed', meetingLink? }`, indexed on `{freelancer, start}`.
+- [x] Availability API: weekly slots minus existing bookings for a date range (30‑min granularity).
+- [x] **Booking system:** a client books a slot on the freelancer's public profile; the freelancer confirms or declines (or auto‑confirms if enabled). Prevent overlap with a conflict check in a transaction. Notify both.
+- [x] **Automatic scheduling:** `POST /schedule/auto-schedule {freelancerId, durationMinutes, earliest, latest}` returns the earliest common free slot. "Find next available" books it.
+- [x] **UI:** a `SchedulerPage` (freelancer) to edit the weekly template and see bookings in a week/month calendar. Extend `AvailabilityCalendar`; build a simple grid rather than adding a heavy library. Add a booking widget on the public profile.
 
 ### 4.13 Disputes (module 13)
 - [ ] `CreateDisputePage` (from a gig or payment) with reason, description and **evidence upload** (multiple files via the upload service).

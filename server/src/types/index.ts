@@ -67,6 +67,7 @@ export enum NotificationType {
   PROPOSAL_COUNTERED = 'proposal_countered',
   VERIFICATION_UPDATE = 'verification_update',
   GIG_INVITATION = 'gig_invitation',
+  BOOKING_UPDATE = 'booking_update',
   GIG_MATCH = 'gig_match',
   SYSTEM = 'system',
 }
@@ -311,6 +312,9 @@ export interface IFreelancerProfile extends Document {
   hourlyRate: number;
   availability: AvailabilityStatus;
   availabilitySlots: IAvailabilitySlot[];
+  /** IANA zone the weekly slots are written in. */
+  timezone: string;
+  autoConfirmBookings: boolean;
   totalEarnings: number;
   completedGigs: number;
   averageRating: number;
@@ -511,6 +515,24 @@ export interface IDispute extends Document {
   resolvedBy?: Types.ObjectId;
   resolvedAt?: Date;
   adminNotes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+
+export interface IBooking extends Document {
+  _id: Types.ObjectId;
+  freelancer: Types.ObjectId;
+  client: Types.ObjectId;
+  gig?: Types.ObjectId;
+  start: Date;
+  end: Date;
+  title: string;
+  notes?: string;
+  status: BookingStatus;
+  meetingLink?: string;
+  cancelledBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

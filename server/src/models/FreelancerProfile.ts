@@ -108,6 +108,9 @@ const freelancerProfileSchema = new Schema<IFreelancerProfile>(
       default: AvailabilityStatus.AVAILABLE,
     },
     availabilitySlots: [availabilitySlotSchema],
+    timezone: { type: String, default: 'Asia/Kolkata' },
+    // Bookings inside free slots are confirmed immediately instead of waiting for the freelancer.
+    autoConfirmBookings: { type: Boolean, default: false },
     totalEarnings: { type: Number, default: 0 },
     completedGigs: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0, min: 0, max: 5 },

@@ -5,6 +5,7 @@ import analyticsRoutes from '../src/routes/analyticsRoutes';
 import authRoutes from '../src/routes/authRoutes';
 import chatRoutes from '../src/routes/chatRoutes';
 import configRoutes from '../src/routes/configRoutes';
+import scheduleRoutes from '../src/routes/scheduleRoutes';
 import disputeRoutes from '../src/routes/disputeRoutes';
 import gigRoutes from '../src/routes/gigRoutes';
 import notificationRoutes from '../src/routes/notificationRoutes';
@@ -22,6 +23,7 @@ export const MOUNTS: [string, Router][] = [
   ['/api/v1/auth', authRoutes],
   ['/api/v1/chat', chatRoutes],
   ['/api/v1/config', configRoutes],
+  ['/api/v1/schedule', scheduleRoutes],
   ['/api/v1/disputes', disputeRoutes],
   ['/api/v1/gigs', gigRoutes],
   ['/api/v1/notifications', notificationRoutes],

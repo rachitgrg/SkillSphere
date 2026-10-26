@@ -1,5 +1,6 @@
 import request from 'supertest';
 import app from '../src/app';
+import Booking from '../src/models/Booking';
 import Conversation from '../src/models/Conversation';
 import Dispute from '../src/models/Dispute';
 import FreelancerProfile from '../src/models/FreelancerProfile';
@@ -148,6 +149,14 @@ const CASES: Record<string, Case> = {
   'GET /api/v1/analytics/freelancer': { role: 'freelancer' },
   'GET /api/v1/analytics/client': { role: 'client' },
 
+  // Schedule
+  'GET /api/v1/schedule/:freelancerId/availability': { role: 'public', path: (i) => `/api/v1/schedule/${i.freelancerId}/availability` },
+  'PUT /api/v1/schedule/me/slots': { role: 'freelancer', body: () => ({ availabilitySlots: [{ dayOfWeek: 1, startTime: '10:00', endTime: '12:00' }] }) },
+  'POST /api/v1/schedule/bookings': { role: 'client', body: (i) => ({ freelancerId: i.freelancerId, start: '2030-01-07T04:30:00.000Z', durationMinutes: 30, title: 'Kick-off' }) },
+  'GET /api/v1/schedule/bookings': { role: 'freelancer' },
+  'PUT /api/v1/schedule/bookings/:id': { role: 'freelancer', path: (i) => `/api/v1/schedule/bookings/${i.bookingId}`, body: () => ({ status: 'confirmed' }) },
+  'POST /api/v1/schedule/auto-schedule': { role: 'client', body: (i) => ({ freelancerId: i.freelancerId, durationMinutes: 60 }) },
+
   // Disputes
   'POST /api/v1/disputes/': { role: 'client', path: () => '/api/v1/disputes', body: (i) => ({ gigId: i.workGigId, title: 'Issue', description: 'Details' }) },
   'GET /api/v1/disputes/': { role: 'admin', path: () => '/api/v1/disputes' },
@@ -205,6 +214,8 @@ const fixtures = async () => {
   );
   await FreelancerProfile.updateOne({ user: spare.user._id }, { $set: { 'verification.status': 'pending', 'verification.requestedAt': new Date() } });
 
+  const booking = await Booking.create({ freelancer: freelancer.user._id, client: client.user._id, start: new Date(Date.now() + 864e5), end: new Date(Date.now() + 864e5 + 18e5), title: 'Call' });
+
   const conversation = await Conversation.create({ participants: [client.user._id, freelancer.user._id] });
   const payment = await Payment.create({ gig: workGig._id, client: client.user._id, freelancer: freelancer.user._id, amount: 100, status: PaymentStatus.ESCROW });
   const review = await Review.create({
@@ -239,6 +250,7 @@ const fixtures = async () => {
     portfolioItemId: withPortfolio!.portfolio[0]._id!.toString(),
     attachmentId: openGig.attachments[0]._id!.toString(),
     inviteGigId: inviteGig.id as string,
+    bookingId: booking.id as string,
   };
 };
 

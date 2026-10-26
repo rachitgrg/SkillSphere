@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidTimeZone } from './timezone';
 
 // ───────────────────────── Shared pieces ─────────────────────────
 
@@ -244,6 +245,54 @@ export const submitMilestoneSchema = z.object({
 
 export const requestChangesSchema = z.object({
   body: z.object({ note: z.string().trim().min(3, 'Say what needs to change').max(2000) }),
+});
+
+// ───────────────────────── Scheduling ─────────────────────────
+
+const objectIdString = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
+const durationMinutes = z.number().int().min(30).max(240).multipleOf(30, 'Use 30-minute steps');
+
+export const slotsSchema = z.object({
+  body: z.object({
+    availabilitySlots: z
+      .array(
+        z
+          .object({ dayOfWeek: z.number().int().min(0).max(6), startTime: z.string().regex(HH_MM, 'Use HH:mm'), endTime: z.string().regex(HH_MM, 'Use HH:mm') })
+          .refine((s) => s.startTime < s.endTime, { message: 'A slot must end after it starts' })
+      )
+      .max(50),
+    timezone: z.string().refine(isValidTimeZone, 'Unknown time zone').optional(),
+    autoConfirmBookings: z.boolean().optional(),
+  }),
+});
+
+export const createBookingSchema = z.object({
+  body: z.object({
+    freelancerId: objectIdString,
+    start: z.string().datetime({ offset: true }),
+    durationMinutes,
+    title: z.string().trim().min(3).max(200),
+    notes: z.string().trim().max(1000).optional(),
+    gigId: objectIdString.optional(),
+  }),
+});
+
+export const updateBookingSchema = z.object({
+  body: z
+    .object({ status: z.enum(['confirmed', 'cancelled', 'completed']).optional(), meetingLink: z.union([z.string().url(), z.literal('')]).optional() })
+    .refine((b) => b.status !== undefined || b.meetingLink !== undefined, { message: 'Nothing to update' }),
+});
+
+export const autoScheduleSchema = z.object({
+  body: z.object({
+    freelancerId: objectIdString,
+    durationMinutes,
+    earliest: z.string().datetime({ offset: true }).optional(),
+    latest: z.string().datetime({ offset: true }).optional(),
+    book: z.boolean().optional(),
+    title: z.string().trim().min(3).max(200).optional(),
+    notes: z.string().trim().max(1000).optional(),
+  }),
 });
 
 // ───────────────────────── Proposal Schemas ─────────────────────────

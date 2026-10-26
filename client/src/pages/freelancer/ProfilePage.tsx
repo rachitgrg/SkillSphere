@@ -10,6 +10,7 @@ import { PortfolioCard } from '../../components/profile/PortfolioCard';
 import { WorkTimeline } from '../../components/profile/WorkTimeline';
 import { AvailabilityCalendar } from '../../components/profile/AvailabilityCalendar';
 import { VerifiedBadge } from '../../components/profile/VerifiedBadge';
+import { BookingWidget } from '../../components/schedule/BookingWidget';
 import { ReviewCard } from '../../components/reviews/ReviewCard';
 import { ReviewBreakdownChart } from '../../components/reviews/ReviewBreakdownChart';
 import { ReportReviewButton } from '../../components/reviews/ReportReviewButton';
@@ -195,6 +196,16 @@ function FreelancerProfileContent({ userId, isOwn }: { userId?: string; isOwn: b
 
               <Section title="Availability">
                 <AvailabilityCalendar slots={profile.availabilitySlots} />
+                {isOwn ? (
+                  <Link to="/freelancer/schedule" className="mt-3 inline-block text-xs text-indigo-400 hover:underline">Edit hours & see bookings</Link>
+                ) : (
+                  profile.availabilitySlots.length > 0 && (
+                    <div className="mt-4 border-t border-slate-800 pt-4">
+                      <h3 className="text-sm font-semibold text-white mb-3">Book a call</h3>
+                      <BookingWidget freelancerId={profile.user._id} freelancerName={profile.user.firstName} />
+                    </div>
+                  )
+                )}
               </Section>
 
               {breakdown.data && breakdown.data.totalReviews > 0 && (

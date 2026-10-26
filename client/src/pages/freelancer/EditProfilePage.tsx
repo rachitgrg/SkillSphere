@@ -14,7 +14,6 @@ import type { FreelancerProfile, ProficiencyLevel } from '../../types';
 import { CITIES } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/helpers';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const fieldClass = 'w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500';
 const dateOnly = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
@@ -31,7 +30,6 @@ interface FormValues {
   education: { degree: string; institution: string; year: number }[];
   milestonePricing: { title: string; description: string; price: number; deliveryDays: number }[];
   languages: { language: string; proficiency: string }[];
-  availabilitySlots: { dayOfWeek: number; startTime: string; endTime: string }[];
   github: string;
   linkedin: string;
   website: string;
@@ -50,7 +48,6 @@ const toForm = (user: NonNullable<ReturnType<typeof useMe>['data']>['user'], p: 
   education: p.education,
   milestonePricing: (p.milestonePricing ?? []).map((m) => ({ ...m, description: m.description ?? '' })),
   languages: p.languages,
-  availabilitySlots: p.availabilitySlots,
   github: p.socialLinks?.github ?? '',
   linkedin: p.socialLinks?.linkedin ?? '',
   website: p.socialLinks?.website ?? '',
@@ -129,7 +126,6 @@ export function EditProfilePage() {
         education: v.education.map((e) => ({ ...e, year: Number(e.year) })),
         milestonePricing: v.milestonePricing.map((m) => ({ ...m, price: Number(m.price), deliveryDays: Number(m.deliveryDays) })),
         languages: v.languages.filter((l) => l.language.trim()),
-        availabilitySlots: v.availabilitySlots.map((s) => ({ ...s, dayOfWeek: Number(s.dayOfWeek) })),
         socialLinks: { github: v.github, linkedin: v.linkedin, website: v.website },
         ...(location && { location }),
       });
@@ -230,16 +226,6 @@ export function EditProfilePage() {
               <input aria-label="Degree" placeholder="Degree" className={`${fieldClass} col-span-12 sm:col-span-5`} {...r(`education.${i}.degree`)} />
               <input aria-label="Institution" placeholder="Institution" className={`${fieldClass} col-span-8 sm:col-span-5`} {...r(`education.${i}.institution`)} />
               <input aria-label="Year" type="number" className={`${fieldClass} col-span-4 sm:col-span-2`} {...r(`education.${i}.year`, { valueAsNumber: true })} />
-            </div>
-          )} />
-
-          <ListSection title="Weekly availability" hint="Clients book meetings inside these hours." control={control} name="availabilitySlots" empty={{ dayOfWeek: 1, startTime: '10:00', endTime: '18:00' }} render={(i) => (
-            <div className="grid grid-cols-3 gap-3">
-              <select aria-label="Day" className={fieldClass} {...r(`availabilitySlots.${i}.dayOfWeek`, { valueAsNumber: true })}>
-                {DAYS.map((d, n) => <option key={d} value={n}>{d}</option>)}
-              </select>
-              <input aria-label="From" type="time" className={fieldClass} {...r(`availabilitySlots.${i}.startTime`)} />
-              <input aria-label="To" type="time" className={fieldClass} {...r(`availabilitySlots.${i}.endTime`)} />
             </div>
           )} />
 

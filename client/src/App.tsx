@@ -48,6 +48,7 @@ const ClientDashboard = page(() => import('./pages/client/ClientDashboard'), 'Cl
 const ClientProfile = page(() => import('./pages/client/ProfilePage'), 'ProfilePage');
 const ClientGigsPage = page(() => import('./pages/client/ClientGigsPage'), 'ClientGigsPage');
 const GigProposalsPage = page(() => import('./pages/client/GigProposalsPage'), 'GigProposalsPage');
+const MeetingsPage = page(() => import('./pages/client/MeetingsPage'), 'MeetingsPage');
 const CreateGigPage = page(() => import('./pages/gigs/CreateGigPage'), 'CreateGigPage');
 
 // Freelancer
@@ -141,6 +142,7 @@ export default function App() {
             {/* Role-neutral links (used by notifications) */}
             <Route path="/payments" element={<RoleRedirect client="/client/payments" freelancer="/freelancer/earnings" admin="/admin/payments" />} />
             <Route path="/reviews" element={<RoleRedirect client="/client/reviews" freelancer="/freelancer/reviews" admin="/admin/dashboard" />} />
+            <Route path="/bookings" element={<RoleRedirect client="/client/meetings" freelancer="/freelancer/schedule" admin="/admin/dashboard" />} />
           </Route>
 
           {/* Client */}
@@ -151,6 +153,7 @@ export default function App() {
             <Route path="gigs/new" element={<CreateGigPage />} />
             <Route path="gigs/:id/proposals" element={<GigProposalsPage />} />
             <Route path="payments" element={<TransactionHistoryPage />} />
+            <Route path="meetings" element={<MeetingsPage />} />
             <Route path="reviews" element={<ReviewPage />} />
             <Route path="profile" element={<ClientProfile />} />
           </Route>

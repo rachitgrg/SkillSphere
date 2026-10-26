@@ -165,6 +165,14 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/analytics/freelancer', tag: 'Analytics', summary: 'Proposals, earnings, monthly revenue, feedback', access: 'freelancer', query: { period: '30d | 90d | 12m' } },
   { method: 'get', path: '/analytics/client', tag: 'Analytics', summary: 'Spending, hires and gig pipeline', access: 'client', query: { period: '30d | 90d | 12m' } },
 
+  // Schedule
+  { method: 'get', path: '/schedule/:freelancerId/availability', tag: 'Schedule', summary: 'Free 30-minute slots (weekly template minus bookings)', access: 'public', query: { from: 'ISO date-time (default now)', to: 'ISO date-time (default +14 days, max 31 days)' } },
+  { method: 'put', path: '/schedule/me/slots', tag: 'Schedule', summary: 'Weekly availability template, time zone and auto-confirm', access: 'freelancer', body: bodyOf(v.slotsSchema) },
+  { method: 'post', path: '/schedule/bookings', tag: 'Schedule', summary: 'Book a slot (conflict-checked under a per-freelancer lock)', access: 'client', body: bodyOf(v.createBookingSchema) },
+  { method: 'get', path: '/schedule/bookings', tag: 'Schedule', summary: 'My bookings', access: 'auth', query: { from: 'ISO date-time', to: 'ISO date-time', status: 'Comma list' } },
+  { method: 'put', path: '/schedule/bookings/:id', tag: 'Schedule', summary: 'Confirm, decline/cancel, complete or set the meeting link', access: 'auth', body: bodyOf(v.updateBookingSchema) },
+  { method: 'post', path: '/schedule/auto-schedule', tag: 'Schedule', summary: 'Earliest common free slot; book it with book=true', access: 'client', body: bodyOf(v.autoScheduleSchema) },
+
   // Disputes
   { method: 'post', path: '/disputes/', tag: 'Disputes', summary: 'Open a dispute (freezes an escrowed payment)', access: 'client|freelancer', body: bodyOf(v.createDisputeSchema) },
   { method: 'get', path: '/disputes/', tag: 'Disputes', summary: 'My disputes (admins: all)', access: 'auth', query: { status: 'Dispute status', gig: 'Gig id', ...pageQuery } },
