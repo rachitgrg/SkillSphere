@@ -484,11 +484,11 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 
 ## Phase 5 — Quality, docs and deployment
 
-- [ ] **Tests:**
+- [x] **Tests:**
   - Server: unit tests for `reputationService`, `aiMatchingService` scoring and `paymentService`; integration tests for each route group (auth, RBAC matrix, proposal → escrow → release flow, disputes).
   - Client: **Vitest + React Testing Library** for key components and the auth slice.
   - **Playwright** e2e for the §9 demo flow (Razorpay mocked).
-- [ ] **CI:** `.github/workflows/ci.yml` runs install, lint, typecheck, test and build for both packages on push/PR.
+- [x] **CI:** `.github/workflows/ci.yml` runs install, lint, typecheck, test and build for both packages on push/PR.
 - [ ] **Frontend polish:**
   - responsive layouts (mobile sidebar)
   - skeleton loaders
