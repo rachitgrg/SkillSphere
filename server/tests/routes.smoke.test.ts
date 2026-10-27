@@ -161,6 +161,9 @@ const CASES: Record<string, Case> = {
   'POST /api/v1/disputes/': { role: 'client', path: () => '/api/v1/disputes', body: (i) => ({ gigId: i.workGigId, title: 'Issue', description: 'Details' }) },
   'GET /api/v1/disputes/': { role: 'admin', path: () => '/api/v1/disputes' },
   'GET /api/v1/disputes/:id': { role: 'client', path: (i) => `/api/v1/disputes/${i.disputeId}` },
+  'POST /api/v1/disputes/:id/evidence': { role: 'client', path: (i) => `/api/v1/disputes/${i.disputeId}/evidence` },
+  'POST /api/v1/disputes/:id/messages': { role: 'client', path: (i) => `/api/v1/disputes/${i.disputeId}/messages`, body: () => ({ content: 'Here is my side' }) },
+  'PUT /api/v1/disputes/:id/status': { role: 'admin', path: (i) => `/api/v1/disputes/${i.disputeId}/status`, body: () => ({ status: 'under_review' }) },
   'PUT /api/v1/disputes/:id/resolve': { role: 'admin', path: (i) => `/api/v1/disputes/${i.disputeId}/resolve`, body: () => ({ resolution: 'Closed' }) },
 
   // Admin

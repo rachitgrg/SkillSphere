@@ -164,6 +164,14 @@ export const PAYMENT_STATUS_META: Record<
   failed: { label: 'Failed', variant: 'error' },
 };
 
+/** Dispute status flow: open → under_review → resolved | closed. */
+export const DISPUTE_STATUS_META: Record<'open' | 'under_review' | 'resolved' | 'closed', { label: string; variant: 'primary' | 'success' | 'warning' | 'secondary' }> = {
+  open: { label: 'Open', variant: 'warning' },
+  under_review: { label: 'Under review', variant: 'primary' },
+  resolved: { label: 'Resolved', variant: 'success' },
+  closed: { label: 'Closed', variant: 'secondary' },
+};
+
 /** Downloads rows as a CSV file (values are quoted; first row is the header). */
 export const downloadCsv = (filename: string, rows: (string | number)[][]) => {
   const csv = rows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');

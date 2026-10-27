@@ -27,6 +27,7 @@ import {
 } from '../../hooks/queries/useAdmin';
 import type { AnalyticsPeriod, DisputeStatus, Gig, PaymentStatus, UserSummary, VerificationRequest } from '../../types';
 import {
+  DISPUTE_STATUS_META,
   formatBudget,
   formatCurrency,
   formatDay,
@@ -335,13 +336,6 @@ export function PaymentMonitoring() {
 
 // ───────────────────────── Disputes ─────────────────────────
 
-const DISPUTE_VARIANT: Record<DisputeStatus, 'warning' | 'primary' | 'success' | 'secondary'> = {
-  open: 'warning',
-  under_review: 'primary',
-  resolved: 'success',
-  closed: 'secondary',
-};
-
 export function DisputeManagement() {
   const [status, setStatus] = useState<'all' | DisputeStatus>('open');
   const [page, setPage] = useState(1);
@@ -349,11 +343,12 @@ export function DisputeManagement() {
 
   return (
     <div className="max-w-5xl">
-      <PageHeader title="Disputes" description="Review evidence and resolve with a refund, release or split." />
+      <PageHeader title="Disputes" description="Review evidence and the mediation thread, then resolve with a refund, release or split." />
       <StatusTabs label="Filter disputes" value={status} onChange={(s) => { setStatus(s); setPage(1); }} tabs={[
         { value: 'open', label: 'Open' },
         { value: 'under_review', label: 'Under review' },
         { value: 'resolved', label: 'Resolved' },
+        { value: 'closed', label: 'Closed' },
         { value: 'all', label: 'All' },
       ]} />
       <QueryState isLoading={disputes.isLoading} isError={disputes.isError} error={disputes.error} onRetry={() => disputes.refetch()} isEmpty={!disputes.data?.items.length} empty={{ icon: <AlertTriangle className="w-8 h-8" />, title: 'No disputes here', description: 'Disputes opened by clients or freelancers appear here.' }}>
@@ -365,9 +360,10 @@ export function DisputeManagement() {
                   <h3 className="font-semibold text-white truncate">{d.title}</h3>
                   <p className="text-xs text-slate-500 mt-1">
                     {populated<{ _id: string; title: string }>(d.gig as { _id: string; title: string })?.title} · {fullName(populated<UserSummary>(d.raisedBy as UserSummary))} vs {fullName(populated<UserSummary>(d.against as UserSummary))} · {formatTimeAgo(d.createdAt)}
+                    {` · ${d.evidence.length} evidence · ${d.messages?.length ?? 0} messages`}
                   </p>
                 </div>
-                <Badge variant={DISPUTE_VARIANT[d.status]} className="capitalize shrink-0">{d.status.replace('_', ' ')}</Badge>
+                <Badge variant={DISPUTE_STATUS_META[d.status].variant} className="shrink-0">{DISPUTE_STATUS_META[d.status].label}</Badge>
               </div>
             </Link>
           ))}

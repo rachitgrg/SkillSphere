@@ -178,6 +178,9 @@ export const ROUTES: RouteDoc[] = [
   { method: 'get', path: '/disputes/', tag: 'Disputes', summary: 'My disputes (admins: all)', access: 'auth', query: { status: 'Dispute status', gig: 'Gig id', ...pageQuery } },
   { method: 'get', path: '/disputes/:id', tag: 'Disputes', summary: 'Dispute details', access: 'auth' },
   { method: 'put', path: '/disputes/:id/resolve', tag: 'Disputes', summary: 'Resolve with refund / release / split', access: 'admin', body: bodyOf(v.resolveDisputeSchema) },
+  { method: 'put', path: '/disputes/:id/status', tag: 'Disputes', summary: 'Admin: mark under review, or close without moving money', access: 'admin', body: bodyOf(v.disputeStatusSchema) },
+  { method: 'post', path: '/disputes/:id/evidence', tag: 'Disputes', summary: 'Parties upload evidence files', access: 'client|freelancer', multipart: { description: 'What the files show', 'files[]': 'Up to 5 images/PDF/DOC/ZIP, 10 MB each' }, description: '503 when Cloudinary is not configured.' },
+  { method: 'post', path: '/disputes/:id/messages', tag: 'Disputes', summary: 'Mediation thread message (parties and admins)', access: 'auth', body: bodyOf(v.disputeMessageSchema), description: 'Multipart with up to 3 `files` is also accepted. An admin message moves the dispute to under_review.' },
 
   // Admin
   { method: 'get', path: '/admin/stats', tag: 'Admin', summary: 'Dashboard counters', access: 'admin' },

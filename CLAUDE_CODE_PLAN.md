@@ -453,9 +453,9 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] **UI:** a `SchedulerPage` (freelancer) to edit the weekly template and see bookings in a week/month calendar. Extend `AvailabilityCalendar`; build a simple grid rather than adding a heavy library. Add a booking widget on the public profile.
 
 ### 4.13 Disputes (module 13)
-- [ ] `CreateDisputePage` (from a gig or payment) with reason, description and **evidence upload** (multiple files via the upload service).
-- [ ] `Dispute.messages: [{sender, content, attachments, createdAt}]` gives a mediation thread between both parties and the admin. The status flow is `open → under_review → resolved | closed`.
-- [ ] Admin `DisputeManagement` page: review evidence and messages, then resolve with refund / release / split (calls payment service from 1.14) and notes. Notify both parties and write an `AdminLog`.
+- [x] `CreateDisputePage` (from a gig or payment) with reason, description and **evidence upload** (multiple files via the upload service).
+- [x] `Dispute.messages: [{sender, content, attachments, createdAt}]` gives a mediation thread between both parties and the admin. The status flow is `open → under_review → resolved | closed`.
+- [x] Admin `DisputeManagement` page: review evidence and messages, then resolve with refund / release / split (calls payment service from 1.14) and notes. Notify both parties and write an `AdminLog`.
 
 ### 4.14 Project progress tracker (module 14)
 - [x] Extend the milestone status flow: `pending → funded → in_progress → submitted → approved | changes_requested`.

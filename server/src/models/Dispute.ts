@@ -5,10 +5,23 @@ const evidenceSchema = new Schema(
   {
     uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     fileUrl: { type: String, required: true },
-    description: { type: String, required: true, maxlength: 500 },
+    name: String,
+    mimeType: String,
+    publicId: String,
+    description: { type: String, default: '', maxlength: 500 },
     uploadedAt: { type: Date, default: Date.now },
   },
   { _id: true }
+);
+
+/** Mediation thread between both parties and the admin. */
+const messageSchema = new Schema(
+  {
+    sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    content: { type: String, required: true, trim: true, maxlength: 3000 },
+    attachments: [{ _id: false, url: String, name: String, mimeType: String, size: Number }],
+  },
+  { _id: true, timestamps: { createdAt: true, updatedAt: false } }
 );
 
 const disputeSchema = new Schema<IDispute>(
@@ -43,6 +56,7 @@ const disputeSchema = new Schema<IDispute>(
       maxlength: [3000, 'Description cannot exceed 3000 characters'],
     },
     evidence: [evidenceSchema],
+    messages: [messageSchema],
     status: {
       type: String,
       enum: Object.values(DisputeStatus),

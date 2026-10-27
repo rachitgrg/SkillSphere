@@ -28,3 +28,12 @@ export const toParams = (filters?: object): Record<string, string | number | boo
   }
   return params;
 };
+
+/** JSON when there are no files, multipart (field `files`) otherwise. */
+export const withFiles = ({ files = [], ...fields }: { files?: File[]; [key: string]: string | File[] | undefined }) => {
+  if (!files.length) return fields;
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) if (typeof value === 'string' && value) form.append(key, value);
+  files.forEach((f) => form.append('files', f));
+  return form;
+};

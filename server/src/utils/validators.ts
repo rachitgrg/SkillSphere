@@ -247,6 +247,18 @@ export const requestChangesSchema = z.object({
   body: z.object({ note: z.string().trim().min(3, 'Say what needs to change').max(2000) }),
 });
 
+export const disputeEvidenceSchema = z.object({
+  body: z.object({ description: z.string().trim().max(500).optional() }),
+});
+
+export const disputeMessageSchema = z.object({
+  body: z.object({ content: z.string().trim().min(1, 'Write a message').max(3000) }),
+});
+
+export const disputeStatusSchema = z.object({
+  body: z.object({ status: z.enum(['under_review', 'closed']), note: z.string().trim().max(1000).optional() }),
+});
+
 // ───────────────────────── Scheduling ─────────────────────────
 
 const objectIdString = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');

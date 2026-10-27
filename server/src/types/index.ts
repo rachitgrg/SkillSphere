@@ -220,10 +220,22 @@ export interface INegotiationEntry {
 }
 
 export interface IEvidence {
+  _id?: Types.ObjectId;
   uploadedBy: Types.ObjectId;
   fileUrl: string;
+  name?: string;
+  mimeType?: string;
+  publicId?: string;
   description: string;
   uploadedAt: Date;
+}
+
+export interface IDisputeMessage {
+  _id?: Types.ObjectId;
+  sender: Types.ObjectId;
+  content: string;
+  attachments: { url: string; name: string; mimeType: string; size: number }[];
+  createdAt: Date;
 }
 
 export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
@@ -509,6 +521,7 @@ export interface IDispute extends Document {
   title: string;
   description: string;
   evidence: IEvidence[];
+  messages: IDisputeMessage[];
   status: DisputeStatus;
   resolution?: string;
   paymentAction?: 'refund' | 'release' | 'split';

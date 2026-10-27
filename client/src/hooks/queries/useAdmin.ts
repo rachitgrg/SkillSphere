@@ -70,3 +70,16 @@ export const useReviewVerification = () => {
     onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: keys.admin.all }), queryClient.invalidateQueries({ queryKey: ['users'] })]),
   });
 };
+export const useSetDisputeStatus = () =>
+  useAdminMutation(({ id, status, note }: { id: string; status: 'under_review' | 'closed'; note?: string }) => disputeApi.setStatus(id, { status, note }));
+
+/** Party/admin dispute actions: only the dispute views need refreshing. */
+const useDisputeMutation = <TVars, TResult>(fn: (vars: TVars) => Promise<TResult>) => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: fn, onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.disputes.all }) });
+};
+
+export const useAddDisputeMessage = () =>
+  useDisputeMutation(({ id, content, files }: { id: string; content: string; files?: File[] }) => disputeApi.addMessage(id, { content, files }));
+export const useAddDisputeEvidence = () =>
+  useDisputeMutation(({ id, files, description }: { id: string; files: File[]; description?: string }) => disputeApi.addEvidence(id, files, description));

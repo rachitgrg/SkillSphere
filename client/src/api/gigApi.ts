@@ -1,15 +1,6 @@
 import axiosInstance from './axiosInstance';
-import { data, paginated, toParams } from './request';
+import { data, paginated, toParams, withFiles } from './request';
 import type { ApiResponse, Gig, GigFilters, GigInput, GigInvitation, GigStatus, MyInvitation, ProgressLog, ProjectProgress } from '../types';
-
-/** JSON when there are no files, multipart (field `files`) otherwise. */
-const withFiles = ({ files = [], ...fields }: { files?: File[]; [key: string]: string | File[] | undefined }) => {
-  if (!files.length) return fields;
-  const form = new FormData();
-  for (const [key, value] of Object.entries(fields)) if (typeof value === 'string' && value) form.append(key, value);
-  files.forEach((f) => form.append('files', f));
-  return form;
-};
 
 export const gigApi = {
   /** Public marketplace: open, public gigs only. */

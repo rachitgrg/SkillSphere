@@ -639,10 +639,21 @@ export type DisputePaymentAction = 'refund' | 'release' | 'split';
 
 export interface Evidence {
   _id?: ID;
-  uploadedBy: ID;
+  uploadedBy: UserSummary | ID;
   fileUrl: string;
+  name?: string;
+  mimeType?: string;
   description: string;
   uploadedAt: string;
+}
+
+/** Mediation thread entry between both parties and admins. */
+export interface DisputeMessage {
+  _id: ID;
+  sender: UserSummary | ID;
+  content: string;
+  attachments: Pick<Attachment, 'url' | 'name' | 'mimeType' | 'size'>[];
+  createdAt: string;
 }
 
 export interface Dispute {
@@ -654,6 +665,7 @@ export interface Dispute {
   title: string;
   description: string;
   evidence: Evidence[];
+  messages: DisputeMessage[];
   status: DisputeStatus;
   resolution?: string;
   resolvedBy?: ID;
