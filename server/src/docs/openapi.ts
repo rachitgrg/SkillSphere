@@ -162,8 +162,8 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/ai/resume-analysis', tag: 'AI', summary: 'Career report from an uploaded PDF/TXT, or the stored resume', access: 'freelancer', multipart: { resume: 'file: optional PDF or TXT; omitted = stored resume' } },
 
   // Analytics
-  { method: 'get', path: '/analytics/freelancer', tag: 'Analytics', summary: 'Proposals, earnings, monthly revenue, feedback', access: 'freelancer', query: { period: '30d | 90d | 12m' } },
-  { method: 'get', path: '/analytics/client', tag: 'Analytics', summary: 'Spending, hires and gig pipeline', access: 'client', query: { period: '30d | 90d | 12m' } },
+  { method: 'get', path: '/analytics/freelancer', tag: 'Analytics', summary: 'Profile views, proposals, earnings, monthly revenue, feedback (with recent comments), winning skills', access: 'freelancer', query: { period: '30d | 90d | 12m' } },
+  { method: 'get', path: '/analytics/client', tag: 'Analytics', summary: 'Spending, hires, gig pipeline and top-paid freelancers', access: 'client', query: { period: '30d | 90d | 12m' } },
 
   // Schedule
   { method: 'get', path: '/schedule/:freelancerId/availability', tag: 'Schedule', summary: 'Free 30-minute slots (weekly template minus bookings)', access: 'public', query: { from: 'ISO date-time (default now)', to: 'ISO date-time (default +14 days, max 31 days)' } },

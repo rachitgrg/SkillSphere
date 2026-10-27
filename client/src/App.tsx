@@ -49,6 +49,7 @@ const ClientProfile = page(() => import('./pages/client/ProfilePage'), 'ProfileP
 const ClientGigsPage = page(() => import('./pages/client/ClientGigsPage'), 'ClientGigsPage');
 const GigProposalsPage = page(() => import('./pages/client/GigProposalsPage'), 'GigProposalsPage');
 const MeetingsPage = page(() => import('./pages/client/MeetingsPage'), 'MeetingsPage');
+const ClientAnalyticsPage = page(() => import('./pages/client/ClientAnalyticsPage'), 'ClientAnalyticsPage');
 const CreateGigPage = page(() => import('./pages/gigs/CreateGigPage'), 'CreateGigPage');
 
 // Freelancer
@@ -154,6 +155,7 @@ export default function App() {
             <Route path="gigs/:id/proposals" element={<GigProposalsPage />} />
             <Route path="payments" element={<TransactionHistoryPage />} />
             <Route path="meetings" element={<MeetingsPage />} />
+            <Route path="analytics" element={<ClientAnalyticsPage />} />
             <Route path="reviews" element={<ReviewPage />} />
             <Route path="profile" element={<ClientProfile />} />
           </Route>

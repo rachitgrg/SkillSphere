@@ -1,21 +1,16 @@
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CheckCircle2, FileText, IndianRupee, Lock } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CheckCircle2, Eye, FileText, IndianRupee, Lock } from 'lucide-react';
 import { StatCard } from '../../components/dashboard/StatCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QueryState } from '../../components/common/QueryState';
+import { StarRating } from '../../components/common/StarRating';
+import { ChartCard as Card, PeriodSelect } from '../../components/charts/AnalyticsParts';
 import { chartTheme, inrTick } from '../../components/charts/chartTheme';
 import { ReviewBreakdownChart } from '../../components/reviews/ReviewBreakdownChart';
 import { useFreelancerAnalytics } from '../../hooks/queries/useDashboard';
 import type { AnalyticsPeriod } from '../../types';
-import { formatCurrency } from '../../utils/helpers';
-
-const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="glass-card p-6 rounded-2xl border border-slate-800">
-    <h2 className="font-semibold text-white mb-4">{title}</h2>
-    {children}
-  </section>
-);
+import { formatCurrency, formatTimeAgo, fullName } from '../../utils/helpers';
 
 export function AnalyticsPage() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('12m');
@@ -33,24 +28,37 @@ export function AnalyticsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Analytics"
-        description="How your proposals, earnings and client feedback are trending."
-        actions={
-          <select aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value as AnalyticsPeriod)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="12m">Last 12 months</option>
-          </select>
-        }
+        description="How your profile views, proposals, earnings and client feedback are trending."
+        actions={<PeriodSelect value={period} onChange={setPeriod} />}
       />
       <QueryState isLoading={analytics.isLoading} isError={analytics.isError} error={analytics.error} onRetry={() => analytics.refetch()}>
         {a && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <StatCard title="Profile views" value={a.profileViews.total} icon={<Eye className="w-6 h-6" />} color="amber" />
               <StatCard title="Earned" value={formatCurrency(a.earnings.released)} icon={<IndianRupee className="w-6 h-6" />} color="emerald" />
               <StatCard title="Pending in escrow" value={formatCurrency(a.earnings.pending)} icon={<Lock className="w-6 h-6" />} color="cyan" />
               <StatCard title="Proposals sent" value={a.proposals.sent} icon={<FileText className="w-6 h-6" />} color="indigo" />
               <StatCard title="Acceptance rate" value={`${a.proposals.acceptanceRate}%`} icon={<CheckCircle2 className="w-6 h-6" />} color="violet" />
             </div>
+
+            <Card title="Profile views">
+              <div className="h-56">
+                {a.profileViews.total ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={a.profileViews.series}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                      <XAxis dataKey="date" stroke={chartTheme.axis} fontSize={12} tickFormatter={(d: string) => (d.length > 7 ? d.slice(5) : d)} minTickGap={16} />
+                      <YAxis stroke={chartTheme.axis} fontSize={12} allowDecimals={false} />
+                      <Tooltip contentStyle={chartTheme.tooltip} />
+                      <Line type="monotone" dataKey="views" name="Unique viewers" stroke={chartTheme.series[1]} strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-sm text-slate-500">No profile views in this period yet. Share your public profile link to get noticed.</p>
+                )}
+              </div>
+            </Card>
 
             <div className="grid lg:grid-cols-2 gap-6">
               <Card title="Monthly revenue">
@@ -122,6 +130,24 @@ export function AnalyticsPage() {
                 )}
               </Card>
             </div>
+
+            {a.feedback.recentReviews.length > 0 && (
+              <Card title="Recent client comments">
+                <ul className="divide-y divide-slate-800">
+                  {a.feedback.recentReviews.map((r) => (
+                    <li key={r._id} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                        <StarRating rating={r.rating} size="sm" />
+                        <span className="text-slate-200 font-medium">{fullName(r.reviewer)}</span>
+                        {r.gig && <span>· {r.gig.title}</span>}
+                        <span>· {formatTimeAgo(r.createdAt)}</span>
+                      </div>
+                      <p className="text-sm text-slate-300 mt-1 break-words">{r.comment}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
           </>
         )}
       </QueryState>

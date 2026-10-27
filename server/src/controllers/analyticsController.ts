@@ -4,6 +4,8 @@ import Payment from '../models/Payment';
 import Proposal from '../models/Proposal';
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
+import Review from '../models/Review';
+import { profileViewSeries } from '../services/profileViewService';
 import reputationService from '../services/reputationService';
 import { AuthRequest, GigStatus, PaymentStatus, ProposalStatus } from '../types';
 
@@ -40,14 +42,14 @@ const sumByStatus = async (match: Record<string, unknown>, amountField: string) 
 
 /**
  * GET /analytics/freelancer?period=30d|90d|12m — proposals funnel, earnings and monthly revenue,
- * client feedback analytics and the skills that won jobs. Profile views arrive with plan 4.15.
+ * profile views over time, client feedback analytics (with recent comments) and the skills that won jobs.
  */
 export const getFreelancerAnalytics = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = new Types.ObjectId(req.user!._id.toString());
     const { period, start } = periodStart(req.query.period);
 
-    const [proposalRows, earnings, monthlyRevenue, feedback, wonGigs, profile] = await Promise.all([
+    const [proposalRows, earnings, monthlyRevenue, feedback, wonGigs, profile, profileViews, recentReviews] = await Promise.all([
       Proposal.aggregate<{ _id: ProposalStatus; count: number }>([
         { $match: { freelancer: userId, createdAt: { $gte: start } } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
@@ -57,6 +59,14 @@ export const getFreelancerAnalytics = async (req: AuthRequest, res: Response, ne
       reputationService.getReputationBreakdown(userId.toString()),
       Gig.find({ selectedFreelancer: userId }).select('skills status').lean(),
       FreelancerProfile.findOne({ user: userId }).select('averageRating totalReviews completedGigs totalEarnings').lean(),
+      profileViewSeries(userId, start, period === '12m'),
+      Review.find({ reviewee: userId, isVisible: true })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('rating comment createdAt reviewer gig')
+        .populate('reviewer', 'firstName lastName avatar')
+        .populate('gig', 'title')
+        .lean(),
     ]);
 
     const proposals = Object.fromEntries(proposalRows.map((r) => [r._id, r.count])) as Partial<Record<ProposalStatus, number>>;
@@ -82,7 +92,8 @@ export const getFreelancerAnalytics = async (req: AuthRequest, res: Response, ne
           released: earnings[PaymentStatus.RELEASED] ?? 0,
         },
         monthlyRevenue,
-        feedback,
+        profileViews,
+        feedback: { ...feedback, recentReviews },
         topSkills,
         activeProjects: wonGigs.filter((g) => g.status === GigStatus.IN_PROGRESS).length,
         completedProjects: wonGigs.filter((g) => g.status === GigStatus.COMPLETED).length,
@@ -94,13 +105,13 @@ export const getFreelancerAnalytics = async (req: AuthRequest, res: Response, ne
   }
 };
 
-/** GET /analytics/client?period= — spending, hires and gig pipeline. */
+/** GET /analytics/client?period= — spending, hires, gig pipeline and top-paid freelancers. */
 export const getClientAnalytics = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = new Types.ObjectId(req.user!._id.toString());
     const { period, start } = periodStart(req.query.period);
 
-    const [spending, monthlySpending, gigRows, proposalsReceived] = await Promise.all([
+    const [spending, monthlySpending, gigRows, proposalsReceived, topFreelancers] = await Promise.all([
       sumByStatus({ client: userId }, 'amount'),
       monthlyTotals({ client: userId }, 'amount', start),
       Gig.aggregate<{ _id: GigStatus; count: number }>([
@@ -110,6 +121,16 @@ export const getClientAnalytics = async (req: AuthRequest, res: Response, next: 
       Gig.aggregate<{ total: number }>([
         { $match: { client: userId, createdAt: { $gte: start } } },
         { $group: { _id: null, total: { $sum: '$totalProposals' } } },
+      ]),
+      // Who the client paid most in the period.
+      Payment.aggregate<{ freelancer: { _id: Types.ObjectId; firstName: string; lastName: string; avatar?: string }; total: number; payments: number }>([
+        { $match: { client: userId, status: PaymentStatus.RELEASED, releasedAt: { $gte: start } } },
+        { $group: { _id: '$freelancer', total: { $sum: '$amount' }, payments: { $sum: 1 } } },
+        { $sort: { total: -1 } },
+        { $limit: 5 },
+        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'freelancer', pipeline: [{ $project: { firstName: 1, lastName: 1, avatar: 1 } }] } },
+        { $unwind: '$freelancer' },
+        { $project: { _id: 0, freelancer: 1, total: 1, payments: 1 } },
       ]),
     ]);
 
@@ -134,6 +155,7 @@ export const getClientAnalytics = async (req: AuthRequest, res: Response, next: 
         },
         hires: (gigs[GigStatus.IN_PROGRESS] ?? 0) + (gigs[GigStatus.COMPLETED] ?? 0),
         proposalsReceived: proposalsReceived[0]?.total ?? 0,
+        topFreelancers,
       },
     });
   } catch (error) {

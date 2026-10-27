@@ -466,16 +466,16 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] When the client approves the last milestone, the gig becomes `completed`, both parties are prompted to review, and counters are updated.
 
 ### 4.15 Freelancer analytics (module 15)
-- [ ] **Profile views:** a `ProfileView { freelancer, viewer?, date (day), count }` collection or a daily counter subdocument. Increment on public profile view (dedupe the same viewer per day).
-- [ ] `GET /analytics/freelancer?period=30d|90d|12m` returns:
+- [x] **Profile views:** a `ProfileView { freelancer, viewer?, date (day), count }` collection or a daily counter subdocument. Increment on public profile view (dedupe the same viewer per day).
+- [x] `GET /analytics/freelancer?period=30d|90d|12m` returns:
   - profile views over time
   - proposals sent / accepted / acceptance rate
   - earnings total, pending (escrow) and released
   - **monthly revenue** (the existing aggregation)
   - client feedback analytics (category averages, rating distribution, recent comments)
   - top skills that won jobs
-- [ ] `AnalyticsPage` with Recharts: line chart for views, bar chart for monthly revenue, pie chart for proposal outcomes, radar or bar chart for feedback categories, and stat cards. Reuse `StatCard`.
-- [ ] Do the same (simpler) for clients: spending and hires.
+- [x] `AnalyticsPage` with Recharts: line chart for views, bar chart for monthly revenue, pie chart for proposal outcomes, radar or bar chart for feedback categories, and stat cards. Reuse `StatCard`.
+- [x] Do the same (simpler) for clients: spending and hires.
 
 ### 4.16 Optional
 - [ ] Redis (`REDIS_URL`): cache trending skills, admin stats and search results. Use the Socket.IO Redis adapter. Skip gracefully if absent.

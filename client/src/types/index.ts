@@ -779,7 +779,11 @@ export interface FreelancerAnalytics {
   proposals: { sent: number; accepted: number; byStatus: Partial<Record<ProposalStatus, number>>; acceptanceRate: number };
   earnings: { total: number; pending: number; released: number };
   monthlyRevenue: MonthlyTotal[];
-  feedback: ReviewBreakdown;
+  /** Unique viewers per day (30d/90d, `date` = YYYY-MM-DD) or per month (12m, `date` = YYYY-MM). */
+  profileViews: { total: number; series: { date: string; views: number }[] };
+  feedback: ReviewBreakdown & {
+    recentReviews: { _id: ID; rating: number; comment: string; createdAt: string; reviewer: UserSummary; gig?: Pick<Gig, '_id' | 'title'> }[];
+  };
   topSkills: { skill: string; count: number }[];
   activeProjects: number;
   completedProjects: number;
@@ -793,6 +797,7 @@ export interface ClientAnalytics {
   gigs: { byStatus: Partial<Record<GigStatus, number>>; total: number; active: number; completed: number };
   hires: number;
   proposalsReceived: number;
+  topFreelancers: { freelancer: UserSummary; total: number; payments: number }[];
 }
 
 // ========== ADMIN ==========

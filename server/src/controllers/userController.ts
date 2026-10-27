@@ -6,6 +6,7 @@ import ClientProfile from '../models/ClientProfile';
 import { AuthRequest, NOTIFICATION_CATEGORIES, NotificationCategory, NotificationPreferences, UserRole } from '../types';
 import { pick } from '../utils/helpers';
 import embeddingService from '../services/embeddingService';
+import { recordProfileView } from '../services/profileViewService';
 
 /**
  * Fields users may edit; ratings, earnings and counters are server-controlled. The portfolio, resume
@@ -66,6 +67,7 @@ export const getFreelancerProfile = async (req: AuthRequest, res: Response, next
       res.status(404).json({ success: false, message: 'Profile not found' });
       return;
     }
+    await recordProfileView(req, user._id);
     res.status(200).json({ success: true, message: 'Profile found', data: { ...profile.toJSON(), user } });
   } catch (error) {
     next(error);

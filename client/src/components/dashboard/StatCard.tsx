@@ -6,7 +6,7 @@ interface StatCardProps {
   value: string | number;
   icon: React.ReactNode;
   trend?: { value: number; isPositive: boolean };
-  color?: 'indigo' | 'emerald' | 'cyan' | 'violet';
+  color?: 'indigo' | 'emerald' | 'cyan' | 'violet' | 'amber';
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, color = 'indigo' }) => {
@@ -15,6 +15,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, c
     emerald: 'from-emerald-500/20 to-emerald-500/5 text-emerald-400 border-emerald-500/20',
     cyan: 'from-cyan-500/20 to-cyan-500/5 text-cyan-400 border-cyan-500/20',
     violet: 'from-violet-500/20 to-violet-500/5 text-violet-400 border-violet-500/20',
+    amber: 'from-amber-500/20 to-amber-500/5 text-amber-400 border-amber-500/20',
   };
 
   return (
