@@ -18,11 +18,13 @@ import { useCall } from '../../contexts/CallContext';
 import { useAppSelector } from '../../hooks/useRedux';
 import type { Conversation, Message, MessagePage } from '../../types';
 import { fullName, getErrorMessage } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 type Pages = InfiniteData<MessagePage, string | undefined>;
 type Ack = { ok: boolean; error?: string; message?: Message };
 
 export function ChatPage() {
+  useDocumentTitle('Messages');
   const me = useAppSelector((s) => s.auth.user)!;
   const [params, setParams] = useSearchParams();
   const activeId = params.get('c') ?? undefined;

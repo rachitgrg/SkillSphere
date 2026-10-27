@@ -1,8 +1,10 @@
 import React from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 export const AboutPage: React.FC = () => {
+  useDocumentTitle('About');
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

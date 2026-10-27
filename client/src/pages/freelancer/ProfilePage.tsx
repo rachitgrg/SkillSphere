@@ -21,6 +21,7 @@ import { useStartConversation } from '../../hooks/queries/useChat';
 import { useAppSelector } from '../../hooks/useRedux';
 import type { PortfolioItem } from '../../types';
 import { formatCurrency, formatDay, fullName, getErrorMessage } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="glass-card p-6 rounded-2xl border border-slate-800">
@@ -60,6 +61,7 @@ function FreelancerProfileContent({ userId, isOwn }: { userId?: string; isOwn: b
   const startConversation = useStartConversation();
   const [gallery, setGallery] = useState<{ item: PortfolioItem; index: number } | null>(null);
   const profile = profileQuery.data;
+  useDocumentTitle(profile ? `${profile.user.firstName} ${profile.user.lastName}` : 'Freelancer profile');
 
   const message = async () => {
     if (!profile) return;

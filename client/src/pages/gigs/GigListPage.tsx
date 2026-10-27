@@ -10,6 +10,7 @@ import { useCategories, useGigs, useTrendingSkills } from '../../hooks/queries/u
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import type { GigFilters as Filters, GigSort } from '../../types';
 import { getErrorMessage } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 const PAGE_SIZE = 12;
 const SORTS: { value: GigSort; label: string }[] = [
@@ -50,6 +51,7 @@ const writeFilters = (filters: Filters): URLSearchParams => {
 };
 
 export const GigListPage: React.FC = () => {
+  useDocumentTitle('Browse gigs');
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
 

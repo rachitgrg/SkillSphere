@@ -41,28 +41,39 @@ export function FileUpload({
     });
   };
 
+  const browse = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = multiple;
+    input.accept = accept;
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) handleFiles(target.files);
+    };
+    input.click();
+  };
+
   return (
     <div className={className}>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${label}: drop files or press Enter to browse`}
         className={`
-          border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer
+          border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer focus-ring
           ${dragOver
             ? 'border-primary-500 bg-primary-500/5'
             : 'border-dark-600 hover:border-dark-400'}
         `}
-        onClick={() => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.multiple = multiple;
-          input.accept = accept;
-          input.onchange = (e) => {
-            const target = e.target as HTMLInputElement;
-            if (target.files) handleFiles(target.files);
-          };
-          input.click();
+        onClick={browse}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            browse();
+          }
         }}
       >
         <Upload className="w-8 h-8 mx-auto mb-3 text-dark-400" />
@@ -78,7 +89,8 @@ export function FileUpload({
               <FileText className="w-4 h-4 text-primary-400 shrink-0" />
               <span className="text-sm text-dark-300 truncate flex-1">{file.name}</span>
               <span className="text-xs text-dark-500">{(file.size / 1024).toFixed(0)}KB</span>
-              <button onClick={() => removeFile(i)} className="text-dark-400 hover:text-error-500 transition-colors">
+              {/* type="button": inside a form the default would submit it. */}
+              <button type="button" aria-label={`Remove ${file.name}`} onClick={() => removeFile(i)} className="text-dark-400 hover:text-error-500 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>

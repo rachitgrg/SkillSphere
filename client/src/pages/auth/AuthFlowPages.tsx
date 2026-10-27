@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { setCredentials, updateUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
 import { getErrorMessage } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4">
@@ -32,6 +33,7 @@ export const strongPassword = z
 
 /** /verify-email?token=… (link from the verification email). */
 export const VerifyEmailPage: React.FC = () => {
+  useDocumentTitle('Verify email');
   const [params] = useSearchParams();
   const token = params.get('token');
   const dispatch = useAppDispatch();
@@ -86,6 +88,7 @@ export const VerifyEmailPage: React.FC = () => {
 const forgotSchema = z.object({ email: z.string().trim().email('Enter a valid email') });
 
 export const ForgotPasswordPage: React.FC = () => {
+  useDocumentTitle('Forgot password');
   const [sent, setSent] = useState(false);
   const { register, handleSubmit, formState } = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema) });
 
@@ -125,6 +128,7 @@ const resetSchema = z
   .refine((v) => v.password === v.confirm, { message: 'Passwords do not match', path: ['confirm'] });
 
 export const ResetPasswordPage: React.FC = () => {
+  useDocumentTitle('Reset password');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get('token');
@@ -206,6 +210,7 @@ export function OtpInput({ value, onChange, onComplete }: { value: string; onCha
 }
 
 export const TwoFactorPage: React.FC = () => {
+  useDocumentTitle('Two-factor sign-in');
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const tempToken = (useLocation().state as { tempToken?: string } | null)?.tempToken;
@@ -264,6 +269,7 @@ export const TwoFactorPage: React.FC = () => {
 // ───────────── First Google login: choose a role ─────────────
 
 export const ChooseRolePage: React.FC = () => {
+  useDocumentTitle('Choose your role');
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);

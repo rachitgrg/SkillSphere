@@ -7,9 +7,11 @@ import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, loginUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
 import { GoogleButton } from '../../components/auth/GoogleButton';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 
 export const LoginPage: React.FC = () => {
+  useDocumentTitle('Sign in');
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);

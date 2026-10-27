@@ -17,12 +17,14 @@ import { keys } from '../../hooks/queries/keys';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import type { FreelancerFilters, FreelancerSort, GigFilters } from '../../types';
 import { formatCurrency, fullName } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 type Tab = 'gigs' | 'freelancers';
 const selectClass = 'bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white';
 
 /** /search?tab=gigs|freelancers&q=… — every filter lives in the URL. */
 export function SearchResultsPage() {
+  useDocumentTitle('Search');
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'freelancers' ? 'freelancers' : 'gigs';
   const [query, setQuery] = useState(params.get('q') ?? '');

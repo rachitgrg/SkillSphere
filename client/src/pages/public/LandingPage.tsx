@@ -21,6 +21,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useTrendingSkills } from '../../hooks/queries/useMarketplace';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 type Category = {
   title: string;
@@ -290,6 +291,7 @@ function TrendingSkills() {
 }
 
 export const LandingPage = () => {
+  useDocumentTitle(null);
   return (
     <div className="min-h-screen overflow-hidden bg-[#020b16] text-white">
       <Navbar />

@@ -1,8 +1,10 @@
 import { Link } from 'react-router';
 import { Compass } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 export function NotFoundPage() {
+  useDocumentTitle('Page not found');
   return (
     <div className="min-h-screen flex flex-col bg-dark-950">
       <Navbar />

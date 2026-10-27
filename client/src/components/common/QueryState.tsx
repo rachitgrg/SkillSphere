@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Spinner } from './Spinner';
+import { SkeletonList } from './Skeleton';
 import { EmptyState } from './EmptyState';
 import { getErrorMessage } from '../../utils/helpers';
 
@@ -11,18 +11,14 @@ interface QueryStateProps {
   onRetry?: () => void;
   isEmpty?: boolean;
   empty?: { title: string; description: string; icon?: ReactNode; action?: { label: string; onClick: () => void } };
+  /** Custom loading placeholder; defaults to skeleton rows. */
+  loading?: ReactNode;
   children: ReactNode;
 }
 
-/** Loading spinner → error card with retry → empty state → content. */
-export function QueryState({ isLoading, isError, error, onRetry, isEmpty, empty, children }: QueryStateProps) {
-  if (isLoading) {
-    return (
-      <div className="py-16 flex justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+/** Loading skeleton → error card with retry → empty state → content. */
+export function QueryState({ isLoading, isError, error, onRetry, isEmpty, empty, loading, children }: QueryStateProps) {
+  if (isLoading) return <>{loading ?? <SkeletonList />}</>;
   if (isError) {
     return (
       <div className="glass-card rounded-2xl p-10 text-center border border-red-500/20" role="alert">

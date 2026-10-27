@@ -10,7 +10,7 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-dark-950">
-      <Navbar />
+      <Navbar hasSidebar />
       <Sidebar />
       <main className={`pt-16 min-h-screen transition-[margin] duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
         <div className="p-4 lg:p-6">

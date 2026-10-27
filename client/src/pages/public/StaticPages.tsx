@@ -3,11 +3,13 @@ import { Link } from 'react-router';
 import { Mail, MessageSquare } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 /** Contact address shown on the Contact page. */
 const SUPPORT_EMAIL = 'support@skillsphere.example';
 
 function StaticLayout({ title, updated, children }: { title: string; updated?: string; children: ReactNode }) {
+  useDocumentTitle(title);
   return (
     <div className="min-h-screen flex flex-col bg-dark-950">
       <Navbar />

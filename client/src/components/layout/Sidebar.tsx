@@ -1,12 +1,13 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Briefcase, FileText, MessageSquare, CreditCard,
   Star, BarChart3, Users, Shield, AlertTriangle, ScrollText, Settings,
-  ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap, BadgeCheck,
+  ChevronLeft, ChevronRight, User, Calendar, Search, Bell, Zap, BadgeCheck, X,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
-import { toggleSidebarCollapsed } from '../../store/slices/uiSlice';
+import { setMobileMenuOpen, toggleSidebarCollapsed } from '../../store/slices/uiSlice';
 
 interface SidebarLink {
   label: string;
@@ -56,15 +57,67 @@ const adminLinks: SidebarLink[] = [
   { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
+/** Desktop: a collapsible rail from `lg` up. Below that: a drawer opened by the navbar menu button. */
 export function Sidebar() {
   const { user } = useAppSelector((s) => s.auth);
-  const { sidebarCollapsed } = useAppSelector((s) => s.ui);
+  const { sidebarCollapsed, mobileMenuOpen } = useAppSelector((s) => s.ui);
   const dispatch = useAppDispatch();
   const location = useLocation();
 
   const links = user?.role === 'admin' ? adminLinks : user?.role === 'freelancer' ? freelancerLinks : clientLinks;
+  const close = () => dispatch(setMobileMenuOpen(false));
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dispatch(setMobileMenuOpen(false));
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen, dispatch]);
 
   return (
+    <>
+    <AnimatePresence>
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" onClick={close} />
+          <motion.nav
+            id="mobile-sidebar"
+            aria-label="Main menu"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'tween', duration: 0.2 }}
+            className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-slate-950 border-r border-dark-700/50 flex flex-col"
+          >
+            <div className="flex items-center justify-between px-4 h-16 border-b border-dark-700/50">
+              <span className="font-semibold text-white">Menu</span>
+              <button type="button" onClick={close} aria-label="Close menu" className="p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+              {links.map((link) => {
+                const isActive = location.pathname === link.href.split('?')[0];
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={close}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${isActive ? 'text-primary-400 bg-primary-500/10' : 'text-dark-300 hover:text-white hover:bg-dark-700/40'}`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.nav>
+        </div>
+      )}
+    </AnimatePresence>
     <motion.aside
       animate={{ width: sidebarCollapsed ? 72 : 260 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -119,6 +172,7 @@ export function Sidebar() {
       <div className="p-3 border-t border-dark-700/50">
         <button
           onClick={() => dispatch(toggleSidebarCollapsed())}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
         >
           {sidebarCollapsed ? (
@@ -132,5 +186,6 @@ export function Sidebar() {
         </button>
       </div>
     </motion.aside>
+    </>
   );
 }

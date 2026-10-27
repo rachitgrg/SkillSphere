@@ -12,7 +12,8 @@ import { Avatar } from '../common/Avatar';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { useUnreadCount } from '../../hooks/queries/useNotifications';
 
-export function Navbar() {
+/** `hasSidebar` (dashboard layout): the menu button opens the sidebar drawer instead of the public dropdown. */
+export function Navbar({ hasSidebar = false }: { hasSidebar?: boolean }) {
   const { user, isAuthenticated } = useAppSelector((s) => s.auth);
   const { mobileMenuOpen, notificationDropdownOpen } = useAppSelector((s) => s.ui);
   const dispatch = useAppDispatch();
@@ -178,8 +179,12 @@ export function Navbar() {
 
             {/* Mobile menu button */}
             <button
+              type="button"
               onClick={() => dispatch(toggleMobileMenu())}
-              className="md:hidden p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls={hasSidebar ? 'mobile-sidebar' : undefined}
+              className={`${hasSidebar ? 'lg:hidden' : 'md:hidden'} p-2 rounded-lg text-dark-400 hover:text-white hover:bg-dark-700/50 transition-all`}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -189,7 +194,7 @@ export function Navbar() {
 
       {/* Mobile menu */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {mobileMenuOpen && !hasSidebar && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

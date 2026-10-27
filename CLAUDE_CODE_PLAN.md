@@ -489,7 +489,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
   - Client: **Vitest + React Testing Library** for key components and the auth slice.
   - **Playwright** e2e for the §9 demo flow (Razorpay mocked).
 - [x] **CI:** `.github/workflows/ci.yml` runs install, lint, typecheck, test and build for both packages on push/PR.
-- [ ] **Frontend polish:**
+- [x] **Frontend polish:**
   - responsive layouts (mobile sidebar)
   - skeleton loaders
   - accessible forms (labels, focus)

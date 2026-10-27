@@ -45,6 +45,7 @@ import {
   populated,
   refId,
 } from '../../utils/helpers';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 /** Statuses in which the owner can still change attachments and invite freelancers. */
 const EDITABLE = ['draft', 'pending_approval', 'open'];
@@ -66,6 +67,7 @@ export const GigDetailPage: React.FC = () => {
 
   const gigQuery = useGig(id);
   const gig = gigQuery.data;
+  useDocumentTitle(gig?.title ?? 'Gig');
   const client = populated<UserSummary>(gig?.client);
   const clientProfile = useClientProfile(refId(gig?.client));
 

@@ -6,12 +6,14 @@ import { useAppDispatch } from '../../hooks/useRedux';
 import { bootstrapSession } from '../../store/slices/authSlice';
 import { store } from '../../store/store';
 import { getDashboardPath } from '../../utils/routes';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 /**
  * Google OAuth lands here after the server has set the refresh cookie. We exchange it for an
  * access token, then continue to the dashboard (or the login page with an error).
  */
 export function OAuthCallbackPage() {
+  useDocumentTitle('Signing in');
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [params] = useSearchParams();

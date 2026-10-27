@@ -1,8 +1,9 @@
 import React, { Suspense, lazy, type ComponentType } from 'react';
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { ScrollToTop } from './components/common/ScrollToTop';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Spinner } from './components/common/Spinner';
 import { useAppSelector } from './hooks/useRedux';
 import type { UserRole } from './types';
@@ -90,8 +91,9 @@ const Area = ({ role }: { role?: UserRole }) => (
 );
 
 export default function App() {
+  const { pathname } = useLocation();
   return (
-    <>
+    <ErrorBoundary resetKey={pathname}>
       <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -175,6 +177,6 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
-    </>
+    </ErrorBoundary>
   );
 }

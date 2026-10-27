@@ -21,3 +21,17 @@ test('a signed-out visitor is sent to login from a protected page', async ({ pag
   await page.goto('/client/dashboard');
   await expect(page).toHaveURL(/\/login$/);
 });
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the menu button opens the full sidebar as a drawer', async ({ page }) => {
+    await login(page, 'freelancer');
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    const drawer = page.getByRole('navigation', { name: 'Main menu' });
+    await drawer.getByRole('link', { name: 'Analytics' }).click();
+    await expect(page).toHaveURL(/\/freelancer\/analytics$/);
+    await expect(drawer).toBeHidden();
+    await expect(page).toHaveTitle('Analytics · SkillSphere');
+  });
+});

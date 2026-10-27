@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 interface PageHeaderProps {
   title: string;
@@ -6,8 +7,9 @@ interface PageHeaderProps {
   actions?: ReactNode;
 }
 
-/** Title row used at the top of every dashboard page. */
+/** Title row used at the top of every dashboard page; also sets the browser tab title. */
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
+  useDocumentTitle(title);
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
       <div>

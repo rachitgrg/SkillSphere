@@ -8,9 +8,11 @@ import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { clearError, registerUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
 import { GoogleButton } from '../../components/auth/GoogleButton';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 
 export const RegisterPage: React.FC = () => {
+  useDocumentTitle('Create an account');
   const [role, setRole] = useState<'freelancer' | 'client' | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

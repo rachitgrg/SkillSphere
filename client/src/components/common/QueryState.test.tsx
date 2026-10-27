@@ -6,8 +6,9 @@ import { QueryState } from './QueryState';
 const empty = { title: 'No gigs yet', description: 'Post one to get started.' };
 
 describe('QueryState', () => {
-  it('shows a spinner instead of the content while loading', () => {
+  it('shows an accessible loading skeleton instead of the content', () => {
     render(<QueryState isLoading isError={false}><p>content</p></QueryState>);
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
     expect(screen.queryByText('content')).not.toBeInTheDocument();
   });
 
