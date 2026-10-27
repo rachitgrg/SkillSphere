@@ -5,6 +5,7 @@ import { GigStatus } from '../types';
 import { containsRegex, escapeRegex } from '../utils/helpers';
 import { env } from '../config/env';
 import { toStringList } from './gigQuery';
+import cacheService from './cacheService';
 
 const toNumber = (value: unknown): number | undefined => {
   if (typeof value !== 'string' || value.trim() === '') return undefined;
@@ -23,7 +24,7 @@ const FREELANCER_SORTS: Record<string, Record<string, 1 | -1>> = {
   newest: { createdAt: -1 },
 };
 
-const TRENDING_TTL_MS = 60 * 60 * 1000;
+const TRENDING_TTL_S = 60 * 60;
 
 /** Haversine distance in metres from `[lng, lat]` to the document's `location` (Atlas path, after $search). */
 const geoDistanceExpr = ([lng, lat]: [number, number]) => {
@@ -47,8 +48,6 @@ export interface TrendingSkill {
   previousCount: number;
   growth: number; // % change vs the previous window
 }
-
-let trendingCache: { at: number; days: number; data: TrendingSkill[] } | null = null;
 
 class SearchService {
   /**
@@ -212,13 +211,14 @@ class SearchService {
 
   /**
    * Skills on gigs posted in the last `days` days vs the `days` before that, with growth %.
-   * Cached in memory for an hour.
+   * Cached for an hour (Redis when configured).
    */
   async getTrendingSkills(days = 30, limit = 15): Promise<TrendingSkill[]> {
-    if (trendingCache && trendingCache.days === days && Date.now() - trendingCache.at < TRENDING_TTL_MS) {
-      return trendingCache.data.slice(0, limit);
-    }
+    const data = await cacheService.wrap(`trending:${days}`, TRENDING_TTL_S, () => this.computeTrendingSkills(days));
+    return data.slice(0, limit);
+  }
 
+  private async computeTrendingSkills(days: number): Promise<TrendingSkill[]> {
     const now = Date.now();
     const start = new Date(now - days * 86_400_000);
     const prevStart = new Date(now - 2 * days * 86_400_000);
@@ -238,14 +238,12 @@ class SearchService {
       { $limit: 50 },
     ]);
 
-    const data = rows.map((r) => ({
+    return rows.map((r) => ({
       skill: r._id,
       count: r.count,
       previousCount: r.previousCount,
       growth: r.previousCount ? Math.round(((r.count - r.previousCount) / r.previousCount) * 100) : 100,
     }));
-    trendingCache = { at: now, days, data };
-    return data.slice(0, limit);
   }
 
   /** Categories of open public gigs with counts, for marketplace filters. */
@@ -260,7 +258,7 @@ class SearchService {
 
   /** Test helper. */
   clearCache(): void {
-    trendingCache = null;
+    cacheService.clear();
   }
 }
 

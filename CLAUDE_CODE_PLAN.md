@@ -478,7 +478,7 @@ Use **React Query** (`useQuery` / `useMutation`, `queryClient.invalidateQueries`
 - [x] Do the same (simpler) for clients: spending and hires.
 
 ### 4.16 Optional
-- [ ] Redis (`REDIS_URL`): cache trending skills, admin stats and search results. Use the Socket.IO Redis adapter. Skip gracefully if absent.
+- [x] Redis (`REDIS_URL`): cache trending skills, admin stats and search results. Use the Socket.IO Redis adapter. Skip gracefully if absent.
 
 ---
 

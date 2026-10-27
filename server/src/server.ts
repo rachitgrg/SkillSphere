@@ -5,7 +5,8 @@ import mongoose from 'mongoose';
 import app from './app';
 import connectDB from './config/db';
 import { configureCloudinary } from './config/cloudinary';
-import { initializeSocket } from './config/socket';
+import { attachRedisAdapter, initializeSocket } from './config/socket';
+import { connectRedis, disconnectRedis } from './config/redis';
 import { registerChatHandlers } from './sockets/chatSocket';
 import { registerCallHandlers } from './sockets/callSocket';
 import embeddingService from './services/embeddingService';
@@ -26,6 +27,8 @@ const PORT = env.PORT;
 const startServer = async () => {
   try {
     await connectDB();
+    const redis = await connectRedis();
+    if (redis) await attachRedisAdapter(redis);
     server.listen(PORT, () => {
       console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
@@ -41,7 +44,7 @@ startServer();
 
 const shutdown = (code: number) => {
   server.close(() => {
-    mongoose.disconnect().finally(() => process.exit(code));
+    Promise.all([mongoose.disconnect(), disconnectRedis()]).finally(() => process.exit(code));
   });
   // Force exit if connections don't drain in time.
   setTimeout(() => process.exit(code), 10_000).unref();

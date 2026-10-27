@@ -12,6 +12,7 @@ import paymentService from '../services/paymentService';
 import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
 import aiMatchingService from '../services/aiMatchingService';
+import cacheService from '../services/cacheService';
 import { getIOOrNull } from '../config/socket';
 import { userRoom } from '../services/chatService';
 import { AdminAction, AuthRequest, DisputeStatus, GigStatus, IGig, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
@@ -23,43 +24,44 @@ const PERIOD_MONTHS: Record<string, number> = { '30d': 1, '90d': 3, '12m': 12 };
 
 // ───────────────────────── Dashboard ─────────────────────────
 
-/** GET /admin/stats — headline counters for the admin dashboard. */
+/** GET /admin/stats — headline counters for the admin dashboard (cached for a minute). */
 export const getStats = async (_req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const monthAgo = new Date(Date.now() - 30 * DAY);
-    const [usersByRole, gigsByStatus, activeDisputes, flaggedReviews, newUsers, money] = await Promise.all([
-      User.aggregate<{ _id: UserRole; count: number }>([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
-      Gig.aggregate<{ _id: GigStatus; count: number }>([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-      Dispute.countDocuments({ status: { $in: [DisputeStatus.OPEN, DisputeStatus.UNDER_REVIEW] } }),
-      Review.countDocuments({ isFlagged: true }),
-      User.countDocuments({ createdAt: { $gte: monthAgo } }),
-      Payment.aggregate<{ _id: PaymentStatus; amount: number; fees: number; count: number }>([
-        { $group: { _id: '$status', amount: { $sum: '$amount' }, fees: { $sum: '$platformFee' }, count: { $sum: 1 } } },
-      ]),
-    ]);
-
-    const byKey = <K extends string>(rows: { _id: K; count: number }[]) =>
-      Object.fromEntries(rows.map((r) => [r._id, r.count])) as Partial<Record<K, number>>;
-    const payments = Object.fromEntries(money.map((m) => [m._id, m]));
-    const users = byKey(usersByRole);
-    const gigs = byKey(gigsByStatus);
-
-    res.status(200).json({
-      success: true,
-      message: 'Dashboard stats',
-      data: {
-        users: { total: usersByRole.reduce((s, r) => s + r.count, 0), ...users, newThisMonth: newUsers },
-        gigs: { total: gigsByStatus.reduce((s, r) => s + r.count, 0), ...gigs, pendingApproval: gigs[GigStatus.PENDING_APPROVAL] ?? 0 },
-        revenue: payments[PaymentStatus.RELEASED]?.fees ?? 0,
-        gmv: payments[PaymentStatus.RELEASED]?.amount ?? 0,
-        inEscrow: (payments[PaymentStatus.ESCROW]?.amount ?? 0) + (payments[PaymentStatus.DISPUTED]?.amount ?? 0),
-        activeDisputes,
-        flaggedReviews,
-      },
-    });
+    const data = await cacheService.wrap('admin:stats', 60, computeStats);
+    res.status(200).json({ success: true, message: 'Dashboard stats', data });
   } catch (error) {
     next(error);
   }
+};
+
+const computeStats = async () => {
+  const monthAgo = new Date(Date.now() - 30 * DAY);
+  const [usersByRole, gigsByStatus, activeDisputes, flaggedReviews, newUsers, money] = await Promise.all([
+    User.aggregate<{ _id: UserRole; count: number }>([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
+    Gig.aggregate<{ _id: GigStatus; count: number }>([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Dispute.countDocuments({ status: { $in: [DisputeStatus.OPEN, DisputeStatus.UNDER_REVIEW] } }),
+    Review.countDocuments({ isFlagged: true }),
+    User.countDocuments({ createdAt: { $gte: monthAgo } }),
+    Payment.aggregate<{ _id: PaymentStatus; amount: number; fees: number; count: number }>([
+      { $group: { _id: '$status', amount: { $sum: '$amount' }, fees: { $sum: '$platformFee' }, count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const byKey = <K extends string>(rows: { _id: K; count: number }[]) =>
+    Object.fromEntries(rows.map((r) => [r._id, r.count])) as Partial<Record<K, number>>;
+  const payments = Object.fromEntries(money.map((m) => [m._id, m]));
+  const users = byKey(usersByRole);
+  const gigs = byKey(gigsByStatus);
+
+  return {
+    users: { total: usersByRole.reduce((s, r) => s + r.count, 0), ...users, newThisMonth: newUsers },
+    gigs: { total: gigsByStatus.reduce((s, r) => s + r.count, 0), ...gigs, pendingApproval: gigs[GigStatus.PENDING_APPROVAL] ?? 0 },
+    revenue: payments[PaymentStatus.RELEASED]?.fees ?? 0,
+    gmv: payments[PaymentStatus.RELEASED]?.amount ?? 0,
+    inEscrow: (payments[PaymentStatus.ESCROW]?.amount ?? 0) + (payments[PaymentStatus.DISPUTED]?.amount ?? 0),
+    activeDisputes,
+    flaggedReviews,
+  };
 };
 
 /**
@@ -407,6 +409,8 @@ const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, 
       targetId: gig._id,
       details: approve ? `Approved "${gig.title}"` : `Rejected "${gig.title}": ${reason}`,
     });
+    // A newly approved gig should show up in search right away, not after the TTL.
+    await Promise.all([cacheService.invalidate('admin:stats'), approve && cacheService.invalidate('search:gigs')]);
     await notificationService.create({
       recipient: gig.client.toString(),
       type: approve ? NotificationType.GIG_APPROVED : NotificationType.GIG_REJECTED,

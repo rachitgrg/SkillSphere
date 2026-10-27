@@ -7,6 +7,7 @@ import { AuthRequest, NOTIFICATION_CATEGORIES, NotificationCategory, Notificatio
 import { pick } from '../utils/helpers';
 import embeddingService from '../services/embeddingService';
 import { recordProfileView } from '../services/profileViewService';
+import cacheService from '../services/cacheService';
 
 /**
  * Fields users may edit; ratings, earnings and counters are server-controlled. The portfolio, resume
@@ -85,6 +86,7 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
     if (['title', 'headline', 'skills'].some((f) => f in (req.body ?? {}))) {
       embeddingService.queue(() => embeddingService.refreshProfile(req.user!._id));
     }
+    await cacheService.invalidate('search:freelancers');
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
   } catch (error) {
     next(error);

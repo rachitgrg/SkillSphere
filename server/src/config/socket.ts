@@ -1,5 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import type { RedisClient } from './redis';
 import User from '../models/User';
 import { env } from './env';
 import { verifyAccessToken } from '../utils/generateToken';
@@ -72,6 +74,24 @@ export const initializeSocket = (
   });
 
   return io;
+};
+
+/**
+ * With Redis, room emits (`user:<id>`, conversations) reach sockets on every API instance.
+ * Presence counts stay per instance, so run a single instance or use sticky sessions for exact presence.
+ */
+export const attachRedisAdapter = async (redis: RedisClient): Promise<void> => {
+  if (!io) return;
+  const pub = redis.duplicate();
+  const sub = redis.duplicate();
+  try {
+    await Promise.all([pub.connect(), sub.connect()]);
+    io.adapter(createAdapter(pub, sub));
+    console.log('Socket.IO using the Redis adapter');
+  } catch (error) {
+    console.warn(`⚠️  Socket.IO Redis adapter unavailable (${(error as Error).message}); events stay on this instance.`);
+    await Promise.all([pub.disconnect().catch(() => undefined), sub.disconnect().catch(() => undefined)]);
+  }
 };
 
 export const getIO = (): Server => {
