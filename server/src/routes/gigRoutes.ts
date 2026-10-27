@@ -67,12 +67,12 @@ router.delete('/:id', protect, authorize(UserRole.CLIENT, UserRole.ADMIN), delet
 // Project progress (4.14): both parties; uploads are optional (multipart) and need Cloudinary.
 const optionalFiles = [uploadLimiter, requireUploads, fileUpload({ field: 'files', kinds: ['image', 'document'], maxFiles: 5, maxSizeMB: 10, required: false })];
 router.get('/:id/progress', protect, getProgress);
-router.post('/:id/progress-logs', protect, ...optionalFiles, validate(progressLogSchema), addProgressLog);
-router.put('/:id/milestones/:mid/start', protect, startMilestone);
-router.put('/:id/milestones/:mid/progress', protect, validate(milestonePercentSchema), setMilestoneProgress);
-router.put('/:id/milestones/:mid/submit', protect, ...optionalFiles, validate(submitMilestoneSchema), submitMilestone);
-router.put('/:id/milestones/:mid/approve', protect, approveMilestone);
-router.put('/:id/milestones/:mid/request-changes', protect, validate(requestChangesSchema), requestMilestoneChanges);
-router.put('/:id/complete', protect, completeGig);
+router.post('/:id/progress-logs', protect, authorize(UserRole.CLIENT, UserRole.FREELANCER), ...optionalFiles, validate(progressLogSchema), addProgressLog);
+router.put('/:id/milestones/:mid/start', protect, authorize(UserRole.FREELANCER), startMilestone);
+router.put('/:id/milestones/:mid/progress', protect, authorize(UserRole.FREELANCER), validate(milestonePercentSchema), setMilestoneProgress);
+router.put('/:id/milestones/:mid/submit', protect, authorize(UserRole.FREELANCER), ...optionalFiles, validate(submitMilestoneSchema), submitMilestone);
+router.put('/:id/milestones/:mid/approve', protect, authorize(UserRole.CLIENT), approveMilestone);
+router.put('/:id/milestones/:mid/request-changes', protect, authorize(UserRole.CLIENT), validate(requestChangesSchema), requestMilestoneChanges);
+router.put('/:id/complete', protect, authorize(UserRole.CLIENT), completeGig);
 
 export default router;

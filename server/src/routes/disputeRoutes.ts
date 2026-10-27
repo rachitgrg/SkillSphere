@@ -20,6 +20,7 @@ router.put('/:id/resolve', authorize(UserRole.ADMIN), validate(resolveDisputeSch
 router.put('/:id/status', authorize(UserRole.ADMIN), validate(disputeStatusSchema), setDisputeStatus);
 router.post(
   '/:id/evidence',
+  authorize(UserRole.CLIENT, UserRole.FREELANCER),
   uploadLimiter,
   requireUploads,
   fileUpload({ field: 'files', kinds: ['image', 'document'], maxFiles: 5, maxSizeMB: 10 }),
