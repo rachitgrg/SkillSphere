@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -18,19 +19,27 @@ const sizeClasses = {
   xl: 'max-w-4xl',
 };
 
+/**
+ * Rendered into document.body: a modal opened from inside a transformed card (e.g. a milestone)
+ * would otherwise be positioned and stacked relative to that card and hidden behind its siblings.
+ */
 export function Modal({ isOpen, onClose, title, children, size = 'md', showClose = true }: ModalProps) {
+  const titleId = useId();
+
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = 'unset';
+      document.removeEventListener('keydown', onKey);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -42,6 +51,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
             onClick={onClose}
           />
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -50,9 +62,11 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
           >
             {(title || showClose) && (
               <div className="flex items-center justify-between mb-6">
-                {title && <h2 className="text-xl font-bold text-white">{title}</h2>}
+                {title && <h2 id={titleId} className="text-xl font-bold text-white">{title}</h2>}
                 {showClose && (
                   <button
+                    type="button"
+                    aria-label="Close"
                     onClick={onClose}
                     className="p-2 rounded-lg hover:bg-dark-700 transition-colors text-dark-400 hover:text-white"
                   >
@@ -65,6 +79,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
