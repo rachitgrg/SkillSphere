@@ -1,11 +1,11 @@
 import React, { Suspense, lazy, type ComponentType } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import { Spinner } from './components/common/Spinner';
 import { useAppSelector } from './hooks/useRedux';
 import type { UserRole } from './types';
-import { getDashboardPath } from './utils/routes';
 
 /** Lazy-loads a named export so each page becomes its own chunk. */
 const page = <K extends string>(loader: () => Promise<Record<K, ComponentType>>, name: K) =>
@@ -75,22 +75,6 @@ const PageLoader = () => (
     <Spinner size="lg" />
   </div>
 );
-
-const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: UserRole }) => {
-  const { isAuthenticated, user, isBootstrapping } = useAppSelector((state) => state.auth);
-
-  if (isBootstrapping) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-  if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
-  if (user.needsRoleSelection) return <Navigate to="/choose-role" replace />;
-  if (role && user.role !== role) return <Navigate to={getDashboardPath(user.role)} replace />;
-  return <>{children}</>;
-};
 
 /** Sends each role to its own version of a page. */
 const RoleRedirect = (paths: Record<UserRole, string>) => {

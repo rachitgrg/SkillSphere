@@ -21,8 +21,9 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <nav aria-label="Pagination" className="flex items-center justify-center gap-1">
       <button
+        aria-label="Previous page"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className="p-2 rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -37,6 +38,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         ) : (
           <button
             key={page}
+            aria-current={page === currentPage ? 'page' : undefined}
             onClick={() => onPageChange(page)}
             className={`
               w-9 h-9 rounded-lg text-sm font-medium transition-all
@@ -50,12 +52,13 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         )
       )}
       <button
+        aria-label="Next page"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className="p-2 rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
-    </div>
+    </nav>
   );
 }
