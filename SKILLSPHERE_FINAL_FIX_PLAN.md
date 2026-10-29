@@ -190,7 +190,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     `defaultOptions.queries = { staleTime: 30_000, retry: (n, e) => n < 2 && !(status 4xx) }`.
   - Test: with `TRUST_PROXY=1`, two different `X-Forwarded-For` values get separate limits.
 
-- [ ] **P1‑2 Real-time dies after the access token expires.**
+- [x] **P1‑2 Real-time dies after the access token expires.**
   - `client/src/contexts/SocketContext.tsx` passes the in-memory access token (15 min) in the handshake.
     After any disconnect (laptop sleep, Wi-Fi blip, server restart) more than 15 min after the last API
     call, the server middleware (`server/src/config/socket.ts` `io.use`) rejects the stale token with
