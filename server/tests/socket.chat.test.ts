@@ -234,3 +234,33 @@ describe('call signalling (4.6)', () => {
     expect(res).toEqual({ ok: false, error: 'unavailable' });
   });
 });
+
+describe('a failing socket handler is contained (P1-7)', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('acks { ok: false } when the database throws, and the socket keeps working', async () => {
+    const { client, conversationId } = await setup();
+    const socket = await connect(client.token);
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const updateMany = jest.spyOn(Message, 'updateMany').mockRejectedValueOnce(new Error('connection reset'));
+
+    const res = await emitAck(socket, 'messages_read', { conversationId });
+    expect(res).toEqual({ ok: false, error: expect.any(String) });
+    expect(logged).toHaveBeenCalledWith('Socket handler "messages_read" failed:', expect.any(Error));
+
+    updateMany.mockRestore();
+    expect(await emitAck(socket, 'messages_read', { conversationId })).toMatchObject({ ok: true });
+    expect(socket.connected).toBe(true);
+  });
+
+  it('covers call signalling too', async () => {
+    const { client, conversationId } = await setup();
+    const socket = await connect(client.token);
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    jest.spyOn(Conversation, 'findOne').mockImplementationOnce(() => {
+      throw new Error('connection reset');
+    });
+    const res = await emitAck(socket, 'call:end', { conversationId });
+    expect(res).toEqual({ ok: false, error: expect.any(String) });
+  });
+});

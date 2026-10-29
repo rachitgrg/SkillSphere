@@ -251,7 +251,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Fix: for payments with a `milestone`, route release through `projectService.approve` (or reject with
     409 "Approve the milestone instead"); keep direct release only for lump-sum payments.
 
-- [ ] **P1‑7 Any socket handler error kills the whole server.**
+- [x] **P1‑7 Any socket handler error kills the whole server.**
   - `server/src/server.ts:54` shuts the process down on `unhandledRejection`, and several async socket
     handlers have no `try/catch` (`sockets/chatSocket.ts:74` `messages_read`, `join_conversation`,
     every handler in `sockets/callSocket.ts`). One DB hiccup during a read receipt restarts the API and
@@ -416,3 +416,6 @@ TODOs in `client/src`.
 - 2026‑10‑29 (session 1) — P0‑1…P0‑4 done (4 commits). Server 37 suites / 477 tests, client 6 files /
   27 tests, both lint/typecheck clean, e2e 7/7 on the production build with CSP checks. Next: P4‑1 push
   (waiting for the user's OK), then P1‑1.
+- 2026‑10‑29 (session 1, cont.) — P1‑1…P1‑7 done; pushed through P1‑4 (CI green). Server 41 suites /
+  498 tests, client 8 files / 34 tests, e2e 7/7. On any real DB run `npm run db:migrate` then
+  `npm run db:sync-indexes` (P1‑3 session field, P1‑4 unique index). Next: P2‑1.

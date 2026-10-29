@@ -50,16 +50,14 @@ const shutdown = (code: number) => {
   setTimeout(() => process.exit(code), 10_000).unref();
 };
 
-// Handle unhandled rejections
-process.on('unhandledRejection', (err: Error) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  shutdown(1);
+// A stray rejected promise (e.g. one failed DB call) is logged, not fatal: restarting would drop
+// every socket connection. A synchronous uncaught exception may leave state corrupt, so exit.
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('UNHANDLED REJECTION (kept running):', reason instanceof Error ? reason.stack : reason);
 });
 
 process.on('uncaughtException', (err: Error) => {
-  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
+  console.error('UNCAUGHT EXCEPTION! Shutting down...', err.stack ?? err);
   process.exit(1);
 });
 

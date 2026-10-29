@@ -3,6 +3,7 @@ import { z } from 'zod';
 import chatService, { conversationRoom } from '../services/chatService';
 import { MessageType } from '../types';
 import Message from '../models/Message';
+import { safeHandler } from './safeHandler';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
@@ -41,7 +42,7 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     else socket.emit('chat:error', { error });
   };
 
-  socket.on('join_conversation', async (raw: unknown, ack?: Ack) => {
+  socket.on('join_conversation', safeHandler('join_conversation', async (raw: unknown, ack?: Ack) => {
     const parsed = normalizeConversation(raw);
     if (!parsed.success) return fail(ack, 'Invalid conversation id');
 
@@ -51,14 +52,14 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     }
     socket.join(conversationRoom(conversationId));
     if (typeof ack === 'function') ack({ ok: true });
-  });
+  }));
 
-  socket.on('leave_conversation', (raw: unknown) => {
+  socket.on('leave_conversation', safeHandler('leave_conversation', (raw: unknown) => {
     const parsed = normalizeConversation(raw);
     if (parsed.success) socket.leave(conversationRoom(parsed.data.conversationId));
-  });
+  }));
 
-  socket.on('send_message', async (raw: unknown, ack?: Ack) => {
+  socket.on('send_message', safeHandler('send_message', async (raw: unknown, ack?: Ack) => {
     const parsed = sendMessagePayload.safeParse(raw);
     if (!parsed.success) return fail(ack, parsed.error.issues[0]?.message ?? 'Invalid message');
 
@@ -68,10 +69,10 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     } catch (error) {
       fail(ack, error instanceof Error ? error.message : 'Failed to send message');
     }
-  });
+  }));
 
   // Read receipts: marks the other participants' messages as read and tells the room.
-  socket.on('messages_read', async (raw: unknown, ack?: Ack) => {
+  socket.on('messages_read', safeHandler('messages_read', async (raw: unknown, ack?: Ack) => {
     const parsed = normalizeConversation(raw);
     if (!parsed.success) return fail(ack, 'Invalid conversation id');
     const { conversationId } = parsed.data;
@@ -84,7 +85,7 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     );
     if (modifiedCount) socket.to(conversationRoom(conversationId)).emit('messages_read', { conversationId, userId, readAt });
     if (typeof ack === 'function') ack({ ok: true, updated: modifiedCount });
-  });
+  }));
 
   // Typing indicators only reach rooms the socket has legitimately joined.
   const relayTyping = (event: 'typing' | 'stop_typing') => (raw: unknown) => {
@@ -95,6 +96,6 @@ export const registerChatHandlers = (_io: Server, socket: Socket): void => {
     socket.to(room).emit(event, { conversationId: parsed.data.conversationId, userId });
   };
 
-  socket.on('typing', relayTyping('typing'));
-  socket.on('stop_typing', relayTyping('stop_typing'));
+  socket.on('typing', safeHandler('typing', relayTyping('typing')));
+  socket.on('stop_typing', safeHandler('stop_typing', relayTyping('stop_typing')));
 };

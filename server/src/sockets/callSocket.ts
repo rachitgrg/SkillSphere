@@ -3,6 +3,7 @@ import { z } from 'zod';
 import Conversation from '../models/Conversation';
 import User from '../models/User';
 import { userRoom } from '../services/chatService';
+import { safeHandler } from './safeHandler';
 
 /**
  * 1:1 WebRTC call signalling (plan 4.6, optional video). The server only relays SDP and ICE
@@ -43,7 +44,7 @@ export const registerCallHandlers = (io: Server, socket: Socket): void => {
   };
 
   for (const event of Object.keys(payloads) as (keyof typeof payloads)[]) {
-    socket.on(event, async (raw: unknown, ack?: Ack) => {
+    socket.on(event, safeHandler(event, async (raw: unknown, ack?: Ack) => {
       const reply = (r: { ok: boolean; error?: string }) => typeof ack === 'function' && ack(r);
       const parsed = payloads[event].safeParse(raw);
       if (!parsed.success) return reply({ ok: false, error: 'Invalid call payload' });
@@ -61,6 +62,6 @@ export const registerCallHandlers = (io: Server, socket: Socket): void => {
       }
       for (const id of recipients) io.to(userRoom(id)).emit(event, data);
       reply({ ok: true });
-    });
+    }));
   }
 };
