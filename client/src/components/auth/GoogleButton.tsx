@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { authApi } from '../../api/authApi';
+import { API_BASE_URL } from '../../config';
 
 const GoogleLogo = () => (
   <svg className="w-5 h-5" viewBox="0 0 48 48" aria-hidden>
@@ -24,7 +25,7 @@ export function GoogleButton() {
     );
   }
   return (
-    <a href="/api/v1/auth/google" className={className}>
+    <a href={`${API_BASE_URL}/auth/google`} className={className}>
       <GoogleLogo /> Continue with Google
     </a>
   );

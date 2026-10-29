@@ -36,7 +36,16 @@ import { env } from './config/env';
 const app: Application = express();
 
 // Security Middlewares
-app.use(helmet());
+// The API only returns JSON, so its CSP forbids everything; Swagger UI gets its own policy below.
+// The SPA's policy (Razorpay, Cloudinary, fonts) ships with the client build (client/vite.config.ts).
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"], baseUri: ["'none'"], formAction: ["'none'"] },
+    },
+  })
+);
 app.use(cors({
   origin: env.CLIENT_URL,
   credentials: true
@@ -82,7 +91,22 @@ const openApiDocument = buildOpenApiDocument();
 app.get('/api/docs.json', (_req: Request, res: Response) => {
   res.json(openApiDocument);
 });
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: 'SkillSphere API' }));
+app.use(
+  '/api/docs',
+  helmet.contentSecurityPolicy({
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  }),
+  swaggerUi.serve,
+  swaggerUi.setup(openApiDocument, { customSiteTitle: 'SkillSphere API' })
+);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

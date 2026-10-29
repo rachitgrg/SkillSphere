@@ -32,9 +32,10 @@ export default defineConfig({
       env: { E2E_API_PORT: String(API_PORT), E2E_CLIENT_URL: `http://localhost:${WEB_PORT}` },
     },
     {
-      command: `npx vite --port ${WEB_PORT} --strictPort`,
+      // The production build (with its CSP) served by `vite preview`, which reuses the dev proxy.
+      command: `npx vite build && npx vite preview --port ${WEB_PORT} --strictPort`,
       url: `http://localhost:${WEB_PORT}`,
-      timeout: 120_000,
+      timeout: 180_000,
       reuseExistingServer: false,
       env: { VITE_PROXY_TARGET: `http://127.0.0.1:${API_PORT}` },
     },

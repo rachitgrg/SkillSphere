@@ -1,5 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { inDays, signedIn } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { inDays, signedIn, test } from './helpers';
 
 /**
  * §9 steps 3, 5 and 7: post a gig with milestones → admin approval → apply → hire → fund

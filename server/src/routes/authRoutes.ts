@@ -17,6 +17,7 @@ import {
 import { protect } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { authLimiter } from '../middleware/rateLimiter';
+import { requireTrustedOrigin } from '../middleware/trustedOrigin';
 import {
   registerSchema,
   loginSchema,
@@ -33,8 +34,8 @@ const router = Router();
 
 router.post('/register', authLimiter, validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
-router.post('/refresh', refreshToken);
-router.post('/logout', logout);
+router.post('/refresh', requireTrustedOrigin, refreshToken);
+router.post('/logout', requireTrustedOrigin, logout);
 router.get('/me', protect, getMe);
 router.put('/change-password', protect, authLimiter, validate(changePasswordSchema), changePassword);
 

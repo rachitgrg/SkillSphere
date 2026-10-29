@@ -6,12 +6,7 @@ import { Button } from '../common/Button';
 import { useNegotiateProposal } from '../../hooks/queries/useProposals';
 import type { Proposal } from '../../types';
 import { formatCurrency, formatTimeAgo, getErrorMessage } from '../../utils/helpers';
-
-/** The latest amount on the table (last counter-offer, or the original bid). */
-export const currentOffer = (proposal: Proposal) => proposal.finalAmount ?? proposal.proposedAmount;
-
-/** Who made the last counter-offer, if any. */
-export const lastOfferBy = (proposal: Proposal) => proposal.negotiationHistory.at(-1)?.proposedBy;
+import { currentOffer } from './offers';
 
 /** Chronological list of counter-offers. `meId` labels "You" vs the other party. */
 export function NegotiationThread({ proposal, meId, otherLabel }: { proposal: Proposal; meId?: string; otherLabel: string }) {
@@ -84,20 +79,4 @@ export function CounterOfferModal({ proposal, isOpen, onClose }: { proposal: Pro
       </form>
     </Modal>
   );
-}
-
-/** Accepts the other party's last counter by echoing it back (it then becomes the agreed amount). */
-export function useAcceptOffer() {
-  const negotiate = useNegotiateProposal();
-  return {
-    isPending: negotiate.isPending,
-    accept: async (proposal: Proposal) => {
-      try {
-        await negotiate.mutateAsync({ id: proposal._id, amount: currentOffer(proposal), message: 'Offer accepted' });
-        toast.success('Offer accepted. The client can now hire you at this amount.');
-      } catch (error) {
-        toast.error(getErrorMessage(error, 'Could not accept the offer'));
-      }
-    },
-  };
 }

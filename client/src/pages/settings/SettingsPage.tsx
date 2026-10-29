@@ -12,7 +12,8 @@ import { Input } from '../../components/common/Input';
 import { authApi } from '../../api/authApi';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { updateUser, setCredentials } from '../../store/slices/authSlice';
-import { OtpInput, strongPassword } from '../auth/AuthFlowPages';
+import { OtpInput } from '../auth/AuthFlowPages';
+import { strongPassword } from '../auth/passwordSchema';
 import type { NotificationCategory, TwoFactorSetup } from '../../types';
 import { getErrorMessage } from '../../utils/helpers';
 

@@ -40,21 +40,18 @@ export const durationToMs = (value: string): number => {
   return Number(match[1]) * DURATION_UNITS[match[2] ?? 's'];
 };
 
+/** SameSite=None cookies are only accepted with Secure. */
+const cookieOptions = () => ({
+  httpOnly: true,
+  sameSite: env.COOKIE_SAMESITE,
+  secure: env.NODE_ENV === 'production' || env.COOKIE_SAMESITE === 'none',
+  path: REFRESH_COOKIE_PATH,
+});
+
 export const setRefreshCookie = (res: Response, token: string): void => {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.NODE_ENV === 'production',
-    path: REFRESH_COOKIE_PATH,
-    maxAge: durationToMs(env.JWT_REFRESH_EXPIRES_IN),
-  });
+  res.cookie(REFRESH_COOKIE, token, { ...cookieOptions(), maxAge: durationToMs(env.JWT_REFRESH_EXPIRES_IN) });
 };
 
 export const clearRefreshCookie = (res: Response): void => {
-  res.clearCookie(REFRESH_COOKIE, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: env.NODE_ENV === 'production',
-    path: REFRESH_COOKIE_PATH,
-  });
+  res.clearCookie(REFRESH_COOKIE, cookieOptions());
 };

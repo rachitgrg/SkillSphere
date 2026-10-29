@@ -34,6 +34,9 @@ const schema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   CLIENT_URL: z.string().url('CLIENT_URL must be a URL, e.g. http://localhost:5173'),
+  // SameSite of the refresh cookie. Keep `lax` when the SPA and API share a site; use `none` when the
+  // API is on another site (e.g. a Vercel SPA + Render API), which also forces Secure.
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
 
   GOOGLE_CLIENT_ID: optionalString,
   GOOGLE_CLIENT_SECRET: optionalString,

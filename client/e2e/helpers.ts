@@ -1,4 +1,4 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import { test as base, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 /** Seeded demo accounts (server/scripts/seed.ts defaults). */
 export const ACCOUNTS = {
@@ -18,9 +18,28 @@ export const login = async (page: Page, role: Role) => {
   await expect(page).toHaveURL(new RegExp(`${account.home}$`));
 };
 
+/** Collects Content-Security-Policy violations reported in the console of every page in `context`. */
+const cspViolations: string[] = [];
+export const watchCsp = (context: BrowserContext) =>
+  context.on('console', (message) => {
+    if (/Content Security Policy/i.test(message.text())) cspViolations.push(message.text());
+  });
+
+/** `test` that fails when any page broke the production CSP. */
+export const test = base.extend({
+  // Named `provide` rather than Playwright's usual `use`, which the react-hooks lint rule mistakes for React's `use`.
+  context: async ({ context }, provide) => {
+    cspViolations.length = 0;
+    watchCsp(context);
+    await provide(context);
+    expect(cspViolations, 'CSP violations').toEqual([]);
+  },
+});
+
 /** A signed-in page in its own browser context, so each role keeps its own session cookie. */
 export const signedIn = async (browser: Browser, role: Role) => {
   const context = await browser.newContext();
+  watchCsp(context);
   const page = await context.newPage();
   await login(page, role);
   return page;

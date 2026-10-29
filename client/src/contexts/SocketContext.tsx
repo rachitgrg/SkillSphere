@@ -6,6 +6,7 @@ import { useAppSelector } from '../hooks/useRedux';
 import { store } from '../store/store';
 import { keys } from '../hooks/queries/keys';
 import type { Notification } from '../types';
+import { SOCKET_URL } from '../config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -36,7 +37,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!userId) return;
 
-    const s = io(window.location.origin, {
+    const s = io(SOCKET_URL, {
       auth: (cb) => cb({ token: store.getState().auth.token }),
       transports: ['websocket', 'polling'],
     });

@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { ACCOUNTS, login, type Role } from './helpers';
+import { expect } from '@playwright/test';
+import { ACCOUNTS, login, test, type Role } from './helpers';
 
 test('a visitor browses the marketplace and opens a real gig', async ({ page }) => {
   await page.goto('/gigs');

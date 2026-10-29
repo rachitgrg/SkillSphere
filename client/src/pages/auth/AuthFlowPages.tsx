@@ -14,6 +14,7 @@ import { setCredentials, updateUser } from '../../store/slices/authSlice';
 import { getDashboardPath } from '../../utils/routes';
 import { getErrorMessage } from '../../utils/helpers';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { strongPassword } from './passwordSchema';
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4">
@@ -21,13 +22,6 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
     <div className="max-w-md w-full glass-card p-8 rounded-2xl border border-slate-800">{children}</div>
   </div>
 );
-
-export const strongPassword = z
-  .string()
-  .min(8, 'At least 8 characters')
-  .regex(/[A-Z]/, 'Add an uppercase letter')
-  .regex(/[a-z]/, 'Add a lowercase letter')
-  .regex(/[0-9]/, 'Add a number');
 
 // ───────────── Verify email ─────────────
 
