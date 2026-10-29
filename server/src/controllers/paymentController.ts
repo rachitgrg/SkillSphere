@@ -5,6 +5,7 @@ import { getRazorpayKeys } from '../config/razorpay';
 import { AuthRequest, MilestoneStatus, PaymentStatus, UserRole } from '../types';
 import { buildPaginationResponse, parsePaginationParams } from '../utils/helpers';
 import paymentService from '../services/paymentService';
+import projectService from '../services/projectService';
 import { env } from '../config/env';
 
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -40,6 +41,25 @@ export const releasePayment = async (req: AuthRequest, res: Response, next: Next
 
     if (payment.client.toString() !== req.user?._id.toString()) {
       res.status(403).json({ success: false, message: 'Only the client can release the payment' });
+      return;
+    }
+
+    // A milestone's money moves with the milestone: approving it releases the payment, marks the
+    // milestone approved and completes the gig after the last one. Releasing it directly would
+    // leave the milestone "funded" while the money is gone.
+    if (payment.milestone) {
+      const gig = await Gig.findById(payment.gig);
+      const milestone = gig?.milestones.find((m) => m._id?.equals(payment.milestone!));
+      if (!gig || milestone?.status !== MilestoneStatus.SUBMITTED) {
+        res.status(409).json({ success: false, message: 'Milestone payments are released by approving the milestone once the freelancer submits it' });
+        return;
+      }
+      if (payment.status !== PaymentStatus.ESCROW) {
+        res.status(400).json({ success: false, message: 'Payment must be in escrow to be released' });
+        return;
+      }
+      await projectService.approve(gig, milestone._id!.toString());
+      res.status(200).json({ success: true, message: 'Milestone approved and payment released', data: await Payment.findById(payment._id) });
       return;
     }
 

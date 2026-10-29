@@ -244,7 +244,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Done: every editable field except `deadline`/`visibility` triggers re-approval (compared by value);
     re-approving an edited gig doesn't resend invitations or "new matching gig" notifications.
 
-- [ ] **P1‑6 Direct "release" leaves milestones inconsistent.**
+- [x] **P1‑6 Direct "release" leaves milestones inconsistent.**
   - `POST /payments/:id/release` (`paymentRoutes.ts:40`) releases a milestone's escrow regardless of the
     milestone's state, so the payment is `released` while the milestone stays `funded`/`in_progress`;
     the progress bar and auto-complete logic then disagree.
