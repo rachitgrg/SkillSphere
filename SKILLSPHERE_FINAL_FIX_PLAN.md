@@ -362,9 +362,11 @@ Ask the user for these; never invent them. Everything works without them in fall
 
 ### P4 — Ship it (resume packaging)
 
-- [ ] **P4‑1 Push the work.** After P0, ask the user before running `git push origin main` (67+ commits).
+- [x] **P4‑1 Push the work.** After P0, ask the user before running `git push origin main` (67+ commits).
   Confirm the CI badge goes green on GitHub. Make sure no secrets are in history (`git log --all -- .env`
   is empty today; keep it that way).
+  - Done 2026‑10‑29: pushed `0047175..c5ef92e` (72 commits) after stripping the Claude co-author
+    trailers at the user's request; CI (client, server, e2e) green. Commits carry no attribution lines.
 - [ ] **P4‑2 Deploy (needs the user's accounts — ask first, do not sign up for anything).**
   - API on Render or Railway: `render.yaml` (build `npm ci && npm run build`, start `npm start`,
     health check `/health`, `NODE_ENV=production`, `TRUST_PROXY=1`, `COOKIE_SAMESITE=none` when the SPA is
