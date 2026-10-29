@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../src/app';
 import User from '../src/models/User';
+import { MAX_SESSIONS, ROTATION_GRACE_MS } from '../src/services/sessionService';
 import { hashToken } from '../src/utils/generateToken';
 import { STRONG_PASSWORD } from './helpers';
 
@@ -38,9 +39,10 @@ describe('refresh tokens (C6)', () => {
   it('stores only a hash of the refresh token', async () => {
     const res = await register();
     const raw = refreshCookie(res);
-    const user = await User.findOne({ email: creds.email }).select('+refreshToken');
-    expect(user!.refreshToken).toBe(hashToken(raw));
-    expect(user!.refreshToken).not.toBe(raw);
+    const user = await User.findOne({ email: creds.email }).select('+refreshSessions');
+    expect(user!.refreshSessions).toHaveLength(1);
+    expect(user!.refreshSessions![0].hash).toBe(hashToken(raw));
+    expect(JSON.stringify(user!.refreshSessions)).not.toContain(raw);
   });
 
   it('issues a new access token and rotates the refresh token', async () => {
@@ -57,16 +59,61 @@ describe('refresh tokens (C6)', () => {
     expect(me.status).toBe(200);
   });
 
-  it('rejects reuse of an old refresh token and revokes the session', async () => {
-    const original = refreshCookie(await register());
-    const rotated = refreshCookie(await refresh(original));
+  /** Pretends the last rotation of every session happened longer ago than the grace window. */
+  const ageRotations = () =>
+    User.updateOne({ email: creds.email }, { $set: { 'refreshSessions.$[].rotatedAt': new Date(Date.now() - ROTATION_GRACE_MS - 1000) } });
 
-    const reuse = await refresh(original);
-    expect(reuse.status).toBe(401);
+  it('replaying a token rotated more than 30 s ago revokes only that device', async () => {
+    const laptop = refreshCookie(await register());
+    const phone = refreshCookie(await request(app).post('/api/v1/auth/login').send(creds).expect(200));
+    const rotated = refreshCookie(await refresh(laptop).expect(200));
+    await ageRotations();
 
-    // The legitimate (rotated) token is revoked too, forcing a fresh login.
-    const after = await refresh(rotated);
-    expect(after.status).toBe(401);
+    await refresh(laptop).expect(401); // replay: likely stolen
+    await refresh(rotated).expect(401); // the laptop's whole session family is gone
+    await refresh(phone).expect(200); // the phone stays signed in
+  });
+
+  it('keeps several devices signed in at once (P1-3)', async () => {
+    const laptop = refreshCookie(await register());
+    const phone = refreshCookie(await request(app).post('/api/v1/auth/login').send(creds).expect(200));
+    await refresh(laptop).expect(200);
+    await refresh(phone).expect(200);
+    const user = await User.findOne({ email: creds.email }).select('+refreshSessions');
+    expect(user!.refreshSessions).toHaveLength(2);
+  });
+
+  it('two tabs refreshing with the same cookie at once both succeed (P1-3)', async () => {
+    const raw = refreshCookie(await register());
+    const [a, b] = await Promise.all([refresh(raw), refresh(raw)]);
+    expect([a.status, b.status]).toEqual([200, 200]);
+    expect(a.body.data.token).toEqual(expect.any(String));
+    expect(b.body.data.token).toEqual(expect.any(String));
+    // Exactly one rotated (and set the new cookie); the other used the grace window and set none.
+    const cookies = [a, b].map((r) => ([] as string[]).concat(r.headers['set-cookie'] ?? []).find((c) => c.startsWith('refreshToken=')));
+    expect(cookies.filter(Boolean)).toHaveLength(1);
+    // The rotated cookie keeps working.
+    await refresh(refreshCookie(cookies[0] ? a : b)).expect(200);
+  });
+
+  it(`keeps at most ${MAX_SESSIONS} sessions, dropping the oldest`, async () => {
+    const first = refreshCookie(await register());
+    for (let i = 0; i < MAX_SESSIONS; i++) await request(app).post('/api/v1/auth/login').send(creds).expect(200);
+    const user = await User.findOne({ email: creds.email }).select('+refreshSessions');
+    expect(user!.refreshSessions).toHaveLength(MAX_SESSIONS);
+    await refresh(first).expect(401);
+  });
+
+  it('change-password signs out the other devices but keeps this one', async () => {
+    const laptop = await register();
+    const phone = refreshCookie(await request(app).post('/api/v1/auth/login').send(creds).expect(200));
+    const changed = await request(app)
+      .put('/api/v1/auth/change-password')
+      .set('Authorization', `Bearer ${laptop.body.data.token}`)
+      .send({ currentPassword: STRONG_PASSWORD, newPassword: 'Another 1Strong' })
+      .expect(200);
+    await refresh(phone).expect(401);
+    await refresh(refreshCookie(changed)).expect(200);
   });
 
   it('rejects a missing or forged token', async () => {
@@ -80,6 +127,7 @@ describe('refresh tokens (C6)', () => {
     expect(res.status).toBe(200);
     expect(([] as string[]).concat(res.headers['set-cookie']).join(';')).toMatch(/refreshToken=;/);
     expect((await refresh(raw)).status).toBe(401);
+    expect((await User.findOne({ email: creds.email }).select('+refreshSessions'))!.refreshSessions).toEqual([]);
   });
 
   it('login rejects deactivated accounts', async () => {

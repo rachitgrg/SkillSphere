@@ -5,7 +5,7 @@ import accountService from '../services/accountService';
 import { env, features } from '../config/env';
 import { AuthRequest, IUser, UserRole } from '../types';
 import { isSuspended } from '../utils/suspension';
-import { TWO_FACTOR_COOKIE, clearTwoFactorCookie, setTwoFactorCookie } from '../utils/generateToken';
+import { TWO_FACTOR_COOKIE, clearTwoFactorCookie, generateAccessToken, setTwoFactorCookie } from '../utils/generateToken';
 import { startSession } from './authController';
 
 // ───────────── Email verification ─────────────
@@ -136,7 +136,7 @@ export const twoFactorVerify = async (req: Request, res: Response, next: NextFun
     }
     user.lastLogin = new Date();
     user.lastLoginIp = req.ip;
-    const token = await startSession(res, user);
+    const token = await startSession(req, res, user);
     clearTwoFactorCookie(res);
     res.status(200).json({ success: true, message: 'Login successful', data: { user, token } });
   } catch (error) {
@@ -181,7 +181,7 @@ export const googleCallback = (req: Request, res: Response, next: NextFunction):
         return res.redirect(`${env.CLIENT_URL}/2fa?via=google`);
       }
       user.lastLoginIp = req.ip;
-      await startSession(res, user);
+      await startSession(req, res, user);
       oauthRedirect(res);
     } catch (err) {
       next(err);
@@ -200,8 +200,9 @@ export const chooseRole = async (req: AuthRequest, res: Response, next: NextFunc
     user.role = req.body.role as UserRole;
     user.needsRoleSelection = false;
     await accountService.createRoleProfile(user);
-    // The role is part of the access token, so issue a fresh one.
-    const token = await startSession(res, user);
+    // The role is part of the access token (not the refresh token), so a fresh access token is enough.
+    await user.save();
+    const token = generateAccessToken({ id: user._id.toString(), role: user.role });
     res.status(200).json({ success: true, message: 'Welcome to SkillSphere', data: { user, token } });
   } catch (error) {
     next(error);

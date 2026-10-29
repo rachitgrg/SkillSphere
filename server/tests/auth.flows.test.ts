@@ -89,7 +89,7 @@ describe('password reset (4.1)', () => {
     const token = lastToken('reset');
     const reset = await request(app).post(`/api/v1/auth/reset-password/${token}`).send({ password: 'Brand New 1Pass' });
     expect(reset.status).toBe(200);
-    expect((await User.findById(user.user._id).select('+refreshToken'))!.refreshToken).toBeUndefined();
+    expect((await User.findById(user.user._id).select('+refreshSessions'))!.refreshSessions).toEqual([]);
 
     expect((await request(app).post('/api/v1/auth/login').send({ email: user.user.email, password: STRONG_PASSWORD })).status).toBe(401);
     expect((await request(app).post('/api/v1/auth/login').send({ email: user.user.email, password: 'Brand New 1Pass' })).status).toBe(200);

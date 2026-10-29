@@ -5,6 +5,8 @@
  *
  * - Gig.attachments: plain URL strings → { url, name } objects (plan 4.4).
  * - Gig.milestones: status "completed" → "submitted" (plan 4.14 status flow).
+ * - User.refreshToken (one session per user) → dropped; sessions now live in User.refreshSessions
+ *   (final-fix plan P1-3). Users signed in before this sign in once more.
  */
 import { env } from '../src/config/env';
 import mongoose from 'mongoose';
@@ -30,6 +32,9 @@ async function main() {
     { arrayFilters: [{ 'm.status': 'completed' }] }
   );
   console.log(`Milestones: ${milestones.modifiedCount} gig(s) moved from "completed" to "submitted".`);
+
+  const sessions = await mongoose.connection.collection('users').updateMany({ refreshToken: { $exists: true } }, { $unset: { refreshToken: 1 } });
+  console.log(`Users: dropped the old single refreshToken from ${sessions.modifiedCount} user(s).`);
 }
 
 main()

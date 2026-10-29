@@ -13,6 +13,7 @@ import reputationService from '../services/reputationService';
 import notificationService from '../services/notificationService';
 import aiMatchingService from '../services/aiMatchingService';
 import cacheService from '../services/cacheService';
+import sessionService from '../services/sessionService';
 import { getIOOrNull } from '../config/socket';
 import { userRoom } from '../services/chatService';
 import { AdminAction, AuthRequest, DisputeStatus, GigStatus, IGig, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
@@ -232,8 +233,8 @@ export const suspendUser = async (req: AuthRequest, res: Response, next: NextFun
     user.isBanned = true;
     user.banReason = reason;
     user.suspendedUntil = durationDays ? new Date(Date.now() + durationDays * DAY) : undefined;
-    user.refreshToken = undefined;
     await user.save();
+    await sessionService.revokeAll(user._id);
 
     getIOOrNull()?.in(userRoom(user._id.toString())).disconnectSockets(true);
 

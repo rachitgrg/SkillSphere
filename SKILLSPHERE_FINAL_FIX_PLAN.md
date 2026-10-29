@@ -201,7 +201,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     token expired is optional; at minimum keep the ban check.
   - Test (Vitest): mock socket emits `connect_error('Invalid token')` → refresh called → `connect()` called.
 
-- [ ] **P1‑3 Only one session per user, and parallel refreshes log the user out.**
+- [x] **P1‑3 Only one session per user, and parallel refreshes log the user out.**
   - `User.refreshToken` (`models/User.ts:141`) is a single hash. Logging in on a phone silently
     invalidates the laptop's session; and the reuse check (`authController.ts:159`) treats an
     already-rotated token as theft and wipes the session. Two tabs refreshing at the same moment
@@ -214,6 +214,9 @@ Ask the user for these; never invent them. Everything works without them in fall
     Add a `db:migrate` step that drops the old field.
   - Tests: login on two "devices" → both refresh; two concurrent refreshes with the same cookie → both 200;
     replay of a token rotated > 30 s ago → only that family revoked.
+  - Done in `services/sessionService.ts`. In the grace window the server returns an access token and
+    sets no cookie (the browser already holds the newer one). `chooseRole` now issues only an access
+    token. Run `npm run db:migrate` once per database (drops `User.refreshToken`; signs users out once).
 
 - [ ] **P1‑4 Same milestone can be funded twice.**
   - `paymentService.ts:105–118`: `Payment.findOne({ …status: { $in: [ESCROW, RELEASED, DISPUTED, PENDING] } })`

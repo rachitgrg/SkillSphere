@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import ClientProfile from '../models/ClientProfile';
 import FreelancerProfile from '../models/FreelancerProfile';
 import User from '../models/User';
+import sessionService from './sessionService';
 import { env } from '../config/env';
 import { IUser, UserRole } from '../types';
 import { decrypt, encrypt, randomToken, sha256 } from '../utils/crypto';
@@ -81,8 +82,8 @@ class AccountService {
     user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    user.refreshToken = undefined;
     await user.save();
+    await sessionService.revokeAll(user._id);
     return true;
   }
 

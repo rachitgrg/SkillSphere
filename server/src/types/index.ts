@@ -295,7 +295,7 @@ export interface IUser extends Document {
   needsRoleSelection?: boolean;
   notificationPreferences?: NotificationPreferences;
   lastLoginIp?: string;
-  refreshToken?: string;
+  refreshSessions?: RefreshSession[];
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   emailVerificationToken?: string;
@@ -588,6 +588,18 @@ export interface JwtPayload {
   role: UserRole;
   iat?: number;
   exp?: number;
+}
+
+/** One signed-in device. Only token hashes are stored (services/sessionService.ts). */
+export interface RefreshSession {
+  hash: string;
+  /** The token this one replaced, accepted briefly so concurrent refreshes don't sign the user out. */
+  previousHash?: string;
+  rotatedAt?: Date;
+  family: string;
+  expiresAt: Date;
+  userAgent?: string;
+  createdAt: Date;
 }
 
 export interface RefreshTokenPayload {

@@ -6,7 +6,7 @@ import { env } from '../config/env';
 /** Never serialised to API responses or socket payloads. */
 const SENSITIVE_FIELDS = [
   'password',
-  'refreshToken',
+  'refreshSessions',
   'twoFactorSecret',
   'twoFactorBackupCodes',
   'lastLoginIp',
@@ -138,9 +138,22 @@ const userSchema = new Schema<IUser>(
     needsRoleSelection: { type: Boolean, default: false },
     // Used for fraud signals (same IP for reviewer and reviewee).
     lastLoginIp: { type: String, select: false },
-    refreshToken: {
-      type: String,
+    // One entry per signed-in device (services/sessionService.ts).
+    refreshSessions: {
+      type: [
+        {
+          _id: false,
+          hash: { type: String, required: true },
+          previousHash: String,
+          rotatedAt: Date,
+          family: { type: String, required: true },
+          expiresAt: { type: Date, required: true },
+          userAgent: String,
+          createdAt: { type: Date, required: true },
+        },
+      ],
       select: false,
+      default: undefined,
     },
     passwordResetToken: {
       type: String,

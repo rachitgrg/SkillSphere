@@ -1,17 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/User';
 import accountService from '../services/accountService';
+import sessionService from '../services/sessionService';
 import { AuthRequest, IUser } from '../types';
 import { isSuspended } from '../utils/suspension';
-import {
-  REFRESH_COOKIE,
-  clearRefreshCookie,
-  generateAccessToken,
-  generateRefreshToken,
-  hashToken,
-  setRefreshCookie,
-  verifyRefreshToken,
-} from '../utils/generateToken';
+import { REFRESH_COOKIE, clearRefreshCookie, generateAccessToken, setRefreshCookie } from '../utils/generateToken';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -40,7 +33,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     await accountService.createRoleProfile(user);
     await accountService.sendEmailVerification(user);
 
-    const token = await startSession(res, user);
+    const token = await startSession(req, res, user);
 
     res.status(201).json({
       success: true,
@@ -90,7 +83,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
 
     user.lastLogin = new Date();
     user.lastLoginIp = req.ip;
-    const token = await startSession(res, user);
+    const token = await startSession(req, res, user);
 
     res.status(200).json({
       success: true,
@@ -102,18 +95,11 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
-/** Revokes the refresh token from the cookie (if any) and clears it. Works with an expired access token. */
+/** Ends this device's session (from the cookie, if any) and clears it. Works with an expired access token. */
 export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const token = req.cookies?.[REFRESH_COOKIE];
-    if (token) {
-      try {
-        const { id } = verifyRefreshToken(token);
-        await User.updateOne({ _id: id, refreshToken: hashToken(token) }, { $unset: { refreshToken: 1 } });
-      } catch {
-        // Invalid/expired token: nothing to revoke.
-      }
-    }
+    if (token) await sessionService.revoke(token);
     clearRefreshCookie(res);
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
@@ -136,7 +122,8 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
 
 /**
  * Exchanges the httpOnly refresh cookie for a new access token and rotates the refresh token.
- * Presenting an already-rotated token revokes the session (likely token theft).
+ * A token rotated in the last 30 s (another tab refreshed at the same moment) gets an access token
+ * and keeps the newer cookie; replaying an older rotated token revokes that device's session.
  */
 export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -146,45 +133,32 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    let userId: string;
-    try {
-      userId = verifyRefreshToken(token).id;
-    } catch {
+    const result = await sessionService.rotate(token);
+    if (result.status === 'invalid') {
       clearRefreshCookie(res);
       res.status(401).json({ success: false, message: 'Invalid refresh token' });
       return;
     }
 
-    const user = await User.findById(userId).select('+refreshToken');
-    if (!user || user.refreshToken !== hashToken(token)) {
-      if (user?.refreshToken) {
-        user.refreshToken = undefined;
-        await user.save();
-      }
-      clearRefreshCookie(res);
-      res.status(401).json({ success: false, message: 'Invalid refresh token' });
-      return;
-    }
-
+    const { user } = result;
     if (!user.isActive || (await isSuspended(user))) {
       clearRefreshCookie(res);
       res.status(403).json({ success: false, message: 'Account is not active' });
       return;
     }
 
-    const accessToken = await startSession(res, user);
+    if (result.status === 'rotated') setRefreshCookie(res, result.refreshToken);
+    const accessToken = generateAccessToken({ id: user._id.toString(), role: user.role });
     res.status(200).json({ success: true, message: 'Token refreshed', data: { user, token: accessToken } });
   } catch (error) {
     next(error);
   }
 };
 
-/** Issues an access token, rotates the (hashed) refresh token and sets its cookie. */
-export const startSession = async (res: Response, user: IUser): Promise<string> => {
-  const refresh = generateRefreshToken({ id: user._id.toString() });
-  user.refreshToken = hashToken(refresh);
+/** Saves the user, starts a session for this device (other devices stay signed in), sets its cookie and returns an access token. */
+export const startSession = async (req: Request, res: Response, user: IUser): Promise<string> => {
   await user.save();
-  setRefreshCookie(res, refresh);
+  setRefreshCookie(res, await sessionService.create(user._id.toString(), req.get('user-agent')));
   return generateAccessToken({ id: user._id.toString(), role: user.role });
 };
 
@@ -199,7 +173,8 @@ export const changePassword = async (req: AuthRequest, res: Response, next: Next
     }
 
     user.password = newPassword;
-    const token = await startSession(res, user);
+    await sessionService.revokeAll(user._id); // signs out every other device
+    const token = await startSession(req, res, user);
     res.status(200).json({ success: true, message: 'Password changed', data: { token } });
   } catch (error) {
     next(error);

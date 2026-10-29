@@ -6,6 +6,7 @@ import { STRONG_PASSWORD } from './helpers';
 const SECRET_KEYS = [
   'password',
   'refreshToken',
+  'refreshSessions',
   'twoFactorSecret',
   'passwordResetToken',
   'passwordResetExpires',
