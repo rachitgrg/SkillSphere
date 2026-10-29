@@ -218,7 +218,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     sets no cookie (the browser already holds the newer one). `chooseRole` now issues only an access
     token. Run `npm run db:migrate` once per database (drops `User.refreshToken`; signs users out once).
 
-- [ ] **P1‑4 Same milestone can be funded twice.**
+- [x] **P1‑4 Same milestone can be funded twice.**
   - `paymentService.ts:105–118`: `Payment.findOne({ …status: { $in: [ESCROW, RELEASED, DISPUTED, PENDING] } })`
     returns *any* match. If a pending order exists next to an escrowed one, the check sees the pending one
     and lets checkout continue. Two concurrent "Fund" clicks also create two pending orders, both payable.
@@ -229,6 +229,9 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Also: `cancelGig` (`gigController.ts`) should mark the gig's pending orders cancelled, and
     `markEscrowed` should refuse (and auto-refund) a capture that arrives for a cancelled gig.
   - Tests: concurrent `createOrder` for one milestone → one order; escrowed milestone → 409.
+  - Done: new `PaymentStatus.CANCELLED` (P2‑2 can reuse it). A capture for a cancelled order/gig, or
+    for a milestone already funded, is refunded automatically. On existing DBs run `npm run db:migrate`
+    (cancels duplicate pending orders) **before** `npm run db:sync-indexes`.
 
 - [ ] **P1‑5 Approved gigs can be edited without re-approval.**
   - `gigController.ts:186` lets the client change title/description/skills/budget of an **open**

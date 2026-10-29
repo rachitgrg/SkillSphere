@@ -492,7 +492,7 @@ export interface MessagePage {
 }
 
 // ========== PAYMENTS ==========
-export type PaymentStatus = 'pending' | 'escrow' | 'released' | 'refunded' | 'disputed' | 'failed';
+export type PaymentStatus = 'pending' | 'escrow' | 'released' | 'refunded' | 'disputed' | 'failed' | 'cancelled';
 
 export interface Payment {
   _id: ID;

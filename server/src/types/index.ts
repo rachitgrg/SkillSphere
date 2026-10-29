@@ -34,6 +34,8 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
   DISPUTED = 'disputed',
   FAILED = 'failed',
+  /** An order that was never paid and can no longer be (superseded, or its gig was cancelled). */
+  CANCELLED = 'cancelled',
 }
 
 export enum DisputeStatus {

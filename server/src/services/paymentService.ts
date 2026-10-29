@@ -19,6 +19,8 @@ const ACTIVE_STATUSES = [PaymentStatus.ESCROW, PaymentStatus.RELEASED, PaymentSt
 
 const sameId = (a: unknown, b: unknown): boolean => Boolean(a && b && String(a) === String(b));
 
+const isDuplicateKey = (error: unknown) => (error as { code?: number })?.code === 11000;
+
 /** Constant-time comparison of two hex HMAC digests. */
 export const safeEqualHex = (a: string, b: string): boolean => {
   const ab = Buffer.from(a, 'utf8');
@@ -117,23 +119,12 @@ class PaymentService {
         }
       }
 
-      const existing = await Payment.findOne({
-        gig: gig._id,
-        milestone: milestoneId,
-        status: { $in: [...ACTIVE_STATUSES, PaymentStatus.PENDING] },
-      });
-      if (existing && existing.status !== PaymentStatus.PENDING) {
+      if (await Payment.exists({ gig: gig._id, milestone: milestoneId, status: { $in: ACTIVE_STATUSES } })) {
         throw new HttpError(409, 'This milestone is already funded');
       }
       // Re-opening checkout for an unpaid order reuses it instead of creating duplicates.
-      if (existing?.razorpayOrderId) {
-        return {
-          payment: existing,
-          order: { id: existing.razorpayOrderId, amount: Math.round(existing.amount * 100), currency: existing.currency },
-          keyId: gateway?.keys.keyId ?? null,
-          simulated,
-        };
-      }
+      const pending = await Payment.findOne({ gig: gig._id, milestone: milestoneId, status: PaymentStatus.PENDING });
+      if (pending?.razorpayOrderId) return this.orderResult(pending, gateway?.keys.keyId ?? null, simulated);
     } else {
       if (!input.amount || input.amount <= 0) throw new HttpError(400, 'Amount is required');
       const proposal = await Proposal.findOne({
@@ -164,22 +155,34 @@ class PaymentService {
         ).id
       : `sim_order_${crypto.randomBytes(8).toString('hex')}`;
 
-    const payment = await Payment.create({
-      gig: gig._id,
-      milestone: milestoneId,
-      client: user._id,
-      freelancer: gig.selectedFreelancer,
-      amount,
-      currency: 'INR',
-      status: PaymentStatus.PENDING,
-      razorpayOrderId: orderId,
-      description: input.description,
-    });
+    let payment: IPayment;
+    try {
+      payment = await Payment.create({
+        gig: gig._id,
+        milestone: milestoneId,
+        client: user._id,
+        freelancer: gig.selectedFreelancer,
+        amount,
+        currency: 'INR',
+        status: PaymentStatus.PENDING,
+        razorpayOrderId: orderId,
+        description: input.description,
+      });
+    } catch (error) {
+      // A concurrent request created this milestone's order first (unique index): hand that one back.
+      if (!isDuplicateKey(error)) throw error;
+      const winner = await Payment.findOne({ gig: gig._id, milestone: milestoneId, status: PaymentStatus.PENDING });
+      if (!winner?.razorpayOrderId) throw new HttpError(409, 'This milestone is already funded');
+      payment = winner;
+    }
+    return this.orderResult(payment, gateway?.keys.keyId ?? null, simulated);
+  }
 
+  private orderResult(payment: IPayment, keyId: string | null, simulated: boolean): OrderResult {
     return {
       payment,
-      order: { id: orderId, amount: Math.round(amount * 100), currency: 'INR' },
-      keyId: gateway?.keys.keyId ?? null,
+      order: { id: payment.razorpayOrderId!, amount: Math.round(payment.amount * 100), currency: payment.currency },
+      keyId,
       simulated,
     };
   }
@@ -198,22 +201,44 @@ class PaymentService {
    * Called from Checkout verification, the webhook and simulated checkout.
    */
   async markEscrowed(payment: IPayment, gatewayPaymentId: string, signature?: string): Promise<IPayment> {
-    const updated = await Payment.findOneAndUpdate(
-      { _id: payment._id, status: PaymentStatus.PENDING },
-      {
-        $set: {
-          status: PaymentStatus.ESCROW,
-          razorpayPaymentId: gatewayPaymentId,
-          ...(signature && { razorpaySignature: signature }),
-          escrowedAt: new Date(),
-        },
-        $unset: { failureReason: 1 },
-      },
-      { returnDocument: 'after' }
-    );
-    if (!updated) return (await Payment.findById(payment._id)) ?? payment; // already handled
+    const current = await Payment.findById(payment._id);
+    if (!current || ![PaymentStatus.PENDING, PaymentStatus.CANCELLED].includes(current.status)) return current ?? payment; // already handled
 
-    const gig = await Gig.findById(updated.gig).select('title milestones');
+    // Money arrived for an order that can no longer be fulfilled: give it straight back.
+    const gig = await Gig.findById(current.gig).select('title milestones status');
+    if (current.status === PaymentStatus.CANCELLED || !gig || gig.status === GigStatus.CANCELLED) {
+      return this.refundStrayCapture(current, gatewayPaymentId, 'The order was cancelled before the payment completed');
+    }
+
+    let updated: IPayment | null;
+    try {
+      updated = await Payment.findOneAndUpdate(
+        { _id: payment._id, status: PaymentStatus.PENDING },
+        {
+          $set: {
+            status: PaymentStatus.ESCROW,
+            razorpayPaymentId: gatewayPaymentId,
+            ...(signature && { razorpaySignature: signature }),
+            escrowedAt: new Date(),
+          },
+          $unset: { failureReason: 1 },
+        },
+        { returnDocument: 'after' }
+      );
+    } catch (error) {
+      // Another payment for this milestone is already live (unique index).
+      if (!isDuplicateKey(error)) throw error;
+      return this.refundStrayCapture(current, gatewayPaymentId, 'This milestone was already funded');
+    }
+    if (!updated) return (await Payment.findById(payment._id)) ?? payment; // handled concurrently
+
+    // Older unpaid orders for the same milestone can no longer be used.
+    if (updated.milestone) {
+      await Payment.updateMany(
+        { gig: updated.gig, milestone: updated.milestone, status: PaymentStatus.PENDING, _id: { $ne: updated._id } },
+        { $set: { status: PaymentStatus.CANCELLED } }
+      );
+    }
     if (updated.milestone) {
       await Gig.updateOne(
         { _id: updated.gig, milestones: { $elemMatch: { _id: updated.milestone, status: MilestoneStatus.PENDING } } },
@@ -243,6 +268,32 @@ class PaymentService {
       }),
     ]);
     return updated;
+  }
+
+  /**
+   * Refunds a capture that arrived for an order that is cancelled or whose milestone is already
+   * funded, and records the payment as refunded. Idempotent through markEscrowed's status check.
+   */
+  private async refundStrayCapture(payment: IPayment, gatewayPaymentId: string, reason: string): Promise<IPayment> {
+    if (!gatewayPaymentId.startsWith('sim_')) {
+      const { razorpay } = this.assertConfigured();
+      await razorpay.payments.refund(gatewayPaymentId, { amount: Math.round(payment.amount * 100), notes: { reason } });
+    }
+    const refunded = await Payment.findByIdAndUpdate(
+      payment._id,
+      { $set: { status: PaymentStatus.REFUNDED, razorpayPaymentId: gatewayPaymentId, refundedAt: new Date(), refundReason: reason } },
+      { returnDocument: 'after' }
+    );
+    await notificationService.create({
+      recipient: payment.client.toString(),
+      type: NotificationType.PAYMENT_REFUNDED,
+      title: 'Payment refunded',
+      message: `Your payment of ${formatCurrency(payment.amount)} was refunded automatically. ${reason}.`,
+      data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
+      link: paymentLink,
+      category: 'payments',
+    });
+    return refunded ?? payment;
   }
 
   /** "milestone “X” of “Gig”" or "“Gig”", for notification text. */

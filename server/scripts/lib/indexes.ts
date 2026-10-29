@@ -4,7 +4,7 @@ import type { IndexDirection } from 'mongodb';
 type IndexSpec = Record<string, IndexDirection>;
 
 /** Options that change an index's behaviour; anything else (e.g. collation: simple) is ignored. */
-const MEANINGFUL = ['unique', 'sparse', 'expireAfterSeconds', 'weights'] as const;
+const MEANINGFUL = ['unique', 'sparse', 'expireAfterSeconds', 'weights', 'partialFilterExpression'] as const;
 
 const sameKey = (a: IndexSpec, b: IndexSpec) => JSON.stringify(a) === JSON.stringify(b);
 

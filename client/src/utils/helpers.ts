@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from 'date-fns';
+import type { PaymentStatus } from '../types';
 
 export const formatDate = (date: string) => {
   const parsed = parseISO(date);
@@ -94,7 +95,7 @@ export const GIG_STATUS_META: Record<
 };
 
 export const PAYMENT_STATUS_META: Record<
-  'pending' | 'escrow' | 'released' | 'refunded' | 'disputed' | 'failed',
+  PaymentStatus,
   { label: string; variant: 'primary' | 'success' | 'warning' | 'error' | 'secondary' }
 > = {
   pending: { label: 'Awaiting payment', variant: 'secondary' },
@@ -103,6 +104,7 @@ export const PAYMENT_STATUS_META: Record<
   refunded: { label: 'Refunded', variant: 'warning' },
   disputed: { label: 'Disputed', variant: 'error' },
   failed: { label: 'Failed', variant: 'error' },
+  cancelled: { label: 'Cancelled', variant: 'secondary' },
 };
 
 /** Dispute status flow: open → under_review → resolved | closed. */

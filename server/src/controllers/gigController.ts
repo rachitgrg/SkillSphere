@@ -252,6 +252,8 @@ export const cancelGig = async (req: AuthRequest, res: Response, next: NextFunct
     const wasActive = gig.status === GigStatus.IN_PROGRESS;
     gig.status = GigStatus.CANCELLED;
     await gig.save();
+    // Unpaid checkout orders die with the gig (a capture that still arrives is refunded).
+    await Payment.updateMany({ gig: gig._id, status: PaymentStatus.PENDING }, { $set: { status: PaymentStatus.CANCELLED } });
     // Cancelled hires lower both parties' completion rate.
     if (wasActive) await Promise.all([gig.client, gig.selectedFreelancer!].map((id) => reputationService.updateUserReputation(id)));
     if (wasActive) await ClientProfile.updateOne({ user: gig.client, activeGigs: { $gt: 0 } }, { $inc: { activeGigs: -1 } });

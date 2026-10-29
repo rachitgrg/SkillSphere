@@ -74,6 +74,17 @@ const paymentSchema = new Schema<IPayment>(
 
 // Indexes
 paymentSchema.index({ gig: 1 });
+// One live payment per milestone: a second order (double click, two tabs) fails with E11000.
+paymentSchema.index(
+  { gig: 1, milestone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      milestone: { $exists: true },
+      status: { $in: [PaymentStatus.PENDING, PaymentStatus.ESCROW, PaymentStatus.DISPUTED, PaymentStatus.RELEASED] },
+    },
+  }
+);
 paymentSchema.index({ client: 1 });
 paymentSchema.index({ freelancer: 1 });
 paymentSchema.index({ status: 1 });
