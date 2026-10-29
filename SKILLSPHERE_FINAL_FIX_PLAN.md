@@ -177,7 +177,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 
 ### P1 — Real bugs (wrong behaviour in normal use)
 
-- [ ] **P1‑1 Production behind a proxy: `trust proxy`, rate limits, IPs.**
+- [x] **P1‑1 Production behind a proxy: `trust proxy`, rate limits, IPs.**
   - `server/src/app.ts:36` never sets `app.set('trust proxy', …)`. On Render/Railway, `req.ip` is the
     proxy, so **all users share one rate-limit bucket** (`apiLimiter` = 60 req/min,
     `rateLimiter.ts:33`) and the site 429s with a handful of users; express-rate-limit also logs

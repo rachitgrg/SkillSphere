@@ -25,6 +25,9 @@ const booleanFlag = z.preprocess(
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
+  // Reverse proxies in front of the API (Render/Railway: 1). Without it req.ip is the proxy's address,
+  // so every user shares one rate-limit bucket and lastLoginIp/profile views record the proxy.
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 
   MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
 

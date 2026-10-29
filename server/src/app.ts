@@ -34,6 +34,8 @@ import { buildOpenApiDocument } from './docs/openapi';
 import { env } from './config/env';
 
 const app: Application = express();
+// Before the rate limiters, which key on req.ip (taken from X-Forwarded-For only for trusted hops).
+app.set('trust proxy', env.TRUST_PROXY);
 
 // Security Middlewares
 // The API only returns JSON, so its CSP forbids everything; Swagger UI gets its own policy below.
