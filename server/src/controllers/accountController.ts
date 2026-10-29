@@ -5,6 +5,7 @@ import accountService from '../services/accountService';
 import { env, features } from '../config/env';
 import { AuthRequest, IUser, UserRole } from '../types';
 import { isSuspended } from '../utils/suspension';
+import { TWO_FACTOR_COOKIE, clearTwoFactorCookie, setTwoFactorCookie } from '../utils/generateToken';
 import { startSession } from './authController';
 
 // ───────────── Email verification ─────────────
@@ -113,10 +114,13 @@ export const twoFactorDisable = async (req: AuthRequest, res: Response, next: Ne
   }
 };
 
-/** POST /auth/2fa/verify { tempToken, code } — second login step; starts the session. */
+/**
+ * POST /auth/2fa/verify { tempToken?, code } — second login step; starts the session. The challenge
+ * comes from the password login response (tempToken) or, after Google sign-in, from a cookie.
+ */
 export const twoFactorVerify = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = accountService.readTwoFactorChallenge(req.body.tempToken);
+    const userId = accountService.readTwoFactorChallenge(req.body.tempToken ?? req.cookies?.[TWO_FACTOR_COOKIE] ?? '');
     if (!userId) {
       res.status(401).json({ success: false, message: 'Your sign-in expired. Please log in again.' });
       return;
@@ -133,6 +137,7 @@ export const twoFactorVerify = async (req: Request, res: Response, next: NextFun
     user.lastLogin = new Date();
     user.lastLoginIp = req.ip;
     const token = await startSession(res, user);
+    clearTwoFactorCookie(res);
     res.status(200).json({ success: true, message: 'Login successful', data: { user, token } });
   } catch (error) {
     next(error);
@@ -158,7 +163,10 @@ export const googleStart = (req: Request, res: Response, next: NextFunction): vo
   passport.authenticate('google', { session: false, scope: ['profile', 'email'], prompt: 'select_account' })(req, res, next);
 };
 
-/** GET /auth/google/callback — sets the refresh cookie and returns to the client. */
+/**
+ * GET /auth/google/callback — sets the refresh cookie and returns to the client. Accounts with 2FA
+ * get no session yet: they continue to /2fa with the challenge in a short-lived httpOnly cookie.
+ */
 export const googleCallback = (req: Request, res: Response, next: NextFunction): void => {
   if (!features.google) {
     oauthRedirect(res, 'Google sign-in is not configured');
@@ -168,6 +176,10 @@ export const googleCallback = (req: Request, res: Response, next: NextFunction):
     try {
       if (error || !user) return oauthRedirect(res, 'Google sign-in failed');
       if (!user.isActive || (await isSuspended(user))) return oauthRedirect(res, 'This account is not active');
+      if (user.twoFactorEnabled) {
+        setTwoFactorCookie(res, accountService.issueTwoFactorChallenge(user));
+        return res.redirect(`${env.CLIENT_URL}/2fa?via=google`);
+      }
       user.lastLoginIp = req.ip;
       await startSession(res, user);
       oauthRedirect(res);

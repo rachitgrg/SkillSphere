@@ -208,12 +208,14 @@ export const TwoFactorPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const tempToken = (useLocation().state as { tempToken?: string } | null)?.tempToken;
+  // After Google sign-in the challenge waits in an httpOnly cookie instead of router state.
+  const viaGoogle = useSearchParams()[0].get('via') === 'google';
   const [code, setCode] = useState('');
   const [useBackup, setUseBackup] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const verify = async (value = code) => {
-    if (!tempToken) return;
+    if (!tempToken && !viaGoogle) return;
     setBusy(true);
     try {
       const session = await authApi.verifyTwoFactor(tempToken, value);
@@ -227,7 +229,7 @@ export const TwoFactorPage: React.FC = () => {
     }
   };
 
-  if (!tempToken) {
+  if (!tempToken && !viaGoogle) {
     return (
       <Shell>
         <p className="text-slate-300 mb-4">Your sign-in session expired.</p>

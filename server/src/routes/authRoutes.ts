@@ -49,7 +49,7 @@ router.post('/reset-password/:token', authLimiter, validate(resetPasswordSchema)
 router.post('/2fa/setup', protect, twoFactorSetup);
 router.post('/2fa/enable', protect, authLimiter, validate(twoFactorCodeSchema), twoFactorEnable);
 router.post('/2fa/disable', protect, authLimiter, validate(twoFactorDisableSchema), twoFactorDisable);
-router.post('/2fa/verify', authLimiter, validate(twoFactorVerifySchema), twoFactorVerify);
+router.post('/2fa/verify', authLimiter, requireTrustedOrigin, validate(twoFactorVerifySchema), twoFactorVerify);
 
 // Google OAuth
 router.get('/providers', getProviders);

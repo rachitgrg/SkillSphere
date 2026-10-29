@@ -54,7 +54,7 @@ export const ROUTES: RouteDoc[] = [
   { method: 'post', path: '/auth/2fa/setup', tag: 'Auth', summary: 'Start TOTP setup (QR code)', access: 'auth' },
   { method: 'post', path: '/auth/2fa/enable', tag: 'Auth', summary: 'Confirm the first code; returns backup codes', access: 'auth', body: bodyOf(v.twoFactorCodeSchema) },
   { method: 'post', path: '/auth/2fa/disable', tag: 'Auth', summary: 'Turn 2FA off (password + code)', access: 'auth', body: bodyOf(v.twoFactorDisableSchema) },
-  { method: 'post', path: '/auth/2fa/verify', tag: 'Auth', summary: 'Second login step: tempToken + code', access: 'public', body: bodyOf(v.twoFactorVerifySchema), description: 'Login returns { twoFactorRequired, tempToken } for 2FA users.' },
+  { method: 'post', path: '/auth/2fa/verify', tag: 'Auth', summary: 'Second login step: tempToken + code', access: 'public', body: bodyOf(v.twoFactorVerifySchema), description: 'Login returns { twoFactorRequired, tempToken } for 2FA users. After Google sign-in the challenge is in an httpOnly cookie instead, so tempToken is omitted.' },
   { method: 'get', path: '/auth/providers', tag: 'Auth', summary: 'Configured sign-in providers', access: 'public' },
   { method: 'get', path: '/auth/google', tag: 'Auth', summary: 'Start Google sign-in (503 if not configured)', access: 'public' },
   { method: 'get', path: '/auth/google/callback', tag: 'Auth', summary: 'Google redirect target; sets the refresh cookie', access: 'public' },

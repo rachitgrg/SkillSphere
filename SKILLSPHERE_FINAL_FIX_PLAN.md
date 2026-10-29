@@ -146,7 +146,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Tests: two users who both logged in from `127.0.0.1` → review visible; two users on `203.0.113.9`
     plus a short comment → flagged.
 
-- [ ] **P0‑3 Google sign-in bypasses 2FA.**
+- [x] **P0‑3 Google sign-in bypasses 2FA.**
   - `server/src/controllers/accountController.ts:172` (`googleCallback`) calls `startSession` even when
     `user.twoFactorEnabled`. A password account with 2FA that later links Google (passport links by
     email, `config/passport.ts:46`) can log in with Google and skip the second factor.
@@ -154,6 +154,9 @@ Ask the user for these; never invent them. Everything works without them in fall
     `${CLIENT_URL}/2fa?tempToken=…` (use a short-lived one-time code in the URL rather than the raw
     token if you prefer; never put the access token in the URL). Update `OAuthCallbackPage`/`TwoFactorPage`.
   - Test: user with 2FA + googleId → callback redirects to `/2fa`, no refresh cookie set.
+  - Done as: the challenge travels in a 5‑min httpOnly cookie scoped to `/api/v1/auth/2fa` (no token in
+    the URL); the callback redirects to `/2fa?via=google`, and `/2fa/verify` takes `tempToken` from the
+    body or that cookie (now behind `requireTrustedOrigin`).
 
 - [ ] **P0‑4 The negotiated price is never what the client pays.**
   - `proposalController.ts:163` copies the proposal's milestones only when the gig has none, and

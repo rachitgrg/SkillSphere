@@ -6,6 +6,10 @@ import { env } from '../config/env';
 
 export const REFRESH_COOKIE = 'refreshToken';
 const REFRESH_COOKIE_PATH = '/api/v1/auth';
+/** Carries the 2FA challenge after Google sign-in, so the token never appears in a URL. */
+export const TWO_FACTOR_COOKIE = 'twoFactorChallenge';
+const TWO_FACTOR_COOKIE_PATH = '/api/v1/auth/2fa';
+const TWO_FACTOR_COOKIE_MAX_AGE = 5 * 60_000; // matches the challenge token's lifetime
 
 export const generateAccessToken = (payload: { id: string; role: string }): string => {
   return jwt.sign(payload, env.JWT_SECRET, {
@@ -41,11 +45,11 @@ export const durationToMs = (value: string): number => {
 };
 
 /** SameSite=None cookies are only accepted with Secure. */
-const cookieOptions = () => ({
+const cookieOptions = (path = REFRESH_COOKIE_PATH) => ({
   httpOnly: true,
   sameSite: env.COOKIE_SAMESITE,
   secure: env.NODE_ENV === 'production' || env.COOKIE_SAMESITE === 'none',
-  path: REFRESH_COOKIE_PATH,
+  path,
 });
 
 export const setRefreshCookie = (res: Response, token: string): void => {
@@ -54,4 +58,12 @@ export const setRefreshCookie = (res: Response, token: string): void => {
 
 export const clearRefreshCookie = (res: Response): void => {
   res.clearCookie(REFRESH_COOKIE, cookieOptions());
+};
+
+export const setTwoFactorCookie = (res: Response, challenge: string): void => {
+  res.cookie(TWO_FACTOR_COOKIE, challenge, { ...cookieOptions(TWO_FACTOR_COOKIE_PATH), maxAge: TWO_FACTOR_COOKIE_MAX_AGE });
+};
+
+export const clearTwoFactorCookie = (res: Response): void => {
+  res.clearCookie(TWO_FACTOR_COOKIE, cookieOptions(TWO_FACTOR_COOKIE_PATH));
 };

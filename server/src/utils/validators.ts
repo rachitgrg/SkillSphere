@@ -68,7 +68,7 @@ export const twoFactorDisableSchema = z.object({
 });
 
 export const twoFactorVerifySchema = z.object({
-  body: z.object({ tempToken: z.string().min(1), code: otpCode }),
+  body: z.object({ tempToken: z.string().min(1).optional(), code: otpCode }), // tempToken may come as a cookie instead
 });
 
 export const chooseRoleSchema = z.object({

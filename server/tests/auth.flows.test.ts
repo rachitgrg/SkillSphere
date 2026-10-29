@@ -1,7 +1,8 @@
 import request from 'supertest';
 import { authenticator } from 'otplib';
+import passport from 'passport';
 import app from '../src/app';
-import { env } from '../src/config/env';
+import { env, features } from '../src/config/env';
 import User from '../src/models/User';
 import { decrypt } from '../src/utils/crypto';
 import { UserRole } from '../src/types';
@@ -148,6 +149,58 @@ describe('two-factor authentication (4.1)', () => {
 });
 
 describe('Google sign-in (4.1)', () => {
+  /** Runs the callback as if Google had authenticated `user` (no real OAuth round trip). */
+  const googleCallbackAs = async (user: unknown) => {
+    const authenticate = jest
+      .spyOn(passport, 'authenticate')
+      .mockImplementation(((_name: string, _options: unknown, done: (error: null, user: unknown) => void) => () => done(null, user)) as never);
+    features.google = true;
+    try {
+      return await request(app).get('/api/v1/auth/google/callback');
+    } finally {
+      features.google = false;
+      authenticate.mockRestore();
+    }
+  };
+  const cookiesOf = (res: request.Response) => ([] as string[]).concat(res.headers['set-cookie'] ?? []);
+
+  it('starts a session for an account without 2FA', async () => {
+    const { user } = await createUser(UserRole.CLIENT, { googleId: 'google-plain' });
+    const res = await googleCallbackAs(user);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`${env.CLIENT_URL}/oauth/callback`);
+    expect(cookiesOf(res).some((c) => c.startsWith('refreshToken='))).toBe(true);
+  });
+
+  it('does not bypass 2FA: redirects to /2fa with an httpOnly challenge cookie and no session (P0-3)', async () => {
+    const { user, secret } = await (async () => {
+      const created = await createUser(UserRole.CLIENT, { googleId: 'google-2fa' });
+      await request(app).post('/api/v1/auth/2fa/setup').set(created.auth).expect(200);
+      const stored = await User.findById(created.user._id).select('+twoFactorSecret');
+      const seed = decrypt(stored!.twoFactorSecret!);
+      await request(app).post('/api/v1/auth/2fa/enable').set(created.auth).send({ code: authenticator.generate(seed) }).expect(200);
+      return { user: await User.findById(created.user._id), secret: seed };
+    })();
+
+    const res = await googleCallbackAs(user);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`${env.CLIENT_URL}/2fa?via=google`);
+    expect(res.headers.location).not.toMatch(/token/i);
+    const cookies = cookiesOf(res);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(false);
+    const challenge = cookies.find((c) => c.startsWith('twoFactorChallenge='))!;
+    expect(challenge).toMatch(/HttpOnly/i);
+    expect(challenge).toMatch(/Path=\/api\/v1\/auth\/2fa/);
+
+    const cookie = challenge.split(';')[0];
+    await request(app).post('/api/v1/auth/2fa/verify').set('Cookie', cookie).send({ code: '000000' }).expect(400);
+    await request(app).post('/api/v1/auth/2fa/verify').set('Cookie', cookie).set('Origin', 'https://evil.example').send({ code: authenticator.generate(secret) }).expect(403);
+    const verified = await request(app).post('/api/v1/auth/2fa/verify').set('Cookie', cookie).send({ code: authenticator.generate(secret) }).expect(200);
+    expect(verified.body.data.token).toEqual(expect.any(String));
+    expect(cookiesOf(verified).some((c) => c.startsWith('refreshToken='))).toBe(true);
+    expect(cookiesOf(verified).some((c) => /^twoFactorChallenge=;/.test(c))).toBe(true); // cleared
+  });
+
   it('reports the provider as disabled and answers 503 without keys', async () => {
     expect((await request(app).get('/api/v1/auth/providers')).body.data).toEqual({ google: false, emailVerification: true });
     expect((await request(app).get('/api/v1/auth/google')).status).toBe(503);

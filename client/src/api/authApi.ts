@@ -35,8 +35,8 @@ export const authApi = {
 
   disableTwoFactor: (password: string, code: string) => axiosInstance.post('/auth/2fa/disable', { password, code }),
 
-  /** Second login step. */
-  verifyTwoFactor: (tempToken: string, code: string) =>
+  /** Second login step. Without `tempToken` (after Google sign-in) the server reads its challenge cookie. */
+  verifyTwoFactor: (tempToken: string | undefined, code: string) =>
     data(axiosInstance.post<ApiResponse<AuthResponse>>('/auth/2fa/verify', { tempToken, code })),
 
   getProviders: () => data(axiosInstance.get<ApiResponse<{ google: boolean; emailVerification: boolean }>>('/auth/providers')),
