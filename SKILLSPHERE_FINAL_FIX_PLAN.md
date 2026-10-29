@@ -158,7 +158,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     the URL); the callback redirects to `/2fa?via=google`, and `/2fa/verify` takes `tempToken` from the
     body or that cookie (now behind `requireTrustedOrigin`).
 
-- [ ] **P0‑4 The negotiated price is never what the client pays.**
+- [x] **P0‑4 The negotiated price is never what the client pays.**
   - `proposalController.ts:163` copies the proposal's milestones only when the gig has none, and
     `paymentService.ts:102` charges `milestone.amount`. So when the gig was posted with milestones
     (the normal case, and §9 step 3), a counter-offer changes `finalAmount` but the client still pays
@@ -172,6 +172,8 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Also enforce in `createOrder` that funded milestones + the new amount never exceed the agreed amount.
   - Tests: gig with 2 × ₹10 000 milestones, freelancer bids ₹16 000, accept → milestones total ₹16 000
     and `createOrder` charges the new amounts.
+  - Done as option 1 (scale), fixed-price gigs only (an hourly bid is a rate). Documented in the README
+    ("Negotiated price and milestones"); the hire dialog tells the client when milestones will be scaled.
 
 ### P1 — Real bugs (wrong behaviour in normal use)
 

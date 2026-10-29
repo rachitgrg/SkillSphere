@@ -121,6 +121,19 @@ export const getProposalById = async (req: AuthRequest, res: Response, next: Nex
   }
 };
 
+/**
+ * Rescales amounts proportionally so they add up to `total`, rounded to 2 dp (computed in paise);
+ * the rounding remainder goes on the last one.
+ */
+export const scaleAmounts = (amounts: number[], total: number): number[] => {
+  const current = amounts.reduce((sum, a) => sum + a, 0);
+  if (amounts.length === 0 || current <= 0) return amounts;
+  const totalPaise = Math.round(total * 100);
+  const paise = amounts.map((a) => Math.round((a * totalPaise) / current));
+  paise[paise.length - 1] = totalPaise - paise.slice(0, -1).reduce((sum, p) => sum + p, 0);
+  return paise.map((p) => p / 100);
+};
+
 /** Statuses a client can still act on. */
 const OPEN_PROPOSAL_STATUSES = [ProposalStatus.PENDING, ProposalStatus.NEGOTIATING];
 
@@ -160,6 +173,7 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
         return;
       }
 
+      const agreed = proposal.finalAmount ?? proposal.proposedAmount;
       if (claimed.milestones.length === 0 && proposal.milestones.length > 0) {
         claimed.milestones.push(
           ...proposal.milestones.map((m) => ({
@@ -170,10 +184,17 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
             status: MilestoneStatus.PENDING,
           }))
         );
-        await claimed.save();
       }
+      // The agreed price is what the client pays. When the bid or a counter-offer moved it away from
+      // the milestone plan, scale the milestones to add up to it. (Hourly bids are a rate, not a total.)
+      const planned = claimed.milestones.reduce((sum, m) => sum + m.amount, 0);
+      if (claimed.budgetType === 'fixed' && claimed.milestones.length > 0 && Math.abs(planned - agreed) >= 0.01) {
+        const scaled = scaleAmounts(claimed.milestones.map((m) => m.amount), agreed);
+        claimed.milestones.forEach((m, i) => (m.amount = scaled[i]));
+      }
+      if (claimed.isModified('milestones')) await claimed.save();
 
-      proposal.finalAmount = proposal.finalAmount ?? proposal.proposedAmount;
+      proposal.finalAmount = agreed;
       await ClientProfile.updateOne({ user: gig.client }, { $inc: { activeGigs: 1 } });
 
       const others = await Proposal.find({

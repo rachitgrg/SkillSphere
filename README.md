@@ -79,3 +79,12 @@ Code: `server/src/services/aiMatchingService.ts` (`MATCH_WEIGHTS`, `scoreMatch`)
   The token must be a fine-grained token with the *Make calls to Inference Providers* permission.
 - **Trending skills:** skill counts on gigs from the last 30 days vs the previous 30, with growth %,
   cached for an hour (`GET /search/trending-skills`).
+
+## Negotiated price and milestones (module 5 → 7)
+
+The amount the client pays is the **agreed price**: the last counter-offer, or the original bid.
+When a fixed-price proposal is accepted and the gig's milestones add up to something else, each
+milestone is scaled proportionally to the agreed price (rounded to the paisa, remainder on the last
+milestone), so the client is never charged the originally posted amounts. Hourly bids are a rate,
+not a total, so they leave milestones unchanged. Checkout (`POST /payments/orders`) also refuses any
+milestone that would push the funded total past the agreed price.

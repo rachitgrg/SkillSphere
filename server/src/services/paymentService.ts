@@ -102,6 +102,21 @@ class PaymentService {
       amount = milestone.amount;
       milestoneId = milestone._id;
 
+      // Milestones never add up to more than the agreed price (they are scaled to it on hire).
+      if (gig.budgetType === 'fixed') {
+        const proposal = await Proposal.findOne({ gig: gig._id, freelancer: gig.selectedFreelancer, status: ProposalStatus.ACCEPTED });
+        if (proposal) {
+          const agreed = proposal.finalAmount ?? proposal.proposedAmount;
+          const [funded] = await Payment.aggregate<{ total: number }>([
+            { $match: { gig: gig._id, milestone: { $ne: milestoneId }, status: { $in: ACTIVE_STATUSES } } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ]);
+          if ((funded?.total ?? 0) + amount > agreed + 0.005) {
+            throw new HttpError(409, 'Funding this milestone would exceed the agreed amount');
+          }
+        }
+      }
+
       const existing = await Payment.findOne({
         gig: gig._id,
         milestone: milestoneId,

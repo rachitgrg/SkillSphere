@@ -40,6 +40,8 @@ export function GigProposalsPage() {
   const shown = all.filter((p) => (filter === 'all' ? true : filter === 'open' ? isOpen(p) : p.status === filter));
   const scoreFor = (freelancerId: string) => matches.data?.find((m) => m.freelancerId?._id === freelancerId)?.score;
   const hiring = gig.data?.status === 'open';
+  // Fixed-price milestones are scaled to the agreed price on hire (hourly bids are a rate).
+  const milestoneTotal = gig.data?.budgetType === 'fixed' && gig.data.milestones.length ? gig.data.milestones.reduce((sum, m) => sum + m.amount, 0) : undefined;
 
   return (
     <div className="max-w-5xl">
@@ -83,7 +85,7 @@ export function GigProposalsPage() {
       >
         <div className="space-y-4">
           {shown.map((proposal) => (
-            <ClientProposal key={proposal._id} proposal={proposal} canHire={hiring} matchScore={scoreFor(proposal.freelancer._id)} />
+            <ClientProposal key={proposal._id} proposal={proposal} canHire={hiring} matchScore={scoreFor(proposal.freelancer._id)} milestoneTotal={milestoneTotal} />
           ))}
         </div>
       </QueryState>
@@ -91,7 +93,7 @@ export function GigProposalsPage() {
   );
 }
 
-function ClientProposal({ proposal, canHire, matchScore }: { proposal: GigProposal; canHire: boolean; matchScore?: number }) {
+function ClientProposal({ proposal, canHire, matchScore, milestoneTotal }: { proposal: GigProposal; canHire: boolean; matchScore?: number; milestoneTotal?: number }) {
   const me = useAppSelector((s) => s.auth.user?._id);
   const navigate = useNavigate();
   const updateStatus = useUpdateProposalStatus();
@@ -161,6 +163,12 @@ function ClientProposal({ proposal, canHire, matchScore }: { proposal: GigPropos
           You&apos;re hiring <strong className="text-white">{fullName(proposal.freelancer)}</strong> for{' '}
           <strong className="text-white">{formatCurrency(currentOffer(proposal))}</strong>. The gig moves to in progress and all
           other open proposals are declined automatically.
+          {milestoneTotal !== undefined && Math.abs(milestoneTotal - currentOffer(proposal)) >= 0.01 && (
+            <>
+              {' '}Your milestones add up to {formatCurrency(milestoneTotal)}, so each one is scaled to add up to{' '}
+              {formatCurrency(currentOffer(proposal))}.
+            </>
+          )}
         </p>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={() => setConfirmHire(false)}>
