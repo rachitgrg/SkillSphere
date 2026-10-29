@@ -10,7 +10,7 @@ import uploadService from '../services/uploadService';
 import { uploadedFiles } from '../middleware/upload';
 import embeddingService from '../services/embeddingService';
 import reputationService from '../services/reputationService';
-import { AuthRequest, UserRole, GigStatus, IGig, PaymentStatus, ProposalStatus } from '../types';
+import { AuthRequest, UserRole, GigStatus, IGig, NotificationType, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
 import { buildPublicGigFilter, gigSort, isInvited, toStringList } from '../services/gigQuery';
 
@@ -19,6 +19,9 @@ export const GIG_EDITABLE = [
   'title', 'description', 'category', 'subCategory', 'skills', 'budgetType', 'budgetMin', 'budgetMax',
   'duration', 'experienceLevel', 'milestones', 'location', 'locationType', 'visibility', 'tags', 'deadline',
 ] as const;
+
+/** Editing any of these on an approved (open) gig sends it back to the admin approval queue. */
+const REVIEWED_FIELDS = GIG_EDITABLE.filter((f) => f !== 'deadline' && f !== 'visibility');
 
 /** A gig can only be edited before work starts. */
 const EDITABLE_STATUSES: GigStatus[] = [GigStatus.DRAFT, GigStatus.PENDING_APPROVAL, GigStatus.OPEN];
@@ -182,15 +185,58 @@ export const updateGig = async (req: AuthRequest, res: Response, next: NextFunct
       return;
     }
 
+    // Compare values, not isModified(): the edit form resends every field, and re-setting an
+    // array marks it modified even when nothing changed.
+    const snapshot = (fields: readonly string[]) => fields.map((f) => JSON.stringify(gig.get(f) ?? null));
+    const before = snapshot(GIG_EDITABLE);
     // Saving the document (not findByIdAndUpdate) runs the budget pre-validate hook.
     gig.set(pick(req.body, GIG_EDITABLE));
-    const textChanged = ['title', 'description', 'skills', 'category'].some((f) => gig.isModified(f));
+    const after = snapshot(GIG_EDITABLE);
+    const changed = new Set(GIG_EDITABLE.filter((_, i) => before[i] !== after[i]));
+
+    // Approval covers the content: changing it on a live gig needs another review.
+    const needsReview = gig.status === GigStatus.OPEN && REVIEWED_FIELDS.some((f) => changed.has(f));
+    if (needsReview) gig.status = GigStatus.PENDING_APPROVAL;
     await gig.save();
-    if (textChanged) embeddingService.queue(() => embeddingService.refreshGig(gig._id));
-    res.status(200).json({ success: true, message: 'Gig updated', data: gig });
+
+    if (['title', 'description', 'skills', 'category'].some((f) => changed.has(f as (typeof GIG_EDITABLE)[number]))) {
+      embeddingService.queue(() => embeddingService.refreshGig(gig._id));
+    }
+    if (needsReview) await notifyResubmitted(gig);
+    res.status(200).json({
+      success: true,
+      message: needsReview ? 'Gig updated and sent back for approval; it is hidden until an admin approves it' : 'Gig updated',
+      data: gig,
+    });
   } catch (error) {
     next(error);
   }
+};
+
+/** Tells the client and every admin that an edited gig is waiting for approval again. */
+const notifyResubmitted = async (gig: IGig): Promise<void> => {
+  const admins = await User.find({ role: UserRole.ADMIN, isActive: true }).select('_id').lean();
+  await Promise.all([
+    notificationService.create({
+      recipient: gig.client.toString(),
+      type: NotificationType.SYSTEM,
+      title: 'Gig sent for re-approval',
+      message: `Your changes to "${gig.title}" need an admin's approval. The gig is hidden from the marketplace until then.`,
+      data: { gigId: gig._id.toString() },
+      link: `/gigs/${gig._id}`,
+      category: 'gigs',
+    }),
+    ...admins.map((admin) =>
+      notificationService.create({
+        recipient: admin._id.toString(),
+        type: NotificationType.SYSTEM,
+        title: 'Edited gig awaiting approval',
+        message: `"${gig.title}" was changed after approval and is back in the queue.`,
+        data: { gigId: gig._id.toString() },
+        link: '/admin/gigs',
+      })
+    ),
+  ]);
 };
 
 export const deleteGig = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {

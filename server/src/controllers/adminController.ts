@@ -392,6 +392,8 @@ const notifyMatchingFreelancers = async (gig: IGig, alreadyInvited: string[]): P
 const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const reason: string | undefined = req.body?.reason;
+    // An edited gig coming back for re-approval: its invites and matches went out the first time.
+    const reapproval = Boolean(await Gig.exists({ _id: req.params.id, approvedAt: { $exists: true } }));
     const gig = await Gig.findOneAndUpdate(
       { _id: req.params.id, status: GigStatus.PENDING_APPROVAL },
       approve
@@ -423,7 +425,7 @@ const reviewGig = (approve: boolean) => async (req: AuthRequest, res: Response, 
       category: 'gigs',
     });
 
-    if (approve) {
+    if (approve && !reapproval) {
       const owner = await User.findById(gig.client).select('firstName lastName');
       const pending = gig.invitations.filter((i) => i.status === 'pending');
       if (owner) await Promise.all(pending.map((i) => notificationService.notifyGigInvitation(gig, i.freelancer.toString(), owner)));

@@ -233,7 +233,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     for a milestone already funded, is refunded automatically. On existing DBs run `npm run db:migrate`
     (cancels duplicate pending orders) **before** `npm run db:sync-indexes`.
 
-- [ ] **P1‑5 Approved gigs can be edited without re-approval.**
+- [x] **P1‑5 Approved gigs can be edited without re-approval.**
   - `gigController.ts:186` lets the client change title/description/skills/budget of an **open**
     (already approved) gig, and it stays public. Approval can be bypassed by posting something benign
     and editing it afterwards.
@@ -241,6 +241,8 @@ Ask the user for these; never invent them. Everything works without them in fall
     client and admins), or restrict open-gig edits to non-content fields (deadline, visibility). Also add
     `requireVerified` to the update route for consistency with create.
   - Test: edit title of an open gig → status `pending_approval`, hidden from `/gigs`.
+  - Done: every editable field except `deadline`/`visibility` triggers re-approval (compared by value);
+    re-approving an edited gig doesn't resend invitations or "new matching gig" notifications.
 
 - [ ] **P1‑6 Direct "release" leaves milestones inconsistent.**
   - `POST /payments/:id/release` (`paymentRoutes.ts:40`) releases a milestone's escrow regardless of the

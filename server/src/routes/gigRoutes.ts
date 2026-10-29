@@ -48,7 +48,7 @@ router.get('/invitations', protect, authorize(UserRole.FREELANCER), getMyInvitat
 router.get('/mine', protect, authorize(UserRole.CLIENT, UserRole.FREELANCER), getMyGigs);
 router.get('/:id', optionalAuth, getGigById);
 router.post('/', protect, authorize(UserRole.CLIENT), requireVerified, validate(createGigSchema), createGig);
-router.put('/:id', protect, authorize(UserRole.CLIENT), validate(updateGigSchema), updateGig);
+router.put('/:id', protect, authorize(UserRole.CLIENT), requireVerified, validate(updateGigSchema), updateGig);
 router.put('/:id/cancel', protect, authorize(UserRole.CLIENT), cancelGig);
 router.post(
   '/:id/attachments',

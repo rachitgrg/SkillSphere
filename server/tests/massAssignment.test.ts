@@ -129,7 +129,7 @@ describe('mass assignment (C8)', () => {
 
     const updated = await Gig.findById(gig._id);
     expect(updated!.title).toBe('Updated');
-    expect(updated!.status).toBe(GigStatus.OPEN);
+    expect(updated!.status).toBe(GigStatus.PENDING_APPROVAL); // not "completed": the title edit sends it back for review (P1-5)
     expect(updated!.views).toBe(0);
     expect(updated!.selectedFreelancer).toBeUndefined();
   });
