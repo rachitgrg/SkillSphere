@@ -403,3 +403,6 @@ TODOs in `client/src`.
 *(Append one line per session: date, items done, what's next, blockers.)*
 
 - 2026‑10‑29 — Plan written from a full audit. Nothing in §3 started yet.
+- 2026‑10‑29 (session 1) — P0‑1…P0‑4 done (4 commits). Server 37 suites / 477 tests, client 6 files /
+  27 tests, both lint/typecheck clean, e2e 7/7 on the production build with CSP checks. Next: P4‑1 push
+  (waiting for the user's OK), then P1‑1.
