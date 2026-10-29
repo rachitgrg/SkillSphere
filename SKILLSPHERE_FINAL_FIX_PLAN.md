@@ -134,7 +134,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     `feat(security): CSP, SameSite option, CSRF origin check, configurable API URL`.
   - Acceptance: `npm run lint` clean in both packages; `server/tests/security.test.ts` passes.
 
-- [ ] **P0‑2 Every genuine review is hidden as "fraud" (shared-IP signal).**
+- [x] **P0‑2 Every genuine review is hidden as "fraud" (shared-IP signal).**
   - `server/src/services/reputationService.ts:159` treats "reviewer and reviewee share `lastLoginIp`"
     as a **strong** signal. Locally everyone logs in from `::1`/`127.0.0.1`; in production without
     `trust proxy` (P1‑1) `req.ip` is the load balancer's IP for everyone. Result: the review in §9 step 9

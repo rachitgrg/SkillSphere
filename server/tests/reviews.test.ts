@@ -124,19 +124,42 @@ describe('POST /api/v1/reviews/:id/reply', () => {
 });
 
 describe('reputation score and extra fraud signals (4.8)', () => {
-  it('flags same-IP pairs and copied comments, and two weak signals together', async () => {
-    const { client, freelancer, gig } = await setup();
-    await User.updateMany({ _id: { $in: [client.user._id, freelancer.user._id] } }, { $set: { lastLoginIp: '10.0.0.7' } });
-    const sameIp = await review(client.auth, { gigId: gig.id, categories, comment: 'Excellent collaboration throughout.' });
-    expect(sameIp.body.data.isFlagged).toBe(true);
-    expect(sameIp.body.data.flagReason).toMatch(/share an IP/);
+  const establish = (userId: unknown) =>
+    User.collection.updateOne({ _id: userId as never }, { $set: { createdAt: new Date(Date.now() - 30 * 86_400_000) } });
 
+  it('ignores a shared loopback/private IP: everyone in local dev (or behind one proxy) has it', async () => {
+    const { client, freelancer, gig } = await setup();
+    await establish(client.user._id);
+    await User.updateMany({ _id: { $in: [client.user._id, freelancer.user._id] } }, { $set: { lastLoginIp: '127.0.0.1' } });
+    const res = await review(client.auth, { gigId: gig.id, categories, comment: 'ok' }).expect(201); // short comment = one weak signal
+    expect(res.body.data.isFlagged).toBe(false);
+    expect(res.body.data.isVisible).toBe(true);
+    expect((await FreelancerProfile.findOne({ user: freelancer.user._id }))!.totalReviews).toBe(1);
+  });
+
+  it('a shared public IP is a weak signal: flags with a short comment, not on its own', async () => {
+    const flagged = await setup();
+    await establish(flagged.client.user._id);
+    await User.updateMany({ _id: { $in: [flagged.client.user._id, flagged.freelancer.user._id] } }, { $set: { lastLoginIp: '203.0.113.9' } });
+    const short = await review(flagged.client.auth, { gigId: flagged.gig.id, categories, comment: 'ok' });
+    expect(short.body.data.isFlagged).toBe(true);
+    expect(short.body.data.isVisible).toBe(false);
+    expect(short.body.data.flagReason).toMatch(/share an IP.*Very short/);
+
+    const alone = await setup();
+    await establish(alone.client.user._id);
+    await User.updateMany({ _id: { $in: [alone.client.user._id, alone.freelancer.user._id] } }, { $set: { lastLoginIp: '203.0.113.9' } });
+    const res = await review(alone.client.auth, { gigId: alone.gig.id, categories, comment: 'Excellent collaboration throughout.' });
+    expect(res.body.data.isFlagged).toBe(false);
+  });
+
+  it('flags two weak signals together, not one', async () => {
     const other = await setup();
     const weak = await review(other.client.auth, { gigId: other.gig.id, categories, comment: 'ok' }); // new account + short
     expect(weak.body.data.flagReason).toMatch(/Brand-new.*Very short/);
 
     const established = await setup();
-    await User.collection.updateOne({ _id: established.client.user._id }, { $set: { createdAt: new Date(Date.now() - 30 * 86_400_000) } });
+    await establish(established.client.user._id);
     const short = await review(established.client.auth, { gigId: established.gig.id, categories, comment: 'ok' }); // one weak signal
     expect(short.body.data.isFlagged).toBe(false);
   });

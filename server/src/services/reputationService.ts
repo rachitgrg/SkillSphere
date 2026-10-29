@@ -6,6 +6,7 @@ import Gig from '../models/Gig';
 import Dispute from '../models/Dispute';
 import User from '../models/User';
 import { DisputeStatus, GigStatus, IReview, UserRole } from '../types';
+import { isPublicIp } from '../utils/ip';
 
 /**
  * Reputation score (0–100), stored as `reputationScore` on freelancer and client profiles:
@@ -120,10 +121,11 @@ class ReputationService {
 
   /**
    * Fraud signals for a new review. Strong signals flag on their own; weak ones flag in pairs.
-   *  strong: self-review, duplicate review, same login IP as the reviewee, ≥5 reviews between the pair,
+   *  strong: self-review, duplicate review, ≥5 reviews between the pair,
    *          ≥3 reviews by the reviewer in the last hour, comment copied from another of their reviews
-   *  weak:   reviewer account < 3 days old, comment shorter than 20 characters,
-   *          rating ≥ 2.5 stars away from an established (≥ 5 reviews) average
+   *  weak:   same public login IP as the reviewee (households, offices and NATs share one, and
+   *          loopback/private addresses are ignored), reviewer account < 3 days old, comment shorter
+   *          than 20 characters, rating ≥ 2.5 stars away from an established (≥ 5 reviews) average
    */
   async detectFraudulentReview(
     reviewerId: string,
@@ -156,7 +158,7 @@ class ReputationService {
 
     const reviewer = users.find((u) => u._id.toString() === reviewerId);
     const reviewee = users.find((u) => u._id.toString() === revieweeId);
-    if (reviewer?.lastLoginIp && reviewer.lastLoginIp === reviewee?.lastLoginIp) strong.push('Reviewer and reviewee share an IP address');
+    if (isPublicIp(reviewer?.lastLoginIp) && reviewer?.lastLoginIp === reviewee?.lastLoginIp) weak.push('Reviewer and reviewee share an IP address');
     if (reviewer && Date.now() - new Date(reviewer.createdAt).getTime() < NEW_ACCOUNT_DAYS * 86_400_000) weak.push('Brand-new reviewer account');
     if (comment && comment.length < MIN_COMMENT_LENGTH) weak.push('Very short comment');
     const stats = revieweeStats[0];

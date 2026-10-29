@@ -18,6 +18,7 @@ import { userRoom } from '../services/chatService';
 import { AdminAction, AuthRequest, DisputeStatus, GigStatus, IGig, NotificationType, PaymentStatus, UserRole, VerificationStatus } from '../types';
 import { logAdminAction } from '../utils/adminLog';
 import { buildPaginationResponse, containsRegex, parsePaginationParams } from '../utils/helpers';
+import { isPublicIp } from '../utils/ip';
 
 const DAY = 86_400_000;
 const PERIOD_MONTHS: Record<string, number> = { '30d': 1, '90d': 3, '12m': 12 };
@@ -493,7 +494,7 @@ const userLookup = [
 
 /**
  * GET /admin/fraud — flagged/reported reviews, users with repeated disputes against them,
- * clients with many refunds, accounts that last logged in from the same IP, and clients with
+ * clients with many refunds, accounts that last logged in from the same public IP, and clients with
  * repeated failed payments.
  */
 export const getFraudReport = async (_req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -531,9 +532,8 @@ export const getFraudReport = async (_req: AuthRequest, res: Response, next: Nex
         },
         { $match: { count: { $gte: 2 } } },
         { $sort: { count: -1 } },
-        { $limit: 20 },
         { $project: { _id: 0, ip: '$_id', users: 1 } },
-      ]),
+      ]).then((groups) => groups.filter((g) => isPublicIp(g.ip)).slice(0, 20)), // loopback/private IPs are shared by design
       Payment.aggregate([
         { $match: { status: PaymentStatus.FAILED } },
         { $group: { _id: '$client', failures: { $sum: 1 }, amount: { $sum: '$amount' } } },
