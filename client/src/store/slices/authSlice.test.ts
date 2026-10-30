@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import authReducer, { loadUser, loginUser, logout, logoutUser, registerUser, setCredentials, updateUser } from './authSlice';
+import authReducer, { loginUser, logout, logoutUser, registerUser, setCredentials, updateUser } from './authSlice';
 import { authApi } from '../../api/authApi';
 import type { User } from '../../types';
 
@@ -67,13 +67,5 @@ describe('authSlice thunks', () => {
     store.dispatch(setCredentials({ user, token: 'jwt' }));
     await store.dispatch(logoutUser());
     expect(store.getState().auth.isAuthenticated).toBe(false);
-  });
-
-  it('loadUser failure signs the user out', async () => {
-    api.getMe.mockRejectedValue(new Error('401'));
-    const store = makeStore();
-    store.dispatch(setCredentials({ user, token: 'jwt' }));
-    await store.dispatch(loadUser());
-    expect(store.getState().auth).toMatchObject({ user: null, token: null, isAuthenticated: false });
   });
 });

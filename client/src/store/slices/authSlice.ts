@@ -67,17 +67,6 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async (_, { dispat
   }
 });
 
-export const loadUser = createAsyncThunk(
-  'auth/loadUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await authApi.getMe();
-    } catch (err: unknown) {
-      return rejectWithValue(getErrorMessage(err, 'Failed to load user'));
-    }
-  }
-);
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -142,21 +131,6 @@ const authSlice = createSlice({
       })
       .addCase(bootstrapSession.rejected, (state) => {
         state.isBootstrapping = false;
-      })
-      // Load User
-      .addCase(loadUser.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(loadUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
-      .addCase(loadUser.rejected, (state) => {
-        state.isLoading = false;
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
       });
   },
 });

@@ -337,7 +337,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   into HTML **without escaping**; `utils/sendEmail.ts` has unused `sendGigNotificationEmail`. Delete
   them; keep `sendNotificationEmail` (escaped) and the verification/reset emails. Make sure the
   verification/reset templates escape `firstName` too.
-- [ ] **P3‑5 Dead client state.** `store/slices/uiSlice.ts`: `sidebarOpen`, `theme`, `activeModal`,
+- [x] **P3‑5 Dead client state.** `store/slices/uiSlice.ts`: `sidebarOpen`, `theme`, `activeModal`,
   `modalData`, `searchQuery` and their actions (`toggleSidebar`, `setSidebarOpen`, `setTheme`,
   `openModal`, `closeModal`, `setSearchQuery`) are unused. `authSlice.ts`: `loadUser` thunk unused.
   Remove, and update `authSlice.test.ts`.
