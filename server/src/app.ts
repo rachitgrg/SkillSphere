@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -111,8 +112,19 @@ app.use(
 );
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'success', message: 'Server is running' });
+// Health check for the host (Render/Railway): 503 unless MongoDB is connected, so a broken
+// instance gets restarted instead of serving errors.
+const DB_STATES = ['disconnected', 'connected', 'connecting', 'disconnecting'] as const;
+app.get('/health', (_req: Request, res: Response) => {
+  const state = mongoose.connection.readyState as number;
+  const healthy = state === 1;
+  res.status(healthy ? 200 : 503).json({
+    success: healthy,
+    status: healthy ? 'success' : 'error',
+    message: healthy ? 'Server is running' : 'Database is not connected',
+    database: DB_STATES[state] ?? 'unknown',
+    uptime: Math.round(process.uptime()),
+  });
 });
 
 // Error Handling

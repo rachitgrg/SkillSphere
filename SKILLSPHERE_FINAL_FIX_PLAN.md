@@ -376,7 +376,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   `https://res.cloudinary.com/…` URL; restrict to `https://res.cloudinary.com/<CLOUDINARY_CLOUD_NAME>/`.
 - [x] **P3‑13 Delete cleans up nothing.** `deleteGig` removes the gig and proposals but not its Cloudinary
   attachments, and does not decrement `ClientProfile.postedGigs`. Fix both.
-- [ ] **P3‑14 Health check is shallow.** `/health` always says OK. Report `mongoose.connection.readyState`
+- [x] **P3‑14 Health check is shallow.** `/health` always says OK. Report `mongoose.connection.readyState`
   (503 when not connected) so the host restarts a broken instance.
 
 ### P4 — Ship it (resume packaging)
@@ -433,3 +433,5 @@ TODOs in `client/src`.
 - 2026‑10‑30 (session 1, cont.) — P2‑1…P2‑14 done (CI green through P1‑7). Server 47 suites / 526
   tests, client 9 files / 35 tests, e2e 7/7. db:migrate now also reconciles freelancer locations.
   P4‑3 README must mention: enable the `payment.authorized` webhook event in Razorpay. Next: P3‑1.
+- 2026‑10‑30 (session 1, cont.) — P3‑1…P3‑14 done. Server 50 suites / 534 tests, client 11 files /
+  38 tests, e2e 8/8; entry chunk 150 kB. Next: P4 (deploy needs the user's accounts; README).
