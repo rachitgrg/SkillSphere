@@ -3,7 +3,7 @@
 A MERN (TypeScript) platform connecting clients with verified local freelancers.
 
 > The full README (setup, architecture, features, demo accounts) is written in Phase 5 of
-> `CLAUDE_CODE_PLAN.md`. This file currently records only the facts that later phases rely on.
+> `docs/dev-notes/CLAUDE_CODE_PLAN.md`. This file currently records only the facts that later phases rely on.
 
 ## API docs
 

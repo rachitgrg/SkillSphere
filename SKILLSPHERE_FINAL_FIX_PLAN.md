@@ -1,7 +1,7 @@
 # SkillSphere — Final Fix & Finish Plan (for Claude Code)
 
 > **Instruction to Claude Code:** This file is your work order for the last stretch of the project. It
-> supersedes the open items in `CLAUDE_CODE_PLAN.md` (Phases 0–4 there are done; only Phase 5 is open).
+> supersedes the open items in `docs/dev-notes/CLAUDE_CODE_PLAN.md` (Phases 0–4 there are done; only Phase 5 is open).
 > Read §0 first, then work through §3 **in priority order** (P0 → P4). Tick each checkbox and commit
 > as you finish it, so a later session can resume. Every finding below was checked against the code on
 > 2026‑10‑29; file:line references are from that snapshot and may drift slightly as you edit.
@@ -38,7 +38,7 @@
   `npm run e2e` passes in `client/`. CI on GitHub is green.
 - Every P0–P2 item below is fixed with a test; P3 cleanup is done; P4 is done or explicitly handed back
   to the user (keys, deploy accounts).
-- The §9 demo script in `CLAUDE_CODE_PLAN.md` works in a browser on a fresh local DB **and** the live demo.
+- The §9 demo script in `docs/dev-notes/CLAUDE_CODE_PLAN.md` works in a browser on a fresh local DB **and** the live demo.
 
 ---
 
@@ -354,11 +354,12 @@ Ask the user for these; never invent them. Everything works without them in fall
   this reads as fabricated. Replace with live counts from a new public, cached endpoint
   (`GET /api/v1/config/stats`: open gigs, verified freelancers, completed projects, categories) or
   remove the section; drop the logo row.
-- [ ] **P3‑8 Repo leftovers.** Ensure these stay untracked (they are ignored, just delete locally):
+- [x] **P3‑8 Repo leftovers.** Ensure these stay untracked (they are ignored, just delete locally):
   `client/dist`, `server/dist`, `client/test-results`, `server/tsconfig.tsbuildinfo`; delete the empty
   `.agents/` folder. Root `package.json` only exists for `concurrently` — keep it, but add `"test"`,
   `"lint"`, `"build"` scripts that run both packages. Move `AUDIT_REPORT.md` and `CLAUDE_CODE_PLAN.md`
   (and this file, once finished) into `docs/dev-notes/` so the repo root is clean for recruiters.
+  - Done; this file stays at the root until P4 is finished, then moves to `docs/dev-notes/` too.
 - [ ] **P3‑9 Bundle size.** The main chunk is 631 kB (`npm run build` warning). Check what lands in it
   (`npx vite-bundle-visualizer`): likely `framer-motion` used on the landing page and `recharts` pulled
   into eagerly imported components. Lazy-load the landing animations and chart components, add
@@ -399,7 +400,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   and reputation formulas (already partly in README), payment/escrow flow diagram, known limitations
   (simulated payouts, STUN-only calls, fallback AI without a token, Elasticsearch not implemented),
   roadmap. Add CI and license badges.
-- [ ] **P4‑4 Final verification.** Run the full §9 acceptance demo from `CLAUDE_CODE_PLAN.md` locally on a
+- [ ] **P4‑4 Final verification.** Run the full §9 acceptance demo from `docs/dev-notes/CLAUDE_CODE_PLAN.md` locally on a
   fresh DB and on the live deployment; run every check in §0.4; update the progress log; give the user a
   short summary with the live URL, demo accounts and anything still waiting on keys.
 

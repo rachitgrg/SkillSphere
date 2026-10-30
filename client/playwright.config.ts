@@ -4,7 +4,7 @@ const API_PORT = 5100;
 const WEB_PORT = 5175;
 
 /**
- * End-to-end tests for the demo flow (CLAUDE_CODE_PLAN §9). Playwright starts its own API on an
+ * End-to-end tests for the demo flow (docs/dev-notes/CLAUDE_CODE_PLAN.md §9). Playwright starts its own API on an
  * in-memory, freshly seeded MongoDB with simulated payments (server `npm run e2e:server`) and a Vite
  * dev server proxying to it, so runs never touch a real database or payment gateway.
  */

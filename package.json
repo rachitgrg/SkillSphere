@@ -9,7 +9,12 @@
     "client": "cd client && npm run dev",
     "build:client": "cd client && npm run build",
     "build:server": "cd server && npm run build",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "e2e": "npm --prefix client run e2e"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
