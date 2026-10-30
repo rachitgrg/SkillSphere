@@ -88,3 +88,16 @@ milestone is scaled proportionally to the agreed price (rounded to the paisa, re
 milestone), so the client is never charged the originally posted amounts. Hourly bids are a rate,
 not a total, so they leave milestones unchanged. Checkout (`POST /payments/orders`) also refuses any
 milestone that would push the funded total past the agreed price.
+
+## Reputation score (module 8)
+
+Code: `server/src/services/reputationService.ts` (`REPUTATION`, `computeReputation`). Stored as
+`reputationScore` (0–100) on freelancer and client profiles and recalculated after every review,
+dispute resolution, gig completion/cancellation and verification change.
+
+| Part | Formula |
+|---|---|
+| Rating | Bayesian mean of visible review ratings ÷ 5, with a prior of 5 reviews at the platform mean. Each rating is already category-weighted (quality 30 %, communication 20 %, timeliness 20 %, professionalism 15 %, value 15 %); reviews older than 12 months count 50 % |
+| Completion | `(completed + 2 × 0.8) ÷ (completed + failed + 2)`: two pseudo-jobs at 80 % so new users aren't punished |
+| Failed | cancelled gigs + lost disputes + 0.5 × split disputes. The freelancer loses a dispute resolved with a refund, the client one resolved with a release; a split counts as half a failure for both |
+| Score | `100 × (0.75 × rating + 0.25 × completion)`, +5 for verified freelancers, capped at 100 |

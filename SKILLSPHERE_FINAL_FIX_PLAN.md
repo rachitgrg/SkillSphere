@@ -308,7 +308,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑13 Two sources of truth for location.** Both `User.location` and `FreelancerProfile.location`
   exist (`updateProfileSchema` and `updateFreelancerProfileSchema` both accept `location`). Matching/search
   use the profile. Pick one (profile for freelancers), make the other derived or remove it, and migrate.
-- [ ] **P2‑14 Lost-dispute reputation ignores splits.** `reputationService.ts` counts only
+- [x] **P2‑14 Lost-dispute reputation ignores splits.** `reputationService.ts` counts only
   `refund`/`release`. Decide how a `split` counts (e.g. half a failure for both) and document the formula.
 
 ### P3 — Cleanup: dead code, unused files, config gaps
@@ -423,3 +423,6 @@ TODOs in `client/src`.
 - 2026‑10‑29 (session 1, cont.) — P1‑1…P1‑7 done; pushed through P1‑4 (CI green). Server 41 suites /
   498 tests, client 8 files / 34 tests, e2e 7/7. On any real DB run `npm run db:migrate` then
   `npm run db:sync-indexes` (P1‑3 session field, P1‑4 unique index). Next: P2‑1.
+- 2026‑10‑30 (session 1, cont.) — P2‑1…P2‑14 done (CI green through P1‑7). Server 47 suites / 526
+  tests, client 9 files / 35 tests, e2e 7/7. db:migrate now also reconciles freelancer locations.
+  P4‑3 README must mention: enable the `payment.authorized` webhook event in Razorpay. Next: P3‑1.

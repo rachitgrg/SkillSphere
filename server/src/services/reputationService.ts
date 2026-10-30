@@ -15,7 +15,10 @@ import { isPublicIp } from '../utils/ip';
  *                 (each review's rating is already weighted by category: quality 30 %, communication 20 %,
  *                  timeliness 20 %, professionalism 15 %, value 15 %; reviews older than 12 months count 50 %;
  *                  prior of BAYES_PRIOR_REVIEWS reviews at the platform mean)
- *   completion  = (completed + 2·0.8) / (completed + cancelled + lost disputes + 2)   — 2 pseudo-jobs at 80 %
+ *   completion  = (completed + 2·0.8) / (completed + failed + 2)   — 2 pseudo-jobs at 80 %
+ *   failed      = cancelled + lost disputes + 0.5 · split disputes
+ *                 (a dispute is lost by the freelancer when the client is refunded, by the client when the
+ *                  money is released; a split counts as half a failure for both)
  *   score       = 100 · (0.75 · rating + 0.25 · completion)  + 5 if verified (freelancers), capped at 100
  *
  * Recalculated after every review, dispute resolution, gig completion/cancellation and verification change.
@@ -30,6 +33,7 @@ export const REPUTATION = {
   COMPLETION_PRIOR_JOBS: 2,
   COMPLETION_PRIOR_RATE: 0.8,
   VERIFIED_BONUS: 5,
+  SPLIT_DISPUTE_FAILURE: 0.5,
 } as const;
 
 const round = (n: number, digits = 2) => Math.round(n * 10 ** digits) / 10 ** digits;
@@ -39,7 +43,7 @@ export const computeReputation = (input: {
   reviews: Pick<IReview, 'rating' | 'createdAt'>[];
   platformMean: number;
   completed: number;
-  failed: number; // cancelled + lost disputes
+  failed: number; // cancelled + lost disputes + SPLIT_DISPUTE_FAILURE · split disputes
   verified?: boolean;
   now?: Date;
 }) => {
@@ -90,7 +94,7 @@ class ReputationService {
     const id = user._id;
     const isFreelancer = user.role === UserRole.FREELANCER;
 
-    const [reviews, platformMean, completed, cancelled, lostDisputes, profile] = await Promise.all([
+    const [reviews, platformMean, completed, cancelled, lostDisputes, splitDisputes, profile] = await Promise.all([
       Review.find({ reviewee: id, isVisible: true }).select('rating createdAt').lean(),
       this.platformMean(),
       Gig.countDocuments({ [isFreelancer ? 'selectedFreelancer' : 'client']: id, status: GigStatus.COMPLETED }),
@@ -101,6 +105,7 @@ class ReputationService {
         paymentAction: isFreelancer ? 'refund' : 'release',
         $or: [{ raisedBy: id }, { against: id }],
       }),
+      Dispute.countDocuments({ status: DisputeStatus.RESOLVED, paymentAction: 'split', $or: [{ raisedBy: id }, { against: id }] }),
       isFreelancer ? FreelancerProfile.findOne({ user: id }).select('verification').lean() : null,
     ]);
 
@@ -110,7 +115,7 @@ class ReputationService {
       reviews,
       platformMean,
       completed,
-      failed: cancelled + lostDisputes,
+      failed: cancelled + lostDisputes + REPUTATION.SPLIT_DISPUTE_FAILURE * splitDisputes,
       verified: profile?.verification?.status === 'verified',
     });
 
