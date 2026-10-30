@@ -1,6 +1,7 @@
 import http from 'http';
 import { AddressInfo } from 'net';
 import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
+import { env } from '../src/config/env';
 import { initializeSocket, getIO, resetSocketState } from '../src/config/socket';
 import { registerChatHandlers } from '../src/sockets/chatSocket';
 import { registerCallHandlers } from '../src/sockets/callSocket';
@@ -185,6 +186,9 @@ describe('Socket.IO security (C7)', () => {
 });
 
 describe('file messages (4.6)', () => {
+  beforeAll(() => Object.assign(env, { CLOUDINARY_CLOUD_NAME: 'demo' }));
+  afterAll(() => Object.assign(env, { CLOUDINARY_CLOUD_NAME: undefined }));
+
   it('accepts uploaded Cloudinary files and rejects foreign or mismatched file payloads', async () => {
     const { client, conversationId } = await setup();
     const socket = await connect(client.token);
@@ -193,6 +197,9 @@ describe('file messages (4.6)', () => {
     const ok = await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://res.cloudinary.com/demo/raw/upload/spec.pdf' });
     expect(ok.ok).toBe(true);
     expect((await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://evil.example/x.exe' })).ok).toBe(false);
+    // Another Cloudinary account, or a look-alike prefix, is not our upload (P3-12).
+    expect((await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://res.cloudinary.com/attacker/raw/upload/x.exe' })).ok).toBe(false);
+    expect((await emitAck(socket, 'send_message', { ...base, type: 'file', fileUrl: 'https://res.cloudinary.com/demo-evil/raw/upload/x.exe' })).ok).toBe(false);
     expect((await emitAck(socket, 'send_message', { ...base, type: 'file' })).ok).toBe(false);
     expect((await emitAck(socket, 'send_message', { ...base, fileUrl: 'https://res.cloudinary.com/demo/raw/upload/spec.pdf' })).ok).toBe(false);
   });

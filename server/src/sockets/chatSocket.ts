@@ -4,20 +4,27 @@ import chatService, { conversationRoom } from '../services/chatService';
 import { MessageType } from '../types';
 import Message from '../models/Message';
 import { safeHandler } from './safeHandler';
+import { env } from '../config/env';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
 const conversationPayload = z.object({ conversationId: objectId });
 
-/** Files must come from POST /chat/conversations/:id/files, i.e. our Cloudinary account. */
-const UPLOADED_FILE_URL = /^https:\/\/res\.cloudinary\.com\//;
+/**
+ * Files must come from POST /chat/conversations/:id/files, i.e. *our* Cloudinary account (not any
+ * res.cloudinary.com URL). Without Cloudinary there are no uploads, so no file URL is accepted.
+ */
+export const isUploadedFileUrl = (url: string): boolean => {
+  const cloud = env.CLOUDINARY_CLOUD_NAME;
+  return Boolean(cloud) && url.startsWith(`https://res.cloudinary.com/${encodeURIComponent(cloud!)}/`);
+};
 
 const sendMessagePayload = z
   .object({
     conversationId: objectId,
     content: z.string().trim().min(1).max(5000),
     type: z.enum([MessageType.TEXT, MessageType.IMAGE, MessageType.FILE]).optional(),
-    fileUrl: z.string().url().regex(UPLOADED_FILE_URL, 'Upload the file first').optional(),
+    fileUrl: z.string().url().refine(isUploadedFileUrl, 'Upload the file first').optional(),
     fileName: z.string().max(255).optional(),
   })
   .refine((m) => (m.type === MessageType.IMAGE || m.type === MessageType.FILE) === Boolean(m.fileUrl), {

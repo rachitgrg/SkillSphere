@@ -372,7 +372,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P3‑11 WebRTC needs TURN to work across networks.** `contexts/CallContext.tsx:10` has STUN only;
   calls fail behind symmetric NAT / mobile networks. Make ICE servers configurable
   (`VITE_TURN_URL/USERNAME/CREDENTIAL`) and document the limitation if no TURN is supplied.
-- [ ] **P3‑12 Chat file URL check is too loose.** `sockets/chatSocket.ts` accepts any
+- [x] **P3‑12 Chat file URL check is too loose.** `sockets/chatSocket.ts` accepts any
   `https://res.cloudinary.com/…` URL; restrict to `https://res.cloudinary.com/<CLOUDINARY_CLOUD_NAME>/`.
 - [ ] **P3‑13 Delete cleans up nothing.** `deleteGig` removes the gig and proposals but not its Cloudinary
   attachments, and does not decrement `ClientProfile.postedGigs`. Fix both.
