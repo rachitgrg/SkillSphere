@@ -571,12 +571,13 @@ class PaymentService {
       .sort({ createdAt: -1 });
   }
 
-  async getPaymentStats(userId: string, role: 'client' | 'freelancer') {
-    const matchField = role === 'client' ? 'client' : 'freelancer';
-    const amountField = role === 'client' ? 'amount' : 'freelancerAmount';
+  /** Totals by status for one client or freelancer, or (admin) for the whole platform at gross amounts. */
+  async getPaymentStats(userId: string, role: 'client' | 'freelancer' | 'admin') {
+    const amountField = role === 'freelancer' ? 'freelancerAmount' : 'amount';
+    const match = role === 'admin' ? {} : { [role]: new Types.ObjectId(userId) };
 
     const stats = await Payment.aggregate([
-      { $match: { [matchField]: new Types.ObjectId(userId) } },
+      { $match: match },
       {
         $group: {
           _id: '$status',

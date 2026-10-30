@@ -280,7 +280,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑5 Job success rate double counts.** `adminController.ts:137` adds every gig that *ever* had a
   dispute to "unsuccessful", even when it was later completed (it is then in both buckets). Count a gig
   once by its final outcome (completed / cancelled / completed-after-lost-dispute).
-- [ ] **P2‑6 Admin payment summary is empty.** `paymentController.ts:177` maps admin to the freelancer
+- [x] **P2‑6 Admin payment summary is empty.** `paymentController.ts:177` maps admin to the freelancer
   branch, so `/payments/summary` shows zeros for admins. Return platform-wide totals for admins.
 - [ ] **P2‑7 Gig views are inflated.** `gigController.ts:148` increments `views` on every fetch,
   including the owner, admins and React Query refetches. Count only non-owner viewers, deduplicated per

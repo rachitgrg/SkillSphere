@@ -194,12 +194,13 @@ export const exportPayments = async (req: AuthRequest, res: Response, next: Next
 export const getPaymentSummary = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = req.user!;
-    const role = user.role === UserRole.CLIENT ? 'client' : 'freelancer';
+    // Admins see platform-wide totals (fees = platform revenue); others see their own payments.
+    const role = user.role === UserRole.ADMIN ? 'admin' : user.role === UserRole.CLIENT ? 'client' : 'freelancer';
     const byStatus = await paymentService.getPaymentStats(user._id.toString(), role);
     const total = (status: PaymentStatus) => byStatus[status]?.total ?? 0;
 
     const [fees] = await Payment.aggregate<{ fees: number }>([
-      { $match: { [role]: user._id, status: PaymentStatus.RELEASED } },
+      { $match: { ...(role !== 'admin' && { [role]: user._id }), status: PaymentStatus.RELEASED } },
       { $group: { _id: null, fees: { $sum: '$platformFee' } } },
     ]);
 
