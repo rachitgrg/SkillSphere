@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Inbox } from 'lucide-react';
 import { Button } from './Button';
 
@@ -15,7 +15,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-16 px-4 text-center"
@@ -30,6 +30,6 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
           {action.label}
         </Button>
       )}
-    </motion.div>
+    </m.div>
   );
 }

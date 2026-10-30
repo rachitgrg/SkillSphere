@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bell } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Link, useNavigate } from 'react-router';
 import { Spinner } from '../common/Spinner';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../../hooks/queries/useNotifications';
@@ -24,7 +24,7 @@ export const NotificationDropdown: React.FC<{ isOpen: boolean; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 10, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="absolute right-0 mt-2 w-80 sm:w-96 glass-card border border-slate-700 shadow-2xl shadow-indigo-500/10 rounded-2xl z-50 overflow-hidden"
@@ -73,7 +73,7 @@ export const NotificationDropdown: React.FC<{ isOpen: boolean; onClose: () => vo
             View all notifications
           </Link>
         </div>
-      </motion.div>
+      </m.div>
     </>
   );
 };

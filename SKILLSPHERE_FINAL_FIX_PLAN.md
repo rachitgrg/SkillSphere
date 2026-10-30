@@ -360,10 +360,13 @@ Ask the user for these; never invent them. Everything works without them in fall
   `"lint"`, `"build"` scripts that run both packages. Move `AUDIT_REPORT.md` and `CLAUDE_CODE_PLAN.md`
   (and this file, once finished) into `docs/dev-notes/` so the repo root is clean for recruiters.
   - Done; this file stays at the root until P4 is finished, then moves to `docs/dev-notes/` too.
-- [ ] **P3‑9 Bundle size.** The main chunk is 631 kB (`npm run build` warning). Check what lands in it
+- [x] **P3‑9 Bundle size.** The main chunk is 631 kB (`npm run build` warning). Check what lands in it
   (`npx vite-bundle-visualizer`): likely `framer-motion` used on the landing page and `recharts` pulled
   into eagerly imported components. Lazy-load the landing animations and chart components, add
   `build.rollupOptions.output.manualChunks` for `react`, `recharts`, `framer-motion`. Target < 300 kB.
+  - Done: entry chunk 631 kB → 150 kB (48 kB gzip). framer-motion via `LazyMotion` + `m` with its features in
+    an async chunk (`motionFeatures.ts`); vendor chunks `react`, `data`, `realtime`; recharts was already
+    lazy. framer-motion is deliberately *not* a manual chunk (that would pull the async features back in).
 - [ ] **P3‑10 OG image must be absolute.** `client/index.html:14` uses `/og-image.png`; social crawlers
   need an absolute URL. Inject it at build time from `VITE_PUBLIC_URL` (or the deploy URL).
 - [ ] **P3‑11 WebRTC needs TURN to work across networks.** `contexts/CallContext.tsx:10` has STUN only;

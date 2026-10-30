@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { m, type HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
@@ -37,7 +37,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <motion.button
+    <m.button
       whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
       whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
       className={`
@@ -59,6 +59,6 @@ export function Button({
         <span className="relative z-10">{icon}</span>
       ) : null}
       <span className="relative z-10">{children}</span>
-    </motion.button>
+    </m.button>
   );
 }

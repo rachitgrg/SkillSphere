@@ -41,6 +41,22 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_API_URL)],
+    build: {
+      rollupOptions: {
+        output: {
+          // Long-lived vendor chunks: app deploys don't invalidate them, and the entry chunk stays small.
+          // framer-motion is left to Rollup so its lazily loaded features (motionFeatures.ts) stay separate.
+          manualChunks: (id) => {
+            const path = id.replace(/\\/g, '/');
+            const from = (...packages: string[]) => packages.some((p) => path.includes(`/node_modules/${p}/`));
+            if (from('react', 'react-dom', 'react-router', 'scheduler')) return 'react';
+            if (from('@reduxjs', 'react-redux', '@tanstack', 'axios', 'immer', 'reselect')) return 'data';
+            if (from('socket.io-client', 'engine.io-client', 'socket.io-parser', '@socket.io')) return 'realtime';
+            return undefined;
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

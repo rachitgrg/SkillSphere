@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ExternalLink, Images } from 'lucide-react';
 import type { PortfolioItem } from '../../types';
 
@@ -7,7 +7,7 @@ import type { PortfolioItem } from '../../types';
 export const PortfolioCard: React.FC<{ item: PortfolioItem; onOpen?: () => void }> = ({ item, onOpen }) => {
   const cover = item.images[0];
   return (
-    <motion.article whileHover={{ y: -4 }} className="group rounded-xl overflow-hidden glass-card border border-slate-800 flex flex-col">
+    <m.article whileHover={{ y: -4 }} className="group rounded-xl overflow-hidden glass-card border border-slate-800 flex flex-col">
       <button
         type="button"
         onClick={onOpen}
@@ -32,6 +32,6 @@ export const PortfolioCard: React.FC<{ item: PortfolioItem; onOpen?: () => void 
           </a>
         )}
       </div>
-    </motion.article>
+    </m.article>
   );
 };

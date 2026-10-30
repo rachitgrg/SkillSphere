@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Link } from 'react-router';
 import {
   BadgeCheck,
@@ -71,13 +71,13 @@ const audienceCardVariants = {
 
 function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
   return (
-    <motion.div
+    <m.div
       {...fadeUp}
       transition={{ duration: 0.55, delay, ease: 'easeOut' }}
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -85,14 +85,14 @@ function DashboardPreview() {
   const chartHeights = [28, 40, 35, 56, 46, 68, 52, 74, 62, 88, 78, 96];
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 28, rotate: 1.5, scale: 0.94 }}
       animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }}
       transition={{ duration: 0.8, delay: 0.18, ease: 'easeOut' }}
       whileHover={{ rotate: -1.25, scale: 1.01 }}
       className="relative mx-auto w-full max-w-[610px]"
     >
-      <motion.div
+      <m.div
         animate={{ opacity: [0.35, 0.55, 0.35], scale: [0.98, 1.02, 0.98] }}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         className="absolute -inset-10 rounded-full bg-gradient-to-br from-primary-500/20 via-secondary-500/5 to-accent-500/20 blur-3xl"
@@ -100,7 +100,7 @@ function DashboardPreview() {
       <div className="absolute -left-8 bottom-3 h-56 w-56 rounded-full border border-primary-500/30" />
       <div className="absolute -right-10 -top-6 h-48 w-48 rounded-full border border-accent-500/25" />
 
-      <motion.div
+      <m.div
         animate={{ y: [0, -5, 0] }}
         transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
         className="relative overflow-hidden rounded-2xl border border-primary-400/15 bg-[#081425]/90 p-2 shadow-2xl shadow-black/40 will-change-transform backdrop-blur-xl sm:p-3"
@@ -117,13 +117,13 @@ function DashboardPreview() {
                   <span className={`h-1.5 w-1.5 rounded-sm ${index === 0 ? 'bg-primary-400' : 'bg-slate-600'}`} />
                   <span>{item}</span>
                   {item === 'Messages' && (
-                    <motion.span
+                    <m.span
                       animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.12, 1] }}
                       transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
                       className="ml-auto rounded-full bg-primary-500 px-1 text-[6px] text-white"
                     >
                       3
-                    </motion.span>
+                    </m.span>
                   )}
                 </div>
               ))}
@@ -131,7 +131,7 @@ function DashboardPreview() {
             <div className="mt-8 border-t border-slate-700/50 pt-3 text-slate-500">Settings</div>
             <div className="mt-3 flex items-center gap-1.5 text-slate-300">
               <span className="relative h-4 w-4 rounded-full bg-gradient-to-br from-amber-300 to-rose-400">
-                <motion.span
+                <m.span
                   animate={{ opacity: [0.25, 0.8, 0.25], scale: [1, 1.75, 1] }}
                   transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
                   className="absolute -bottom-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400"
@@ -157,7 +157,7 @@ function DashboardPreview() {
                 ['Total Spent', '₹4,890', 'text-emerald-300'],
                 ['Unread Messages', '5', 'text-amber-300'],
               ].map(([label, value, color], index) => (
-                <motion.div
+                <m.div
                   key={label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -167,12 +167,12 @@ function DashboardPreview() {
                   <p className="truncate text-slate-500">{label}</p>
                   <p className={`mt-1 text-[10px] font-bold sm:text-xs ${color}`}>{value}</p>
                   <p className="mt-0.5 truncate text-[6px] text-emerald-400 sm:text-[7px]">↗ 20% from last month</p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
 
             <div className="mt-2 grid grid-cols-[1.55fr_1fr] gap-2">
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.84 }}
@@ -181,7 +181,7 @@ function DashboardPreview() {
                 <div className="flex items-center justify-between"><p className="font-medium text-slate-200">Project Overview</p><span className="text-primary-300">⋯</span></div>
                 <div className="mt-2 flex h-20 items-end gap-1 border-b border-l border-slate-700/50 px-1 pb-1 sm:h-24">
                   {chartHeights.map((height, index) => (
-                    <motion.span
+                    <m.span
                       key={index}
                       initial={{ height: 0 }}
                       animate={{ height: `${height}%` }}
@@ -191,8 +191,8 @@ function DashboardPreview() {
                   ))}
                 </div>
                 <div className="mt-1 flex justify-between text-[6px] text-slate-600"><span>Jan</span><span>Mar</span><span>May</span><span>Jul</span></div>
-              </motion.div>
-              <motion.div
+              </m.div>
+              <m.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.94 }}
@@ -202,7 +202,7 @@ function DashboardPreview() {
                 <p className="mt-0.5 text-[7px] text-slate-500">New matches for your projects</p>
                 <div className="mt-2 space-y-2">
                   {['Alex Johnson', 'Sarah Williams', 'David Miller'].map((name, index) => (
-                    <motion.div
+                    <m.div
                       key={name}
                       initial={{ opacity: 0, x: 6 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -212,14 +212,14 @@ function DashboardPreview() {
                       <span className={`h-4 w-4 rounded-full ${['bg-violet-400', 'bg-amber-300', 'bg-cyan-400'][index]}`} />
                       <span className="min-w-0 flex-1 truncate text-slate-300">{name}</span>
                       <span className="text-[6px] text-emerald-400">+ {95 - index * 3}%</span>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
                 <p className="mt-3 text-[7px] font-medium text-primary-300">View all recommendations →</p>
-              </motion.div>
+              </m.div>
             </div>
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.42, delay: 1.04 }}
@@ -227,11 +227,11 @@ function DashboardPreview() {
             >
               <div><p className="font-medium text-slate-200">E-commerce Website Redesign</p><p className="text-[7px] text-slate-500">Budget: ₹25,000 – ₹40,000</p></div>
               <div className="flex -space-x-1"><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-violet-400" /><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-amber-300" /><span className="h-4 w-4 rounded-full border border-[#0c1a2c] bg-cyan-400" /></div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
 
@@ -275,7 +275,7 @@ export const LandingPage = () => {
           <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
 
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-14 sm:px-6 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8 lg:px-8 lg:pb-20">
-            <motion.div initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.65, ease: 'easeOut' }} className="relative z-10 max-w-xl">
+            <m.div initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.65, ease: 'easeOut' }} className="relative z-10 max-w-xl">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary-400/20 bg-primary-500/10 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-primary-300">
                 <Sparkles className="h-3 w-3" /> AI-powered matchmaking
               </div>
@@ -303,7 +303,7 @@ export const LandingPage = () => {
               </div>
 
               <TrendingSkills />
-            </motion.div>
+            </m.div>
 
             <DashboardPreview />
           </div>
@@ -345,7 +345,7 @@ export const LandingPage = () => {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-5 lg:grid-cols-2">
               <Reveal>
-                <motion.div variants={audienceCardVariants} initial="rest" animate="rest" whileHover="hover" transition={{ duration: 0.28, ease: 'easeOut' }} className="group relative overflow-hidden rounded-2xl border border-primary-500/25 bg-gradient-to-br from-primary-950/45 via-[#091627] to-[#081323] p-6 shadow-lg shadow-black/10 transition-[border-color,box-shadow] duration-300 ease-out hover:border-primary-400/50 hover:shadow-xl hover:shadow-primary-950/35 sm:p-7">
+                <m.div variants={audienceCardVariants} initial="rest" animate="rest" whileHover="hover" transition={{ duration: 0.28, ease: 'easeOut' }} className="group relative overflow-hidden rounded-2xl border border-primary-500/25 bg-gradient-to-br from-primary-950/45 via-[#091627] to-[#081323] p-6 shadow-lg shadow-black/10 transition-[border-color,box-shadow] duration-300 ease-out hover:border-primary-400/50 hover:shadow-xl hover:shadow-primary-950/35 sm:p-7">
                   <div className="absolute -bottom-20 -left-14 h-40 w-72 rounded-full border border-primary-500/30" />
                   <div className="relative grid gap-6 sm:grid-cols-[1fr_165px] sm:items-center">
                     <div>
@@ -355,14 +355,14 @@ export const LandingPage = () => {
                       <div className="mt-5"><Link to="/client/gigs/new" className="btn-primary px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-primary-500/25"><span>Post a Project</span></Link></div>
                     </div>
                     <div className="rounded-xl border border-primary-400/15 bg-[#081426]/80 p-3 text-xs text-slate-400">
-                      {['Post Project', 'Get Matched', 'Review Proposals', 'Hire & Get Work Done'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><motion.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></motion.span></div>)}
+                      {['Post Project', 'Get Matched', 'Review Proposals', 'Hire & Get Work Done'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><m.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></m.span></div>)}
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               </Reveal>
 
               <Reveal delay={0.1}>
-                <motion.div variants={audienceCardVariants} initial="rest" animate="rest" whileHover="hover" transition={{ duration: 0.28, ease: 'easeOut' }} className="group relative overflow-hidden rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/35 via-[#091627] to-[#071d1b] p-6 shadow-lg shadow-black/10 transition-[border-color,box-shadow] duration-300 ease-out hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-950/35 sm:p-7">
+                <m.div variants={audienceCardVariants} initial="rest" animate="rest" whileHover="hover" transition={{ duration: 0.28, ease: 'easeOut' }} className="group relative overflow-hidden rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/35 via-[#091627] to-[#071d1b] p-6 shadow-lg shadow-black/10 transition-[border-color,box-shadow] duration-300 ease-out hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-950/35 sm:p-7">
                   <div className="absolute -right-20 -top-20 h-44 w-72 rounded-full border border-emerald-500/25" />
                   <div className="relative grid gap-6 sm:grid-cols-[1fr_165px] sm:items-center">
                     <div>
@@ -372,10 +372,10 @@ export const LandingPage = () => {
                       <div className="mt-5"><Link to="/gigs" className="btn-success px-4 py-2.5 text-xs transition duration-300 ease-out group-hover:brightness-110 group-hover:shadow-lg group-hover:shadow-emerald-500/20"><span>Browse Projects</span></Link></div>
                     </div>
                     <div className="rounded-xl border border-emerald-400/15 bg-[#081725]/80 p-3 text-xs text-slate-400">
-                      {['Create Profile', 'Find Projects', 'Submit Proposals', 'Get Hired & Earn'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><motion.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></motion.span></div>)}
+                      {['Create Profile', 'Find Projects', 'Submit Proposals', 'Get Hired & Earn'].map((item, index) => <div key={item} className="flex items-center justify-between py-1.5"><span>{item}</span><m.span variants={checklistIconVariants} transition={{ duration: 0.22, delay: index * 0.035, ease: 'easeOut' }}><Check className={`h-3.5 w-3.5 ${index === 3 ? 'text-primary-400' : 'text-emerald-400'}`} /></m.span></div>)}
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               </Reveal>
             </div>
 

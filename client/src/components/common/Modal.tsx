@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -43,14 +43,14 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div
+          <m.div
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
@@ -76,7 +76,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
               </div>
             )}
             {children}
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>,

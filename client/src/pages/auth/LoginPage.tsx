@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
@@ -41,7 +41,7 @@ export const LoginPage: React.FC = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md glass-card p-8 rounded-3xl border border-slate-800 relative z-10"
@@ -91,7 +91,7 @@ export const LoginPage: React.FC = () => {
         <p className="text-center text-sm text-slate-400 mt-6">
           Don't have an account? <Link to="/register" className="text-indigo-400 font-medium hover:text-indigo-300">Sign up</Link>
         </p>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

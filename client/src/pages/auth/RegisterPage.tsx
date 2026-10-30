@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Briefcase, User } from 'lucide-react';
@@ -42,7 +42,7 @@ export const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4 py-12 relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[120px] pointer-events-none" />
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-lg glass-card p-8 rounded-3xl border border-slate-800 relative z-10"
@@ -91,7 +91,7 @@ export const RegisterPage: React.FC = () => {
         <p className="text-center text-sm text-slate-400 mt-8">
           Already have an account? <Link to="/login" className="text-indigo-400 font-medium hover:text-indigo-300">Log in</Link>
         </p>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

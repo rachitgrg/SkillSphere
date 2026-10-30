@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -14,7 +14,7 @@ const sizeClasses = {
 export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
-      <motion.div
+      <m.div
         className={`${sizeClasses[size]} border-2 border-dark-600 border-t-primary-500 rounded-full`}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -27,7 +27,7 @@ export function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
-        <motion.div
+        <m.div
           className="w-16 h-16 border-3 border-dark-600 border-t-primary-500 rounded-full mx-auto mb-4"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}

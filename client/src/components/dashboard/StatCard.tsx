@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 interface StatCardProps {
   title: string;
@@ -19,7 +19,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, c
   };
 
   return (
-    <motion.div 
+    <m.div 
       whileHover={{ y: -5 }}
       className={`glass-card p-6 rounded-2xl border ${colorMap[color].split(' ')[2]} relative overflow-hidden`}
     >
@@ -42,6 +42,6 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, c
         <h4 className="text-sm font-medium text-slate-400 mb-1">{title}</h4>
         <div className="text-3xl font-bold text-white">{value}</div>
       </div>
-    </motion.div>
+    </m.div>
   );
 };

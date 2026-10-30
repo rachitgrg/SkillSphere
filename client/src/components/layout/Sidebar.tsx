@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Briefcase, FileText, MessageSquare, CreditCard,
   Star, BarChart3, Users, Shield, AlertTriangle, ScrollText, Settings,
@@ -81,8 +81,8 @@ export function Sidebar() {
     <AnimatePresence>
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" onClick={close} />
-          <motion.nav
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60" onClick={close} />
+          <m.nav
             id="mobile-sidebar"
             aria-label="Main menu"
             initial={{ x: '-100%' }}
@@ -114,11 +114,11 @@ export function Sidebar() {
                 );
               })}
             </div>
-          </motion.nav>
+          </m.nav>
         </div>
       )}
     </AnimatePresence>
-    <motion.aside
+    <m.aside
       animate={{ width: sidebarCollapsed ? 72 : 260 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed left-0 top-16 bottom-0 z-40 glass border-r border-dark-700/50 flex flex-col hidden lg:flex"
@@ -130,7 +130,7 @@ export function Sidebar() {
             return (
               <Link key={link.href} to={link.href} className="block relative">
                 {isActive && (
-                  <motion.div
+                  <m.div
                     layoutId="sidebar-active"
                     className="absolute inset-0 bg-gradient-to-r from-primary-500/15 to-accent-500/10 rounded-xl border border-primary-500/20"
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -146,14 +146,14 @@ export function Sidebar() {
                   <span className="shrink-0">{link.icon}</span>
                   <AnimatePresence>
                     {!sidebarCollapsed && (
-                      <motion.span
+                      <m.span
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: 'auto' }}
                         exit={{ opacity: 0, width: 0 }}
                         className="text-sm font-medium whitespace-nowrap overflow-hidden"
                       >
                         {link.label}
-                      </motion.span>
+                      </m.span>
                     )}
                   </AnimatePresence>
                   {link.badge && !sidebarCollapsed && (
@@ -185,7 +185,7 @@ export function Sidebar() {
           )}
         </button>
       </div>
-    </motion.aside>
+    </m.aside>
     </>
   );
 }

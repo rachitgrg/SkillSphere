@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Link } from 'react-router';
 import { Clock, IndianRupee, MapPin, Users } from 'lucide-react';
 import { Badge } from '../common/Badge';
@@ -18,7 +18,7 @@ export const GigCard: React.FC<GigCardProps> = ({ gig, footer }) => {
   const city = client?.address?.city;
 
   return (
-    <motion.div
+    <m.div
       whileHover={{ y: -4 }}
       className="glass-card rounded-2xl p-5 border border-slate-800 flex flex-col h-full hover:border-slate-700 transition-all duration-300"
     >
@@ -88,6 +88,6 @@ export const GigCard: React.FC<GigCardProps> = ({ gig, footer }) => {
           )}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 };

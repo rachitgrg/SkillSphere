@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router';
 import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { LazyMotion } from 'framer-motion';
 import { store } from './store/store';
 import { configureAuth } from './api/axiosInstance';
 import { createQueryClient } from './api/queryClient';
@@ -15,6 +16,9 @@ import App from './App';
 import './index.css';
 
 const queryClient = createQueryClient();
+
+// Components use the lightweight `m` elements; the animation features arrive in their own chunk.
+const loadMotionFeatures = () => import('./motionFeatures').then((module) => module.default);
 
 configureAuth({
   getToken: () => store.getState().auth.token,
@@ -35,6 +39,7 @@ store.dispatch(bootstrapSession());
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <LazyMotion features={loadMotionFeatures} strict>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SocketProvider>
@@ -55,5 +60,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </SocketProvider>
       </QueryClientProvider>
     </Provider>
+    </LazyMotion>
   </React.StrictMode>
 );

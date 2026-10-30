@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Bell, Search, ChevronDown, User, LogOut,
   LayoutDashboard, MessageSquare, Zap,
@@ -140,7 +140,7 @@ export function Navbar({ hasSidebar = false }: { hasSidebar?: boolean }) {
 
                   <AnimatePresence>
                     {profileOpen && (
-                      <motion.div
+                      <m.div
                         initial={{ opacity: 0, y: -5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
@@ -161,7 +161,7 @@ export function Navbar({ hasSidebar = false }: { hasSidebar?: boolean }) {
                         <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 w-full transition-all">
                           <LogOut className="w-4 h-4" /> Sign Out
                         </button>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -195,7 +195,7 @@ export function Navbar({ hasSidebar = false }: { hasSidebar?: boolean }) {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileMenuOpen && !hasSidebar && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -219,7 +219,7 @@ export function Navbar({ hasSidebar = false }: { hasSidebar?: boolean }) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </nav>

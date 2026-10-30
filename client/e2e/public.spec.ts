@@ -10,6 +10,13 @@ test('a visitor browses the marketplace and opens a real gig', async ({ page }) 
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
+test('animation features load lazily after the first render', async ({ page }) => {
+  const features = page.waitForResponse((r) => /\/assets\/motionFeatures-[\w-]+\.js$/.test(r.url()) && r.ok());
+  await page.goto('/');
+  await features; // LazyMotion fetched framer-motion's features in their own chunk
+  await expect(page.getByRole('link', { name: /browse projects/i }).first()).toBeVisible();
+});
+
 for (const role of Object.keys(ACCOUNTS) as Role[]) {
   test(`${role} lands on their own dashboard after signing in`, async ({ page }) => {
     await login(page, role);
