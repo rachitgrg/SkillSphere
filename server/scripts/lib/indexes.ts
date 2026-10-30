@@ -1,7 +1,7 @@
-import { Model } from 'mongoose';
-import type { IndexDirection } from 'mongodb';
+import type { Model, mongo } from 'mongoose';
 
-type IndexSpec = Record<string, IndexDirection>;
+// The driver's types come through mongoose's re-export, so `mongodb` needn't be a direct dependency.
+type IndexSpec = Record<string, mongo.IndexDirection>;
 
 /** Options that change an index's behaviour; anything else (e.g. collation: simple) is ignored. */
 const MEANINGFUL = ['unique', 'sparse', 'expireAfterSeconds', 'weights', 'partialFilterExpression'] as const;
