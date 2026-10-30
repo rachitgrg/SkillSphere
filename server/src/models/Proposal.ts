@@ -66,6 +66,8 @@ const proposalSchema = new Schema<IProposal>(
       default: ProposalStatus.PENDING,
     },
     negotiationHistory: [negotiationEntrySchema],
+    // Set when the freelancer accepts the client's last counter-offer; cleared by any new counter.
+    agreedAt: Date,
     clientNotes: String,
     isBookmarked: { type: Boolean, default: false },
     submittedAt: { type: Date, default: Date.now },

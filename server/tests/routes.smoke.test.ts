@@ -93,6 +93,7 @@ const CASES: Record<string, Case> = {
   'GET /api/v1/proposals/gig/:gigId': { role: 'client', path: (i) => `/api/v1/proposals/gig/${i.openGigId}` },
   'GET /api/v1/proposals/:id': { role: 'freelancer', path: (i) => `/api/v1/proposals/${i.proposalId}` },
   'POST /api/v1/proposals/:id/negotiate': { role: 'client', path: (i) => `/api/v1/proposals/${i.proposalId}/negotiate`, body: () => ({ amount: 4, message: 'Can you do 4?' }) },
+  'POST /api/v1/proposals/:id/accept-offer': { role: 'freelancer', path: (i) => `/api/v1/proposals/${i.proposalId}/accept-offer` },
   'PUT /api/v1/proposals/:id/withdraw': { role: 'freelancer', path: (i) => `/api/v1/proposals/${i.withdrawProposalId}/withdraw` },
   'PUT /api/v1/proposals/:id/status': { role: 'client', path: (i) => `/api/v1/proposals/${i.proposalId}/status`, body: () => ({ status: 'negotiating' }) },
 

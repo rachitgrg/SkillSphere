@@ -101,7 +101,8 @@ function ClientProposal({ proposal, canHire, matchScore, milestoneTotal }: { pro
   const [counterOpen, setCounterOpen] = useState(false);
   const [confirmHire, setConfirmHire] = useState(false);
   const open = proposal.status === 'pending' || proposal.status === 'negotiating';
-  const waitingOnFreelancer = proposal.status === 'negotiating' && lastOfferBy(proposal) === me;
+  const agreed = proposal.status === 'negotiating' && Boolean(proposal.agreedAt);
+  const waitingOnFreelancer = proposal.status === 'negotiating' && lastOfferBy(proposal) === me && !agreed;
 
   const setStatus = async (status: 'accepted' | 'rejected') => {
     try {
@@ -153,6 +154,11 @@ function ClientProposal({ proposal, canHire, matchScore, milestoneTotal }: { pro
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Negotiation</h4>
             <NegotiationThread proposal={proposal} meId={me} otherLabel={proposal.freelancer.firstName} />
             {waitingOnFreelancer && <p className="text-xs text-slate-500 mt-2">Waiting for the freelancer to respond.</p>}
+            {agreed && (
+              <p className="text-sm text-emerald-300 mt-2">
+                {proposal.freelancer.firstName} agreed to {formatCurrency(currentOffer(proposal))} — hire now.
+              </p>
+            )}
           </div>
         )}
       </ProposalCard>

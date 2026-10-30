@@ -418,6 +418,7 @@ export interface IProposal extends Document {
   attachments: string[];
   status: ProposalStatus;
   negotiationHistory: INegotiationEntry[];
+  agreedAt?: Date;
   clientNotes?: string;
   isBookmarked: boolean;
   submittedAt: Date;

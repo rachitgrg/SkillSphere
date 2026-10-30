@@ -37,6 +37,11 @@ export const useNegotiateProposal = () => {
   });
 };
 
+export const useAcceptOfferMutation = () => {
+  const invalidate = useInvalidateProposals();
+  return useMutation({ mutationFn: (id: string) => proposalApi.acceptOffer(id), onSuccess: invalidate });
+};
+
 export const useUpdateProposalStatus = () => {
   const invalidate = useInvalidateProposals();
   return useMutation({

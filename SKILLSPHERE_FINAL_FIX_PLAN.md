@@ -273,7 +273,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   If the Razorpay account is on manual capture, "verified" payments are only *authorized* and auto-refund
   after a few days. Either capture in `verifyAndEscrow`/webhook (`razorpay.payments.capture`) when the
   status is `authorized`, or document "enable auto-capture in the dashboard" in the README.
-- [ ] **P2‑4 Freelancer "accepting" a counter is a fake counter.** `Negotiation.tsx:90` accepts by
+- [x] **P2‑4 Freelancer "accepting" a counter is a fake counter.** `Negotiation.tsx:90` accepts by
   posting the same amount as a new counter-offer. Add an explicit `POST /proposals/:id/accept-offer`
   (freelancer only, last offer must be the client's) that records `agreedAt` and keeps status
   `negotiating`, and show "Freelancer agreed to ₹X — hire now" on the client side.

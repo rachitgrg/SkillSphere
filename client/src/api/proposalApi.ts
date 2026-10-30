@@ -21,6 +21,8 @@ export const proposalApi = {
   /** Either party counters; the latest amount becomes finalAmount. */
   negotiate: (id: string, amount: number, message: string) =>
     data(axiosInstance.post<ApiResponse<Proposal>>(`/proposals/${id}/negotiate`, { amount, message })),
+  /** Freelancer accepts the client's last counter-offer. */
+  acceptOffer: (id: string) => data(axiosInstance.post<ApiResponse<Proposal>>(`/proposals/${id}/accept-offer`)),
 
   withdraw: (id: string) => data(axiosInstance.put<ApiResponse<Proposal>>(`/proposals/${id}/withdraw`)),
 };

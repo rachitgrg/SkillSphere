@@ -438,6 +438,8 @@ export interface Proposal {
   attachments: string[];
   status: ProposalStatus;
   negotiationHistory: NegotiationEntry[];
+  /** The freelancer accepted the client's last counter-offer (cleared by any new counter). */
+  agreedAt?: string;
   clientNotes?: string;
   submittedAt: string;
   respondedAt?: string;

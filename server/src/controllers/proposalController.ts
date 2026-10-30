@@ -304,6 +304,7 @@ export const negotiateProposal = async (req: AuthRequest, res: Response, next: N
     proposal.negotiationHistory.push({ proposedBy: req.user!._id, amount, message, createdAt: new Date() });
     proposal.finalAmount = amount;
     proposal.status = ProposalStatus.NEGOTIATING;
+    proposal.agreedAt = undefined; // a new offer replaces any earlier agreement
     await proposal.save();
 
     const recipient = isClient ? proposal.freelancer.toString() : gig.client.toString();
@@ -318,6 +319,51 @@ export const negotiateProposal = async (req: AuthRequest, res: Response, next: N
     });
 
     res.status(200).json({ success: true, message: 'Offer sent', data: proposal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /proposals/:id/accept-offer — the freelancer agrees to the client's last counter-offer.
+ * Records agreedAt (the client still decides when to hire); the status stays "negotiating".
+ */
+export const acceptOffer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const proposal = await Proposal.findById(req.params.id);
+    if (!proposal || proposal.freelancer.toString() !== req.user!._id.toString()) {
+      res.status(404).json({ success: false, message: 'Proposal not found' });
+      return;
+    }
+    const gig = await Gig.findById(proposal.gig).select('client title status');
+    const last = proposal.negotiationHistory.at(-1);
+    if (!gig || gig.status !== GigStatus.OPEN || proposal.status !== ProposalStatus.NEGOTIATING || !last) {
+      res.status(409).json({ success: false, message: 'There is no offer to accept on this proposal' });
+      return;
+    }
+    if (last.proposedBy.toString() !== gig.client.toString()) {
+      res.status(409).json({ success: false, message: 'The last offer is yours; wait for the client to respond' });
+      return;
+    }
+    if (proposal.agreedAt) {
+      res.status(200).json({ success: true, message: 'Offer already accepted', data: proposal });
+      return;
+    }
+
+    proposal.agreedAt = new Date();
+    await proposal.save();
+
+    await notificationService.create({
+      recipient: gig.client.toString(),
+      sender: req.user!._id.toString(),
+      type: NotificationType.PROPOSAL_COUNTERED,
+      title: 'Offer accepted',
+      message: `The freelancer agreed to ₹${last.amount.toLocaleString('en-IN')} for "${gig.title}". You can hire them now.`,
+      data: { proposalId: proposal._id.toString(), gigId: gig._id.toString(), amount: last.amount },
+      link: `/client/gigs/${gig._id}/proposals`,
+    });
+
+    res.status(200).json({ success: true, message: 'Offer accepted', data: proposal });
   } catch (error) {
     next(error);
   }

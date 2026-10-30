@@ -65,7 +65,8 @@ function MyProposalRow({ proposal }: { proposal: Proposal }) {
   const acceptOffer = useAcceptOffer();
   const [counterOpen, setCounterOpen] = useState(false);
   const open = proposal.status === 'pending' || proposal.status === 'negotiating';
-  const theirMove = proposal.status === 'negotiating' && lastOfferBy(proposal) !== me;
+  const agreed = proposal.status === 'negotiating' && Boolean(proposal.agreedAt);
+  const theirMove = proposal.status === 'negotiating' && lastOfferBy(proposal) !== me && !agreed;
 
   const onWithdraw = async () => {
     try {
@@ -110,6 +111,11 @@ function MyProposalRow({ proposal }: { proposal: Proposal }) {
 
       {theirMove && (
         <p className="mt-3 text-sm text-amber-300">The client sent a counter-offer — accept it or reply with your own.</p>
+      )}
+      {agreed && (
+        <p className="mt-3 text-sm text-emerald-300">
+          You agreed to {formatCurrency(currentOffer(proposal))}. Waiting for the client to hire you.
+        </p>
       )}
 
       {(open || proposal.status === 'accepted') && (

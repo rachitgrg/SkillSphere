@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { useNegotiateProposal } from '../../hooks/queries/useProposals';
+import { useAcceptOfferMutation } from '../../hooks/queries/useProposals';
 import type { Proposal } from '../../types';
 import { getErrorMessage } from '../../utils/helpers';
 
@@ -9,14 +9,14 @@ export const currentOffer = (proposal: Proposal) => proposal.finalAmount ?? prop
 /** Who made the last counter-offer, if any. */
 export const lastOfferBy = (proposal: Proposal) => proposal.negotiationHistory.at(-1)?.proposedBy;
 
-/** Accepts the other party's last counter by echoing it back (it then becomes the agreed amount). */
+/** The freelancer accepts the client's last counter-offer; the client can then hire at that amount. */
 export function useAcceptOffer() {
-  const negotiate = useNegotiateProposal();
+  const acceptOffer = useAcceptOfferMutation();
   return {
-    isPending: negotiate.isPending,
+    isPending: acceptOffer.isPending,
     accept: async (proposal: Proposal) => {
       try {
-        await negotiate.mutateAsync({ id: proposal._id, amount: currentOffer(proposal), message: 'Offer accepted' });
+        await acceptOffer.mutateAsync(proposal._id);
         toast.success('Offer accepted. The client can now hire you at this amount.');
       } catch (error) {
         toast.error(getErrorMessage(error, 'Could not accept the offer'));
