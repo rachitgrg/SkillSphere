@@ -389,6 +389,15 @@ class PaymentService {
       throw new HttpError(400, 'Payment cannot be refunded in its current state');
     }
 
+    // A pending order never captured money: cancel it rather than record a refund, so refund
+    // totals and the CSV export only show money that actually went back.
+    if (payment.status === PaymentStatus.PENDING) {
+      payment.status = PaymentStatus.CANCELLED;
+      payment.failureReason = reason;
+      await payment.save();
+      return payment;
+    }
+
     // Simulated captures ("sim_pay_…") never touched a gateway.
     if (payment.razorpayPaymentId && !payment.razorpayPaymentId.startsWith('sim_')) {
       const { razorpay } = this.assertConfigured();
@@ -403,7 +412,6 @@ class PaymentService {
       }
     }
 
-    const wasCaptured = payment.status !== PaymentStatus.PENDING;
     payment.status = PaymentStatus.REFUNDED;
     payment.refundedAt = new Date();
     payment.refundReason = reason;
@@ -416,23 +424,21 @@ class PaymentService {
         { $set: { 'milestones.$.status': MilestoneStatus.PENDING } }
       );
     }
-    if (wasCaptured) {
-      const gig = await Gig.findById(payment.gig).select('title milestones');
-      const what = this.describe(payment, gig);
-      await Promise.all(
-        [payment.client, payment.freelancer].map((recipient) =>
-          notificationService.create({
-            recipient: recipient.toString(),
-            type: NotificationType.PAYMENT_REFUNDED,
-            title: 'Payment refunded',
-            message: `${formatCurrency(amount ?? payment.amount)} for ${what} was refunded to the client. Reason: ${reason}`,
-            data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
-            link: paymentLink,
-            category: 'payments',
-          })
-        )
-      );
-    }
+    const gig = await Gig.findById(payment.gig).select('title milestones');
+    const what = this.describe(payment, gig);
+    await Promise.all(
+      [payment.client, payment.freelancer].map((recipient) =>
+        notificationService.create({
+          recipient: recipient.toString(),
+          type: NotificationType.PAYMENT_REFUNDED,
+          title: 'Payment refunded',
+          message: `${formatCurrency(amount ?? payment.amount)} for ${what} was refunded to the client. Reason: ${reason}`,
+          data: { gigId: payment.gig.toString(), paymentId: payment._id.toString() },
+          link: paymentLink,
+          category: 'payments',
+        })
+      )
+    );
     return payment;
   }
 

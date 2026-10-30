@@ -137,4 +137,15 @@ describe('paymentService money movements', () => {
     expect(paid!.payout!.reference).toMatch(/^sim_payout_/);
     expect(await paymentService.processPayouts()).toBe(0);
   });
+
+  it('refunding a never-captured pending payment cancels it instead (P2-2)', async () => {
+    const { payment } = await escrowed();
+    await Payment.updateOne({ _id: payment._id }, { $set: { status: PaymentStatus.PENDING }, $unset: { razorpayPaymentId: 1 } });
+    const cancelled = await paymentService.refundPayment(payment._id, 'Client changed their mind');
+    expect(cancelled.status).toBe(PaymentStatus.CANCELLED);
+    expect(cancelled.refundedAt).toBeUndefined();
+    expect(cancelled.failureReason).toBe('Client changed their mind');
+    expect(mockRazorpay.payments.refund).not.toHaveBeenCalled();
+    expect(await Payment.countDocuments({ status: PaymentStatus.REFUNDED })).toBe(0);
+  });
 });

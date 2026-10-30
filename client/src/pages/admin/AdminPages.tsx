@@ -301,6 +301,7 @@ export function PaymentMonitoring() {
         { value: 'refunded', label: 'Refunded', count: totals.refunded?.count },
         { value: 'pending', label: 'Pending', count: totals.pending?.count },
         { value: 'failed', label: 'Failed', count: totals.failed?.count },
+        { value: 'cancelled', label: 'Cancelled', count: totals.cancelled?.count },
       ]} />
       <QueryState isLoading={payments.isLoading} isError={payments.isError} error={payments.error} onRetry={() => payments.refetch()} isEmpty={!payments.data?.items.payments.length} empty={{ title: 'No payments', description: 'Nothing in this status.' }}>
         <div className="glass-card rounded-2xl border border-slate-800 overflow-x-auto">

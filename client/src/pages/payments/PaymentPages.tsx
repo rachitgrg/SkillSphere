@@ -84,6 +84,7 @@ export function TransactionHistoryPage() {
           { value: 'disputed', label: 'Disputed' },
           { value: 'pending', label: 'Pending' },
           { value: 'failed', label: 'Failed' },
+          { value: 'cancelled', label: 'Cancelled' },
         ]}
       />
 
