@@ -5,9 +5,7 @@ import { useSocket } from './SocketContext';
 import { Avatar } from '../components/common/Avatar';
 import type { UserSummary } from '../types';
 import { fullName } from '../utils/helpers';
-
-/** Google's public STUN servers; enough for most home/office NATs (no TURN relay). */
-const ICE_SERVERS: RTCIceServer[] = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+import { ICE_SERVERS } from '../config';
 const RING_TIMEOUT_MS = 30_000;
 
 type Phase = 'outgoing' | 'incoming' | 'connected';

@@ -369,7 +369,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     lazy. framer-motion is deliberately *not* a manual chunk (that would pull the async features back in).
 - [x] **P3‑10 OG image must be absolute.** `client/index.html:14` uses `/og-image.png`; social crawlers
   need an absolute URL. Inject it at build time from `VITE_PUBLIC_URL` (or the deploy URL).
-- [ ] **P3‑11 WebRTC needs TURN to work across networks.** `contexts/CallContext.tsx:10` has STUN only;
+- [x] **P3‑11 WebRTC needs TURN to work across networks.** `contexts/CallContext.tsx:10` has STUN only;
   calls fail behind symmetric NAT / mobile networks. Make ICE servers configurable
   (`VITE_TURN_URL/USERNAME/CREDENTIAL`) and document the limitation if no TURN is supplied.
 - [ ] **P3‑12 Chat file URL check is too loose.** `sockets/chatSocket.ts` accepts any
