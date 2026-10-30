@@ -19,6 +19,10 @@ import '../src/models/Conversation';
 import '../src/models/Message';
 import '../src/models/Notification';
 import '../src/models/AdminLog';
+import '../src/models/Booking';
+import '../src/models/GigView';
+import '../src/models/Lock';
+import '../src/models/ProfileView';
 
 async function main() {
   await mongoose.connect(env.MONGO_URI);

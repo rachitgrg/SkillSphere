@@ -2,7 +2,9 @@ import crypto from 'crypto';
 import { Request } from 'express';
 import { Types } from 'mongoose';
 import ProfileView from '../models/ProfileView';
-import { AuthRequest } from '../types';
+import Gig from '../models/Gig';
+import GigView from '../models/GigView';
+import { AuthRequest, UserRole } from '../types';
 
 const DAY = 86_400_000;
 
@@ -32,6 +34,28 @@ export const recordProfileView = async (req: Request, freelancerId: Types.Object
     );
   } catch (error) {
     if ((error as { code?: number }).code !== 11000) console.warn(`⚠️  Profile view not recorded: ${(error as Error).message}`);
+  }
+};
+
+/**
+ * Counts a gig view on Gig.views, at most once per viewer per day; the owner and admins are not
+ * counted. Never throws: a failed counter must not break the gig page.
+ */
+export const recordGigView = async (req: Request, gig: { _id: Types.ObjectId; client: Types.ObjectId }): Promise<void> => {
+  const user = (req as AuthRequest).user;
+  if (user && (user._id.equals(gig.client) || user.role === UserRole.ADMIN)) return;
+  const key = viewerKey(req);
+  try {
+    // Same dedupe as profile views: a repeat viewer misses the filter and the upsert hits the unique index.
+    const res = await GigView.updateOne(
+      { gig: gig._id, day: startOfUtcDay(new Date()), viewers: { $ne: key } },
+      { $push: { viewers: key } },
+      { upsert: true }
+    );
+    // Atomic increment: never re-validates (or rewrites) the whole gig document.
+    if (res.modifiedCount || res.upsertedCount) await Gig.updateOne({ _id: gig._id }, { $inc: { views: 1 } });
+  } catch (error) {
+    if ((error as { code?: number }).code !== 11000) console.warn(`⚠️  Gig view not recorded: ${(error as Error).message}`);
   }
 };
 

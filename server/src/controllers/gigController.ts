@@ -10,6 +10,7 @@ import uploadService from '../services/uploadService';
 import { uploadedFiles } from '../middleware/upload';
 import embeddingService from '../services/embeddingService';
 import reputationService from '../services/reputationService';
+import { recordGigView } from '../services/profileViewService';
 import { AuthRequest, UserRole, GigStatus, IGig, NotificationType, PaymentStatus, ProposalStatus } from '../types';
 import { buildPaginationResponse, parsePaginationParams, pick } from '../utils/helpers';
 import { buildPublicGigFilter, gigSort, isInvited, toStringList } from '../services/gigQuery';
@@ -147,8 +148,7 @@ export const getGigById = async (req: AuthRequest, res: Response, next: NextFunc
       return;
     }
 
-    // Atomic increment: never re-validates (or rewrites) the whole document.
-    await Gig.updateOne({ _id: req.params.id }, { $inc: { views: 1 } });
+    await recordGigView(req, existing);
 
     const gig = await Gig.findById(req.params.id)
       .populate('client', 'firstName lastName avatar address')

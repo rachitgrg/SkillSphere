@@ -282,7 +282,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   once by its final outcome (completed / cancelled / completed-after-lost-dispute).
 - [x] **P2‑6 Admin payment summary is empty.** `paymentController.ts:177` maps admin to the freelancer
   branch, so `/payments/summary` shows zeros for admins. Return platform-wide totals for admins.
-- [ ] **P2‑7 Gig views are inflated.** `gigController.ts:148` increments `views` on every fetch,
+- [x] **P2‑7 Gig views are inflated.** `gigController.ts:148` increments `views` on every fetch,
   including the owner, admins and React Query refetches. Count only non-owner viewers, deduplicated per
   viewer per day (reuse `profileViewService`'s approach).
 - [ ] **P2‑8 Proposal acceptance is not atomic.** `proposalController.ts` claims the gig
