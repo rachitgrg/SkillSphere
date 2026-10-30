@@ -22,7 +22,8 @@ const booleanFlag = z.preprocess(
   z.boolean().default(false)
 );
 
-const schema = z.object({
+/** Exported so tests can check that .env.example lists every variable. */
+export const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
   // Reverse proxies in front of the API (Render/Railway: 1). Without it req.ip is the proxy's address,
@@ -78,7 +79,6 @@ const schema = z.object({
   AUTO_RELEASE_DAYS: z.coerce.number().positive().default(7),
   PAYOUT_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(59).default(5),
 
-  ADMIN_EMAIL: optionalString,
   PLATFORM_FEE_PERCENTAGE: z.coerce.number().min(0).max(100).default(10),
 });
 

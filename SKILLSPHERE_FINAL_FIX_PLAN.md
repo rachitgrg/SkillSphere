@@ -313,7 +313,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 
 ### P3 — Cleanup: dead code, unused files, config gaps
 
-- [ ] **P3‑1 `.env.example` is incomplete / stale.** Missing: `COOKIE_SAMESITE`,
+- [x] **P3‑1 `.env.example` is incomplete / stale.** Missing: `COOKIE_SAMESITE`,
   `TWO_FACTOR_ENCRYPTION_KEY`, `TRUST_PROXY` (new), `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`,
   `SEED_DEMO_PASSWORD`, and a client section with `VITE_API_URL` (create `client/.env.example`).
   `ADMIN_EMAIL` is declared in `server/src/config/env.ts:78` and the example but **never used** — remove
