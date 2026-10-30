@@ -285,10 +285,12 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑7 Gig views are inflated.** `gigController.ts:148` increments `views` on every fetch,
   including the owner, admins and React Query refetches. Count only non-owner viewers, deduplicated per
   viewer per day (reuse `profileViewService`'s approach).
-- [ ] **P2‑8 Proposal acceptance is not atomic.** `proposalController.ts` claims the gig
+- [x] **P2‑8 Proposal acceptance is not atomic.** `proposalController.ts` claims the gig
   (`in_progress`) before saving the proposal and rejecting the others; an error in between leaves a gig
   in progress with a pending proposal. Use a Mongo transaction (`session.withTransaction`) — Atlas and
   `mongodb-memory-server` replica-set mode support it — or reorder so the failure is recoverable.
+  - Done by reordering (tests run on a standalone mongod without transactions): claim → milestones →
+    reject others → guarded accept → counters/notify; clicking Hire again resumes a half-done hire.
 - [ ] **P2‑9 Google account linking trusts any email.** `config/passport.ts:46` links Google to an
   existing account by email without checking `profile.emails[0].verified`; also there is no OAuth
   `state` (login CSRF). Require `verified === true` and pass `state: true` (or a signed nonce cookie).

@@ -162,9 +162,18 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
     }
 
     if (status === ProposalStatus.ACCEPTED) {
-      // Guarded claim: only one proposal can ever win the gig, even under concurrent accepts.
+      // Hiring runs as steps ordered so that a failure part-way is finished by clicking Hire again:
+      // claim → milestones (idempotent) → reject the others → accept this one → counters/notify.
+      // Guarded claim: only one proposal can ever win the gig, even under concurrent accepts. The
+      // second branch resumes a hire of this same freelancer that stopped before step 4.
       const claimed = await Gig.findOneAndUpdate(
-        { _id: gig._id, status: GigStatus.OPEN, selectedFreelancer: null },
+        {
+          _id: gig._id,
+          $or: [
+            { status: GigStatus.OPEN, selectedFreelancer: null },
+            { status: GigStatus.IN_PROGRESS, selectedFreelancer: proposal.freelancer },
+          ],
+        },
         { $set: { selectedFreelancer: proposal.freelancer, status: GigStatus.IN_PROGRESS } },
         { returnDocument: 'after' }
       );
@@ -194,9 +203,7 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
       }
       if (claimed.isModified('milestones')) await claimed.save();
 
-      proposal.finalAmount = agreed;
-      await ClientProfile.updateOne({ user: gig.client }, { $inc: { activeGigs: 1 } });
-
+      const ids = [gig._id.toString(), gig.client.toString()] as const;
       const others = await Proposal.find({
         gig: gig._id,
         _id: { $ne: proposal._id },
@@ -206,13 +213,34 @@ export const updateProposalStatus = async (req: AuthRequest, res: Response, next
         { _id: { $in: others.map((o) => o._id) } },
         { $set: { status: ProposalStatus.REJECTED, respondedAt: new Date() } }
       );
-
-      const ids = [gig._id.toString(), gig.client.toString()] as const;
-      await notificationService.notifyProposalAccepted(proposal.freelancer.toString(), ids[1], gig.title, ids[0]);
       await Promise.all(
         others.map((o) => notificationService.notifyProposalRejected(o.freelancer.toString(), ids[1], gig.title, ids[0]))
       );
-    } else if (status === ProposalStatus.REJECTED) {
+
+      const accepted = await Proposal.findOneAndUpdate(
+        { _id: proposal._id, status: { $in: OPEN_PROPOSAL_STATUSES } },
+        {
+          $set: {
+            status: ProposalStatus.ACCEPTED,
+            finalAmount: agreed,
+            respondedAt: new Date(),
+            ...(clientNotes && { clientNotes }),
+          },
+        },
+        { returnDocument: 'after' }
+      );
+      if (!accepted) {
+        res.status(409).json({ success: false, message: 'This proposal was already handled' });
+        return;
+      }
+
+      await ClientProfile.updateOne({ user: gig.client }, { $inc: { activeGigs: 1 } });
+      await notificationService.notifyProposalAccepted(proposal.freelancer.toString(), ids[1], gig.title, ids[0]);
+      res.status(200).json({ success: true, message: 'Proposal status updated', data: accepted });
+      return;
+    }
+
+    if (status === ProposalStatus.REJECTED) {
       await notificationService.notifyProposalRejected(
         proposal.freelancer.toString(), gig.client.toString(), gig.title, gig._id.toString()
       );

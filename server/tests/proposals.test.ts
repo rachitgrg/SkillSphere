@@ -1,9 +1,10 @@
 import request from 'supertest';
 import app from '../src/app';
+import ClientProfile from '../src/models/ClientProfile';
 import Gig from '../src/models/Gig';
 import Notification from '../src/models/Notification';
 import Proposal from '../src/models/Proposal';
-import { GigStatus, ProposalStatus, UserRole } from '../src/types';
+import { GigStatus, NotificationType, ProposalStatus, UserRole } from '../src/types';
 import { createGig, createUser } from './helpers';
 
 const proposalBody = (gigId: string, extra: Record<string, unknown> = {}) => ({
@@ -77,6 +78,31 @@ describe('PUT /api/v1/proposals/:id/status (1.12)', () => {
     const pb = await apply(b.auth, proposalBody(gig.id));
     return { client, a, b, gig, pa: pa.body.data._id as string, pb: pb.body.data._id as string };
   };
+
+  it('a hire that fails part-way is completed by retrying, with counters counted once (P2-8)', async () => {
+    const { client, a, b, gig, pa, pb } = await setup();
+    const reject = jest.spyOn(Proposal, 'updateMany').mockRejectedValueOnce(new Error('connection reset'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect((await setStatus(client.auth, pa, 'accepted')).status).toBe(500);
+    // Stuck half-way: the gig is claimed but the proposal is still open.
+    expect((await Gig.findById(gig._id))!.status).toBe(GigStatus.IN_PROGRESS);
+    expect((await Proposal.findById(pa))!.status).toBe(ProposalStatus.PENDING);
+    reject.mockRestore();
+
+    // Another freelancer's proposal still can't take the gig...
+    expect((await setStatus(client.auth, pb, 'accepted')).status).toBe(409);
+    // ...but hiring the same one again finishes the job.
+    const retried = await setStatus(client.auth, pa, 'accepted');
+    expect(retried.status).toBe(200);
+    expect(retried.body.data.status).toBe(ProposalStatus.ACCEPTED);
+    expect((await Proposal.findById(pb))!.status).toBe(ProposalStatus.REJECTED);
+    expect((await ClientProfile.findOne({ user: client.user._id }))!.activeGigs).toBe(1);
+    expect(await Notification.countDocuments({ recipient: a.user._id, type: NotificationType.PROPOSAL_ACCEPTED })).toBe(1);
+    expect(await Notification.countDocuments({ recipient: b.user._id, type: NotificationType.PROPOSAL_REJECTED })).toBe(1);
+
+    expect((await setStatus(client.auth, pa, 'accepted')).status).toBe(409); // already accepted
+    jest.restoreAllMocks();
+  });
 
   it('accepting hires the freelancer, copies milestones and auto-rejects the others', async () => {
     const { client, a, b, gig, pa, pb } = await setup();
