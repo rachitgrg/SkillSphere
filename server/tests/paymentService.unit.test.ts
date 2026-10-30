@@ -10,7 +10,10 @@ import { createGig, createUser } from './helpers';
 
 const KEY_SECRET = 'unit_test_key_secret';
 const WEBHOOK_SECRET = 'unit_test_webhook_secret';
-const mockRazorpay = { payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })) }, orders: { create: jest.fn() } };
+const mockRazorpay = {
+  payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })), fetch: jest.fn(async (id: string) => ({ id, status: 'captured' })), capture: jest.fn(async (id: string) => ({ id, status: 'captured' })) },
+  orders: { create: jest.fn() },
+};
 jest.mock('../src/config/razorpay', () => ({
   getRazorpay: () => mockRazorpay,
   getRazorpayKeys: () => ({ keyId: 'rzp_test_key', keySecret: 'unit_test_key_secret', webhookSecret: 'unit_test_webhook_secret' }),

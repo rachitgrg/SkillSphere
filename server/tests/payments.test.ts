@@ -13,7 +13,11 @@ const mockRazorpay = {
   orders: {
     create: jest.fn(async (o: { amount: number; currency: string }) => ({ id: `order_${++mockState.orderSeq}`, ...o })),
   },
-  payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })) },
+  payments: {
+    refund: jest.fn(async () => ({ id: 'rfnd_1' })),
+    fetch: jest.fn(async (id: string) => ({ id, status: 'captured' })),
+    capture: jest.fn(async (id: string) => ({ id, status: 'captured' })),
+  },
 };
 jest.mock('../src/config/razorpay', () => ({
   getRazorpay: () => (mockState.configured ? mockRazorpay : null),

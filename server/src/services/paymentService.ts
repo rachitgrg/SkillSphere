@@ -150,6 +150,7 @@ class PaymentService {
             amount: Math.round(amount * 100), // paise
             currency: 'INR',
             receipt: `gig_${gig._id.toString().slice(-12)}_${Date.now()}`,
+            payment_capture: true, // capture on authorization; ensureCaptured covers accounts that ignore it
             notes: { gigId: gig._id.toString(), milestoneId: milestoneId?.toString() ?? '' },
           })
         ).id
@@ -210,6 +211,8 @@ class PaymentService {
       return this.refundStrayCapture(current, gatewayPaymentId, 'The order was cancelled before the payment completed');
     }
 
+    await this.ensureCaptured(current, gatewayPaymentId);
+
     let updated: IPayment | null;
     try {
       updated = await Payment.findOneAndUpdate(
@@ -268,6 +271,22 @@ class PaymentService {
       }),
     ]);
     return updated;
+  }
+
+  /**
+   * On a Razorpay account set to manual capture, a successful Checkout only *authorizes* the
+   * payment, and Razorpay refunds it automatically after a few days. Capture it before treating the
+   * money as held in escrow; anything other than authorized/captured is refused.
+   */
+  private async ensureCaptured(payment: IPayment, gatewayPaymentId: string): Promise<void> {
+    if (gatewayPaymentId.startsWith('sim_')) return;
+    const { razorpay } = this.assertConfigured();
+    const remote = await razorpay.payments.fetch(gatewayPaymentId);
+    if (remote.status === 'authorized') {
+      await razorpay.payments.capture(gatewayPaymentId, Math.round(payment.amount * 100), payment.currency);
+    } else if (remote.status !== 'captured') {
+      throw new HttpError(409, `The payment is ${remote.status}, not completed`);
+    }
   }
 
   /**
@@ -482,7 +501,7 @@ class PaymentService {
 
   /**
    * Razorpay webhook (raw body + X-Razorpay-Signature, HMAC-SHA256 with RAZORPAY_WEBHOOK_SECRET).
-   * Handles payment.captured, payment.failed and refund.processed; every branch is idempotent.
+   * Handles payment.authorized/captured, payment.failed and refund.processed; every branch is idempotent.
    * Returns false when the signature is invalid.
    */
   async handleWebhook(rawBody: Buffer, signature: string | undefined): Promise<boolean> {
@@ -494,7 +513,8 @@ class PaymentService {
     const event = JSON.parse(rawBody.toString('utf8')) as WebhookEvent;
     const entity = event.payload.payment?.entity;
 
-    if (event.event === 'payment.captured' && entity) {
+    // "authorized" arrives first on manual-capture accounts; markEscrowed captures it.
+    if ((event.event === 'payment.captured' || event.event === 'payment.authorized') && entity) {
       const payment = await Payment.findOne({ razorpayOrderId: entity.order_id });
       if (payment) await this.markEscrowed(payment, entity.id);
     } else if (event.event === 'payment.failed' && entity) {

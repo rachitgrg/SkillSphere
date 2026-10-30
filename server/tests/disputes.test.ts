@@ -9,7 +9,10 @@ import { createGig, createUser } from './helpers';
 import { features } from '../src/config/env';
 import uploadService from '../src/services/uploadService';
 
-const mockRazorpay = { payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })) }, orders: { create: jest.fn() } };
+const mockRazorpay = {
+  payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })), fetch: jest.fn(async (id: string) => ({ id, status: 'captured' })), capture: jest.fn(async (id: string) => ({ id, status: 'captured' })) },
+  orders: { create: jest.fn() },
+};
 jest.mock('../src/config/razorpay', () => ({
   getRazorpay: () => mockRazorpay,
   getRazorpayKeys: () => ({ keyId: 'rzp_test_key', keySecret: 'test_key_secret' }),

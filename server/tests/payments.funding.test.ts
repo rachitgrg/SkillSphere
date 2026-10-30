@@ -10,7 +10,11 @@ import { createGig, createUser } from './helpers';
 let orderSeq = 0;
 const mockRazorpay = {
   orders: { create: jest.fn(async (o: { amount: number }) => ({ id: `order_${++orderSeq}`, ...o })) },
-  payments: { refund: jest.fn(async () => ({ id: 'rfnd_1' })) },
+  payments: {
+    refund: jest.fn(async () => ({ id: 'rfnd_1' })),
+    fetch: jest.fn(async (id: string) => ({ id, status: 'captured' })),
+    capture: jest.fn(async (id: string) => ({ id, status: 'captured' })),
+  },
 };
 jest.mock('../src/config/razorpay', () => ({
   getRazorpay: () => mockRazorpay,

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import request from 'supertest';
 import app from '../src/app';
 import { env, features } from '../src/config/env';
+import * as razorpayConfig from '../src/config/razorpay';
 import ClientProfile from '../src/models/ClientProfile';
 import FreelancerProfile from '../src/models/FreelancerProfile';
 import Gig from '../src/models/Gig';
@@ -162,7 +163,19 @@ describe('Razorpay webhook (4.7)', () => {
   afterEach(() => {
     Object.assign(env, { RAZORPAY_KEY_ID: undefined, RAZORPAY_KEY_SECRET: undefined, RAZORPAY_WEBHOOK_SECRET: undefined });
     features.razorpay = false;
+    jest.restoreAllMocks();
   });
+
+  /** Stands in for the Razorpay API: payments report `status` until captured. */
+  const gateway = (status: string) => {
+    const payments = {
+      fetch: jest.fn(async (id: string) => ({ id, status })),
+      capture: jest.fn(async (id: string) => ({ id, status: 'captured' })),
+      refund: jest.fn(async () => ({ id: 'rfnd_x' })),
+    };
+    jest.spyOn(razorpayConfig, 'getRazorpay').mockReturnValue({ payments } as never);
+    return payments;
+  };
 
   const send = (body: object, signature?: string) => {
     const raw = JSON.stringify(body);
@@ -174,6 +187,7 @@ describe('Razorpay webhook (4.7)', () => {
   };
 
   it('captures, fails and refunds idempotently and rejects bad signatures', async () => {
+    gateway('captured');
     const { client, freelancer, gig, m1 } = await setup();
     const pending = await Payment.create({ gig: gig._id, milestone: m1, client: client.user._id, freelancer: freelancer.user._id, amount: 8000, razorpayOrderId: 'order_1' });
     const failing = await Payment.create({ gig: gig._id, client: client.user._id, freelancer: freelancer.user._id, amount: 100, razorpayOrderId: 'order_2' });
@@ -191,5 +205,24 @@ describe('Razorpay webhook (4.7)', () => {
 
     await send({ event: 'refund.processed', payload: { refund: { entity: { id: 'rfnd_1', payment_id: 'pay_1', amount: 800000 } } } }).expect(200);
     expect((await Payment.findById(pending._id))!.status).toBe(PaymentStatus.REFUNDED);
+  });
+
+  it('captures an authorized-only payment before escrow (manual-capture accounts, P2-3)', async () => {
+    const payments = gateway('authorized');
+    const { client, freelancer, gig, m1 } = await setup();
+    const pending = await Payment.create({ gig: gig._id, milestone: m1, client: client.user._id, freelancer: freelancer.user._id, amount: 8000, razorpayOrderId: 'order_a' });
+
+    await send({ event: 'payment.authorized', payload: { payment: { entity: { id: 'pay_a', order_id: 'order_a' } } } }).expect(200);
+    expect(payments.capture).toHaveBeenCalledWith('pay_a', 800000, 'INR');
+    expect((await Payment.findById(pending._id))!.status).toBe(PaymentStatus.ESCROW);
+  });
+
+  it('does not escrow a payment Razorpay reports as failed', async () => {
+    gateway('failed');
+    const { client, freelancer, gig, m1 } = await setup();
+    const pending = await Payment.create({ gig: gig._id, milestone: m1, client: client.user._id, freelancer: freelancer.user._id, amount: 8000, razorpayOrderId: 'order_f' });
+    const res = await send({ event: 'payment.captured', payload: { payment: { entity: { id: 'pay_f', order_id: 'order_f' } } } });
+    expect(res.status).toBe(409);
+    expect((await Payment.findById(pending._id))!.status).toBe(PaymentStatus.PENDING);
   });
 });

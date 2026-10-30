@@ -269,7 +269,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑2 Refunding a pending payment is recorded as "refunded".** `paymentService.ts:340` — a
   `pending` payment never captured money; mark it `cancelled` (add the status) so the refunded totals and
   CSV export are not inflated.
-- [ ] **P2‑3 `payment.captured` vs auto-capture.** `createOrder` doesn't pass `payment_capture`.
+- [x] **P2‑3 `payment.captured` vs auto-capture.** `createOrder` doesn't pass `payment_capture`.
   If the Razorpay account is on manual capture, "verified" payments are only *authorized* and auto-refund
   after a few days. Either capture in `verifyAndEscrow`/webhook (`razorpay.payments.capture`) when the
   status is `authorized`, or document "enable auto-capture in the dashboard" in the README.
