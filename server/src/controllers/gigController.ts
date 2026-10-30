@@ -262,6 +262,14 @@ export const deleteGig = async (req: AuthRequest, res: Response, next: NextFunct
 
     await Proposal.deleteMany({ gig: gig._id });
     await Gig.deleteOne({ _id: gig._id });
+    await ClientProfile.updateOne({ user: gig.client, postedGigs: { $gt: 0 } }, { $inc: { postedGigs: -1 } });
+    // Uploaded files go with the gig (best effort: a failed delete only leaves an orphan in Cloudinary).
+    const files = [
+      ...gig.attachments,
+      ...gig.milestones.flatMap((m) => m.submission?.attachments ?? []),
+      ...gig.progressLogs.flatMap((l) => l.attachments ?? []),
+    ];
+    await Promise.all(files.map((f) => uploadService.deleteFile(f.publicId, f.mimeType?.startsWith('image/') ? 'image' : 'raw')));
     res.status(200).json({ success: true, message: 'Gig deleted successfully' });
   } catch (error) {
     next(error);

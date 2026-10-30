@@ -1,9 +1,11 @@
 import request from 'supertest';
 import { Types } from 'mongoose';
 import app from '../src/app';
+import ClientProfile from '../src/models/ClientProfile';
 import Gig from '../src/models/Gig';
 import Payment from '../src/models/Payment';
 import Proposal from '../src/models/Proposal';
+import uploadService from '../src/services/uploadService';
 import { GigStatus, PaymentStatus, ProposalStatus, UserRole } from '../src/types';
 import { createGig, createUser } from './helpers';
 
@@ -21,6 +23,29 @@ describe('DELETE /api/v1/gigs/:id (1.15)', () => {
     expect(res.status).toBe(200);
     expect(await Gig.exists({ _id: gig._id })).toBeNull();
     expect(await Proposal.countDocuments({ gig: gig._id })).toBe(0);
+  });
+
+  it('deletes its uploaded files and decrements postedGigs (P3-13)', async () => {
+    const client = await createUser(UserRole.CLIENT);
+    await ClientProfile.updateOne({ user: client.user._id }, { postedGigs: 1 });
+    const gig = await createGig(client.user._id, {
+      attachments: [
+        { url: 'https://res.cloudinary.com/demo/image/upload/a.png', publicId: 'gigs/a', name: 'a.png', mimeType: 'image/png' },
+        { url: 'https://res.cloudinary.com/demo/raw/upload/b.pdf', publicId: 'gigs/b', name: 'b.pdf', mimeType: 'application/pdf' },
+      ],
+    });
+    const deleteFile = jest.spyOn(uploadService, 'deleteFile').mockResolvedValue();
+
+    await request(app).delete(`/api/v1/gigs/${gig.id}`).set(client.auth).expect(200);
+    expect(deleteFile).toHaveBeenCalledWith('gigs/a', 'image');
+    expect(deleteFile).toHaveBeenCalledWith('gigs/b', 'raw');
+    expect((await ClientProfile.findOne({ user: client.user._id }))!.postedGigs).toBe(0);
+
+    // Never below zero (e.g. gigs created before the counter existed).
+    const other = await createGig(client.user._id);
+    await request(app).delete(`/api/v1/gigs/${other.id}`).set(client.auth).expect(200);
+    expect((await ClientProfile.findOne({ user: client.user._id }))!.postedGigs).toBe(0);
+    deleteFile.mockRestore();
   });
 
   it('refuses to delete a gig that has started (suggests cancelling)', async () => {

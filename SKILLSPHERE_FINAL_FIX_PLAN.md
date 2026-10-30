@@ -374,7 +374,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   (`VITE_TURN_URL/USERNAME/CREDENTIAL`) and document the limitation if no TURN is supplied.
 - [x] **P3‑12 Chat file URL check is too loose.** `sockets/chatSocket.ts` accepts any
   `https://res.cloudinary.com/…` URL; restrict to `https://res.cloudinary.com/<CLOUDINARY_CLOUD_NAME>/`.
-- [ ] **P3‑13 Delete cleans up nothing.** `deleteGig` removes the gig and proposals but not its Cloudinary
+- [x] **P3‑13 Delete cleans up nothing.** `deleteGig` removes the gig and proposals but not its Cloudinary
   attachments, and does not decrement `ClientProfile.postedGigs`. Fix both.
 - [ ] **P3‑14 Health check is shallow.** `/health` always says OK. Report `mongoose.connection.readyState`
   (503 when not connected) so the host restarts a broken instance.
