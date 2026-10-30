@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { absoluteSocialMeta, resolvePublicUrl } from './src/socialMeta';
 
 // The API the dev server proxies to; e2e runs point it at the in-memory API (see playwright.config.ts).
 const apiTarget = process.env.VITE_PROXY_TARGET ?? 'http://127.0.0.1:5000';
@@ -37,10 +38,21 @@ const contentSecurityPolicy = (apiUrl?: string): Plugin => {
   };
 };
 
+/** Absolute og:image / og:url for production builds (see src/socialMeta.ts). */
+const socialMeta = (publicUrl?: string): Plugin => ({
+  name: 'skillsphere-social-meta',
+  apply: 'build',
+  transformIndexHtml: (html) => {
+    if (publicUrl) return absoluteSocialMeta(html, publicUrl);
+    console.warn('⚠️  VITE_PUBLIC_URL is not set: og:image stays relative, so link previews show no image.');
+    return html;
+  },
+});
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
-    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_API_URL)],
+    plugins: [react(), tailwindcss(), contentSecurityPolicy(env.VITE_API_URL), socialMeta(resolvePublicUrl({ ...process.env, ...env }))],
     build: {
       rollupOptions: {
         output: {

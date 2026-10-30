@@ -367,7 +367,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Done: entry chunk 631 kB → 150 kB (48 kB gzip). framer-motion via `LazyMotion` + `m` with its features in
     an async chunk (`motionFeatures.ts`); vendor chunks `react`, `data`, `realtime`; recharts was already
     lazy. framer-motion is deliberately *not* a manual chunk (that would pull the async features back in).
-- [ ] **P3‑10 OG image must be absolute.** `client/index.html:14` uses `/og-image.png`; social crawlers
+- [x] **P3‑10 OG image must be absolute.** `client/index.html:14` uses `/og-image.png`; social crawlers
   need an absolute URL. Inject it at build time from `VITE_PUBLIC_URL` (or the deploy URL).
 - [ ] **P3‑11 WebRTC needs TURN to work across networks.** `contexts/CallContext.tsx:10` has STUN only;
   calls fail behind symmetric NAT / mobile networks. Make ICE servers configurable
