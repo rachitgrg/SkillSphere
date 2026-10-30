@@ -302,7 +302,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑11 Presence leaks every online user id.** `config/socket.ts:60–61` broadcasts presence to
   everyone and sends the full online list on connect. Limit presence to users who share a conversation
   (emit to their `user:` rooms) or to the chat contacts list.
-- [ ] **P2‑12 Gig skill filter is case-sensitive.** `services/gigQuery.ts` `filter.skills = { $in: skills }`
+- [x] **P2‑12 Gig skill filter is case-sensitive.** `services/gigQuery.ts` `filter.skills = { $in: skills }`
   while freelancer search is case-insensitive. Use anchored case-insensitive regexes like
   `searchService.ts`, or normalise skills to a canonical case on save.
 - [ ] **P2‑13 Two sources of truth for location.** Both `User.location` and `FreelancerProfile.location`

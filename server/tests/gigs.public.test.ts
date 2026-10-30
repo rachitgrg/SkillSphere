@@ -35,6 +35,18 @@ describe('public marketplace (1.16)', () => {
     expect((await request(app).get(`/api/v1/gigs/${draft.id}`).set(client.auth)).status).toBe(200);
   });
 
+  it('matches skills case-insensitively and exactly, like freelancer search (P2-12)', async () => {
+    const { client } = await seed();
+    await createGig(client.user._id, { title: 'C++ engine', skills: ['C++'] });
+    const titles = async (skills: string) =>
+      (await request(app).get('/api/v1/gigs').query({ skills }).expect(200)).body.data.map((g: { title: string }) => g.title).sort();
+    expect(await titles('react')).toEqual(['React app']);
+    expect(await titles('NODE.JS,vue.js')).toEqual(['React app', 'Vue app']);
+    expect(await titles('c++')).toEqual(['C++ engine']);
+    expect(await titles('Reac')).toEqual([]); // whole skill only
+    expect(await titles('.*')).toEqual([]); // input is not a pattern
+  });
+
   it('filters by skills given as a comma string or repeated params', async () => {
     await seed();
     const comma = await request(app).get('/api/v1/search/gigs?skills=React,Go');

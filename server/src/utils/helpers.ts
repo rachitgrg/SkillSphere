@@ -119,3 +119,6 @@ export const escapeRegex = (input: string): string => input.replace(/[.*+?^${}()
 
 /** Case-insensitive "contains" matcher for untrusted input. */
 export const containsRegex = (input: string): RegExp => new RegExp(escapeRegex(String(input)), 'i');
+
+/** Case-insensitive whole-value matcher for untrusted input ("react" matches "React", not "React Native"). */
+export const exactRegex = (input: string): RegExp => new RegExp(`^${escapeRegex(String(input))}$`, 'i');

@@ -2,7 +2,7 @@ import { PipelineStage } from 'mongoose';
 import Gig from '../models/Gig';
 import FreelancerProfile from '../models/FreelancerProfile';
 import { GigStatus } from '../types';
-import { containsRegex, escapeRegex } from '../utils/helpers';
+import { containsRegex, exactRegex } from '../utils/helpers';
 import { env } from '../config/env';
 import { toStringList } from './gigQuery';
 import cacheService from './cacheService';
@@ -82,7 +82,7 @@ class SearchService {
     }
 
     const skills = toStringList(query.skills);
-    if (skills.length) match['skills.name'] = { $in: skills.map((s) => new RegExp(`^${escapeRegex(s)}$`, 'i')) };
+    if (skills.length) match['skills.name'] = { $in: skills.map(exactRegex) };
 
     const minRate = toNumber(query.minRate);
     const maxRate = toNumber(query.maxRate);

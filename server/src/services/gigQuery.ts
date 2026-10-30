@@ -1,5 +1,6 @@
 import { QueryFilter, SortOrder, Types } from 'mongoose';
 import { GigStatus, IGig } from '../types';
+import { exactRegex } from '../utils/helpers';
 
 /** Accepts `?skills=a,b`, `?skills=a&skills=b` or a JSON-less array and returns trimmed, non-empty values. */
 export const toStringList = (value: unknown): string[] => {
@@ -36,7 +37,7 @@ export const buildPublicGigFilter = (query: Record<string, unknown>): QueryFilte
   if (typeof query.category === 'string' && query.category) filter.category = query.category;
 
   const skills = toStringList(query.skills);
-  if (skills.length) filter.skills = { $in: skills };
+  if (skills.length) filter.skills = { $in: skills.map(exactRegex) }; // case-insensitive, like freelancer search
 
   const min = toNumber(query.budgetMin ?? query.minBudget);
   const max = toNumber(query.budgetMax ?? query.maxBudget);
