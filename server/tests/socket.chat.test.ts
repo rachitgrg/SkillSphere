@@ -264,3 +264,37 @@ describe('a failing socket handler is contained (P1-7)', () => {
     expect(res).toEqual({ ok: false, error: expect.any(String) });
   });
 });
+
+describe('presence only reaches chat contacts (P2-11)', () => {
+  /** Connects and resolves with the socket plus the first presence:list it receives. */
+  const connectWithList = async (token: string) => {
+    const socket = ioClient(url, { auth: { token }, transports: ['websocket'], reconnection: false });
+    sockets.push(socket);
+    const list = new Promise<string[]>((resolve) => socket.once('presence:list', ({ online }: { online: string[] }) => resolve(online)));
+    await new Promise<void>((resolve, reject) => {
+      socket.on('connect', () => resolve());
+      socket.on('connect_error', reject);
+    });
+    return { socket, list: await list };
+  };
+
+  it('contacts see each other come and go; outsiders see nothing and are not listed', async () => {
+    const { client, freelancer, outsider } = await setup(); // client and freelancer share a conversation
+
+    const a = await connectWithList(client.token);
+    const outsiderEvents = collect<{ userId: string }>(a.socket, 'presence', 400);
+    const o = await connectWithList(outsider.token);
+    expect(o.list).toEqual([]); // the client is online but not the outsider's contact
+    expect((await outsiderEvents).map((e) => e.userId)).not.toContain(outsider.user.id);
+
+    const contactEvents = collect<{ userId: string; online: boolean }>(a.socket, 'presence', 400);
+    const f = await connectWithList(freelancer.token);
+    expect(f.list).toEqual([client.user.id]);
+    expect(await contactEvents).toContainEqual({ userId: freelancer.user.id, online: true });
+
+    const offline = collect<{ userId: string; online: boolean }>(a.socket, 'presence', 400);
+    f.socket.disconnect();
+    expect(await offline).toContainEqual({ userId: freelancer.user.id, online: false });
+  });
+});
+

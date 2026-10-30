@@ -299,7 +299,7 @@ Ask the user for these; never invent them. Everything works without them in fall
     passport's `state: true` needs sessions. New Google users are `isVerified` only if Google says so.
 - [x] **P2‑10 TOTP codes can be replayed.** `accountService.checkSecondFactor` accepts the same code
   again within the ±1 step window. Store the last used time-step on the user and reject reuse.
-- [ ] **P2‑11 Presence leaks every online user id.** `config/socket.ts:60–61` broadcasts presence to
+- [x] **P2‑11 Presence leaks every online user id.** `config/socket.ts:60–61` broadcasts presence to
   everyone and sends the full online list on connect. Limit presence to users who share a conversation
   (emit to their `user:` rooms) or to the chat contacts list.
 - [ ] **P2‑12 Gig skill filter is case-sensitive.** `services/gigQuery.ts` `filter.skills = { $in: skills }`

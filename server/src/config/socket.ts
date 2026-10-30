@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import type { RedisClient } from './redis';
+import Conversation from '../models/Conversation';
 import User from '../models/User';
 import { env } from './env';
 import { verifyAccessToken } from '../utils/generateToken';
@@ -13,6 +14,21 @@ let io: Server | null = null;
 const onlineCounts = new Map<string, number>();
 
 export const isUserOnline = (userId: string): boolean => (onlineCounts.get(userId) ?? 0) > 0;
+
+/** Everyone the user shares a conversation with: the only people who see their presence. */
+const contactsOf = async (userId: string): Promise<string[]> =>
+  (await Conversation.distinct('participants', { participants: userId })).map(String).filter((id) => id !== userId);
+
+/** Tells the user's contacts they came online/went offline; never throws (presence is best effort). */
+const announcePresence = async (userId: string, online: boolean, socket?: Socket): Promise<void> => {
+  try {
+    const contacts = await contactsOf(userId);
+    for (const id of contacts) io?.to(`user:${id}`).emit('presence', { userId, online });
+    socket?.emit('presence:list', { online: contacts.filter(isUserOnline) });
+  } catch (error) {
+    console.error('Presence update failed:', error);
+  }
+};
 
 /**
  * Creates the single Socket.IO server. One auth middleware verifies the access token and
@@ -55,10 +71,11 @@ export const initializeSocket = (
     const userId: string = socket.data.userId;
     socket.join(`user:${userId}`);
 
+    // Presence goes only to the user's chat contacts, never to every connected client.
     const count = (onlineCounts.get(userId) ?? 0) + 1;
     onlineCounts.set(userId, count);
-    if (count === 1) io!.emit('presence', { userId, online: true });
-    socket.emit('presence:list', { online: [...onlineCounts.keys()] });
+    if (count === 1) void announcePresence(userId, true, socket);
+    else void contactsOf(userId).then((c) => socket.emit('presence:list', { online: c.filter(isUserOnline) }), () => undefined);
 
     socket.on('disconnect', () => {
       const remaining = (onlineCounts.get(userId) ?? 1) - 1;
@@ -66,7 +83,7 @@ export const initializeSocket = (
         onlineCounts.set(userId, remaining);
       } else {
         onlineCounts.delete(userId);
-        io?.emit('presence', { userId, online: false });
+        void announcePresence(userId, false);
       }
     });
 
