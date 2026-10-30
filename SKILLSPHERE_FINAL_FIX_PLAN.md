@@ -318,7 +318,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   `SEED_DEMO_PASSWORD`, and a client section with `VITE_API_URL` (create `client/.env.example`).
   `ADMIN_EMAIL` is declared in `server/src/config/env.ts:78` and the example but **never used** — remove
   it or use it (e.g. admin alert emails).
-- [ ] **P3‑2 Dead server helpers.** Unused exports — delete them (and their tests if any):
+- [x] **P3‑2 Dead server helpers.** Unused exports — delete them (and their tests if any):
   - `utils/helpers.ts`: `generateRandomToken`, `isValidObjectId`, `slugify`, `sanitizeInput`,
     `calculatePercentageChange`, `getDateRange`; also `parsePaginationParams` returns a `sort` built from
     an arbitrary `sortBy` query param — remove that field (nothing uses it, and it would allow sorting by

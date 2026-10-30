@@ -39,7 +39,6 @@ export const loginSchema = z.object({
   body: z.object({
     email: z.string().trim().toLowerCase().email('Invalid email address'),
     password: z.string().min(1, 'Password is required'),
-    twoFactorCode: z.string().optional(),
   }),
 });
 
@@ -343,16 +342,6 @@ export const createConversationSchema = z.object({
   }),
 });
 
-export const sendMessageSchema = z.object({
-  body: z.object({
-    content: z.string().min(1, 'Message content is required').max(5000),
-    type: z.enum(['text', 'image', 'file', 'system']).optional(),
-  }),
-  params: z.object({
-    conversationId: z.string().min(1),
-  }),
-});
-
 // ───────────────────────── Payment Schemas ─────────────────────────
 
 export const createPaymentSchema = z.object({
@@ -426,23 +415,6 @@ export const resolveDisputeSchema = z.object({
 
 // ───────────────────────── Search Schemas ─────────────────────────
 
-export const searchSchema = z.object({
-  query: z.object({
-    q: z.string().optional(),
-    category: z.string().optional(),
-    skills: z.string().optional(),
-    budgetMin: z.string().optional(),
-    budgetMax: z.string().optional(),
-    experienceLevel: z.string().optional(),
-    locationType: z.string().optional(),
-    status: z.string().optional(),
-    sortBy: z.string().optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional(),
-    page: z.string().optional(),
-    limit: z.string().optional(),
-  }),
-});
-
 // ───────────────────────── Admin Schemas ─────────────────────────
 
 export const suspendUserSchema = z.object({
@@ -462,12 +434,6 @@ export const rejectGigSchema = z.object({
 export const reviewVisibilitySchema = z.object({
   body: z.object({
     isVisible: z.boolean(),
-  }),
-});
-
-export const idParamSchema = z.object({
-  params: z.object({
-    id: z.string().min(1),
   }),
 });
 

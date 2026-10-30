@@ -8,8 +8,6 @@ const skip = () => env.NODE_ENV === 'test';
 export const createLimiter = (windowMs: number, max: number, message: string, options: Partial<Options> = {}) =>
   rateLimit({ windowMs, max, message: { success: false, message }, standardHeaders: true, legacyHeaders: false, skip, ...options });
 
-export const generalLimiter = createLimiter(15 * 60 * 1000, 100, 'Too many requests, please try again after 15 minutes');
-
 export const authLimiter = createLimiter(15 * 60 * 1000, 20, 'Too many authentication attempts, please try again after 15 minutes');
 
 // An SPA page load fires several queries at once, so this is generous; authLimiter stays strict.

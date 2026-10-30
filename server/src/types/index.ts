@@ -573,18 +573,6 @@ export type AuthRequest = Request;
 
 // ───────────────────────── API Response ─────────────────────────
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message: string;
-  data?: T;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
-
 // ───────────────────────── Token Payloads ─────────────────────────
 
 export interface JwtPayload {
@@ -624,35 +612,5 @@ export interface EmailOptions {
 export interface PaginationOptions {
   page: number;
   limit: number;
-  sort?: Record<string, 1 | -1>;
 }
 
-export interface SearchFilters {
-  query?: string;
-  category?: string;
-  skills?: string[];
-  budgetMin?: number;
-  budgetMax?: number;
-  experienceLevel?: string;
-  locationType?: string;
-  status?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface MatchScore {
-  freelancerId: Types.ObjectId;
-  score: number;
-  reasons: string[];
-}
-
-export interface DashboardStats {
-  totalUsers: number;
-  totalGigs: number;
-  totalPayments: number;
-  totalRevenue: number;
-  activeDisputes: number;
-  newUsersThisMonth: number;
-  completedGigsThisMonth: number;
-  revenueThisMonth: number;
-}
