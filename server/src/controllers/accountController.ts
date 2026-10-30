@@ -172,9 +172,10 @@ export const googleCallback = (req: Request, res: Response, next: NextFunction):
     oauthRedirect(res, 'Google sign-in is not configured');
     return;
   }
-  passport.authenticate('google', { session: false }, async (error: Error | null, user: IUser | false) => {
+  passport.authenticate('google', { session: false }, async (error: Error | null, user: IUser | false, info?: { message?: string }) => {
     try {
-      if (error || !user) return oauthRedirect(res, 'Google sign-in failed');
+      // `info` explains a refusal (unverified email, bad OAuth state); errors stay generic.
+      if (error || !user) return oauthRedirect(res, (!error && info?.message) || 'Google sign-in failed');
       if (!user.isActive || (await isSuspended(user))) return oauthRedirect(res, 'This account is not active');
       if (user.twoFactorEnabled) {
         setTwoFactorCookie(res, accountService.issueTwoFactorChallenge(user));
