@@ -305,7 +305,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P2‑12 Gig skill filter is case-sensitive.** `services/gigQuery.ts` `filter.skills = { $in: skills }`
   while freelancer search is case-insensitive. Use anchored case-insensitive regexes like
   `searchService.ts`, or normalise skills to a canonical case on save.
-- [ ] **P2‑13 Two sources of truth for location.** Both `User.location` and `FreelancerProfile.location`
+- [x] **P2‑13 Two sources of truth for location.** Both `User.location` and `FreelancerProfile.location`
   exist (`updateProfileSchema` and `updateFreelancerProfileSchema` both accept `location`). Matching/search
   use the profile. Pick one (profile for freelancers), make the other derived or remove it, and migrate.
 - [ ] **P2‑14 Lost-dispute reputation ignores splits.** `reputationService.ts` counts only

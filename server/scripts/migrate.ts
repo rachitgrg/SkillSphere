@@ -10,6 +10,8 @@
  * - Payments: extra *pending* orders for a milestone that already has a live payment become
  *   "cancelled", so the one-live-payment-per-milestone unique index can be built (P1-4).
  *   Run this before `npm run db:sync-indexes`.
+ * - Freelancer location: FreelancerProfile.location is the source of truth (P2-13). Profiles without
+ *   one take the account's; otherwise the account gets the profile's.
  */
 import { env } from '../src/config/env';
 import mongoose from 'mongoose';
@@ -55,6 +57,24 @@ async function main() {
     if (stale.length) cancelled += (await payments.updateMany({ _id: { $in: stale } }, { $set: { status: 'cancelled' } })).modifiedCount;
   }
   console.log(`Payments: cancelled ${cancelled} duplicate pending order(s).`);
+
+  const users = mongoose.connection.collection('users');
+  const profiles = mongoose.connection.collection('freelancerprofiles');
+  let toProfile = 0;
+  let toUser = 0;
+  for await (const freelancer of users.find({ role: 'freelancer' }, { projection: { location: 1 } })) {
+    const profile = await profiles.findOne({ user: freelancer._id }, { projection: { location: 1 } });
+    if (!profile) continue;
+    const hasPoint = (l: unknown) => Array.isArray((l as { coordinates?: unknown })?.coordinates) && (l as { coordinates: unknown[] }).coordinates.length === 2;
+    if (!hasPoint(profile.location) && hasPoint(freelancer.location)) {
+      await profiles.updateOne({ _id: profile._id }, { $set: { location: freelancer.location } });
+      toProfile += 1;
+    } else if (hasPoint(profile.location) && JSON.stringify(profile.location) !== JSON.stringify(freelancer.location)) {
+      await users.updateOne({ _id: freelancer._id }, { $set: { location: profile.location } });
+      toUser += 1;
+    }
+  }
+  console.log(`Freelancer location: ${toProfile} profile(s) filled from the account, ${toUser} account(s) synced from the profile.`);
 }
 
 main()

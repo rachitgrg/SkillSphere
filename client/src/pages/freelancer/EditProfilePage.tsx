@@ -113,7 +113,7 @@ export function EditProfilePage() {
     try {
       await updateMe.mutateAsync({
         bio: v.bio,
-        ...(city && { address: { city: city.name, state: city.state, country: 'India' }, location }),
+        ...(city && { address: { city: city.name, state: city.state, country: 'India' } }),
       });
       await updateProfile.mutateAsync({
         title: v.title,
@@ -127,7 +127,7 @@ export function EditProfilePage() {
         milestonePricing: v.milestonePricing.map((m) => ({ ...m, price: Number(m.price), deliveryDays: Number(m.deliveryDays) })),
         languages: v.languages.filter((l) => l.language.trim()),
         socialLinks: { github: v.github, linkedin: v.linkedin, website: v.website },
-        ...(location && { location }),
+        ...(location && { location }), // the profile holds a freelancer's location; the server copies it to the account
       });
       toast.success('Profile saved');
       navigate('/freelancer/profile');

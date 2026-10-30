@@ -40,14 +40,26 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
   }
 };
 
+/**
+ * A freelancer's location lives on FreelancerProfile (matching and geo search read it); User.location
+ * is kept as a copy. Both update endpoints call this, so the two never disagree.
+ */
+const syncFreelancerLocation = async (userId: Types.ObjectId, location: unknown, from: 'user' | 'profile') => {
+  if (from === 'user') await FreelancerProfile.updateOne({ user: userId }, { $set: { location } }, { runValidators: true });
+  else await User.updateOne({ _id: userId }, { $set: { location } }, { runValidators: true });
+  await cacheService.invalidate('search:freelancers');
+};
+
 /** PUT /users/me — basic account fields (name, phone, bio, address, GeoJSON location). */
 export const updateMe = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const changes = pick(req.body, USER_EDITABLE);
     const user = await User.findByIdAndUpdate(
       req.user!._id,
-      { $set: pick(req.body, USER_EDITABLE) },
+      { $set: changes },
       { returnDocument: 'after', runValidators: true }
     );
+    if (req.user!.role === UserRole.FREELANCER && 'location' in changes) await syncFreelancerLocation(req.user!._id, changes.location, 'user');
     res.status(200).json({ success: true, message: 'Profile updated', data: user });
   } catch (error) {
     next(error);
@@ -86,6 +98,7 @@ export const updateFreelancerProfile = async (req: AuthRequest, res: Response, n
     if (['title', 'headline', 'skills'].some((f) => f in (req.body ?? {}))) {
       embeddingService.queue(() => embeddingService.refreshProfile(req.user!._id));
     }
+    if (profile && req.body?.location) await syncFreelancerLocation(req.user!._id, profile.location, 'profile');
     await cacheService.invalidate('search:freelancers');
     res.status(200).json({ success: true, message: 'Profile updated', data: profile });
   } catch (error) {
