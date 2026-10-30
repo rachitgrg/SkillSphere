@@ -262,7 +262,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 
 ### P2 — Logic flaws and correctness (visible in analytics, edge cases)
 
-- [ ] **P2‑1 Revenue counts money still in escrow.** `paymentService.ts:510` and `:545`
+- [x] **P2‑1 Revenue counts money still in escrow.** `paymentService.ts:510` and `:545`
   (`calculatePlatformRevenue`, `getRevenueByMonth`) sum fees for `released` **and** `escrow`; escrow can
   still be refunded. Count `released` only, group by `releasedAt`. `getRevenueByMonth` is unused — delete
   it (P3‑3). Check the admin page that uses `calculatePlatformRevenue` (`adminController.ts:463`).

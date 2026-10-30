@@ -568,18 +568,20 @@ class PaymentService {
     return result;
   }
 
+  /**
+   * Platform fees earned: released payments only (money in escrow can still be refunded), dated by
+   * when they were released.
+   */
   async calculatePlatformRevenue(
     startDate?: Date,
     endDate?: Date
   ): Promise<{ totalRevenue: number; totalTransactions: number }> {
-    const match: Record<string, unknown> = {
-      status: { $in: [PaymentStatus.RELEASED, PaymentStatus.ESCROW] },
-    };
+    const match: Record<string, unknown> = { status: PaymentStatus.RELEASED };
 
     if (startDate || endDate) {
-      match.createdAt = {};
-      if (startDate) (match.createdAt as Record<string, Date>).$gte = startDate;
-      if (endDate) (match.createdAt as Record<string, Date>).$lte = endDate;
+      match.releasedAt = {};
+      if (startDate) (match.releasedAt as Record<string, Date>).$gte = startDate;
+      if (endDate) (match.releasedAt as Record<string, Date>).$lte = endDate;
     }
 
     const result = await Payment.aggregate([
@@ -599,44 +601,6 @@ class PaymentService {
     };
   }
 
-  async getRevenueByMonth(
-    months: number = 12
-  ): Promise<{ month: string; revenue: number; transactions: number }[]> {
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
-
-    const result = await Payment.aggregate([
-      {
-        $match: {
-          status: { $in: [PaymentStatus.RELEASED, PaymentStatus.ESCROW] },
-          createdAt: { $gte: startDate },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' },
-          },
-          revenue: { $sum: '$platformFee' },
-          transactions: { $sum: 1 },
-        },
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
-    ]);
-
-    return result.map(
-      (r: {
-        _id: { year: number; month: number };
-        revenue: number;
-        transactions: number;
-      }) => ({
-        month: `${r._id.year}-${String(r._id.month).padStart(2, '0')}`,
-        revenue: r.revenue,
-        transactions: r.transactions,
-      })
-    );
-  }
 }
 
 export default new PaymentService();
