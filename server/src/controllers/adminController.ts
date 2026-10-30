@@ -78,7 +78,7 @@ export const getAnalytics = async (req: AuthRequest, res: Response, next: NextFu
     start.setMonth(start.getMonth() - PERIOD_MONTHS[period]);
     const activeSince = new Date(Date.now() - 30 * DAY);
 
-    const [revenueByMonth, userGrowth, categories, outcomes, disputedGigs, proposalAuthors, paidFreelancers, recentLogins] =
+    const [revenueByMonth, userGrowth, categories, outcomes, proposalAuthors, paidFreelancers, recentLogins] =
       await Promise.all([
         Payment.aggregate<{ month: string; revenue: number; gmv: number; transactions: number }>([
           { $match: { status: PaymentStatus.RELEASED, releasedAt: { $gte: start } } },
@@ -124,19 +124,44 @@ export const getAnalytics = async (req: AuthRequest, res: Response, next: NextFu
           { $limit: 8 },
           { $project: { _id: 0, category: '$_id', gigs: 1, gmv: 1 } },
         ]),
-        Gig.aggregate<{ _id: GigStatus; count: number }>([
+        // Each finished gig counts once, by its final outcome: cancelled, completed after the client
+        // won a dispute (refund), or completed.
+        Gig.aggregate<{ _id: 'completed' | 'cancelled' | 'lostDispute'; count: number }>([
           { $match: { status: { $in: [GigStatus.COMPLETED, GigStatus.CANCELLED] }, updatedAt: { $gte: start } } },
-          { $group: { _id: '$status', count: { $sum: 1 } } },
+          {
+            $lookup: {
+              from: 'disputes',
+              let: { gigId: '$_id' },
+              pipeline: [
+                { $match: { $expr: { $eq: ['$gig', '$$gigId'] }, status: DisputeStatus.RESOLVED, paymentAction: 'refund' } },
+                { $limit: 1 },
+              ],
+              as: 'lost',
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $cond: [
+                  { $eq: ['$status', GigStatus.CANCELLED] },
+                  'cancelled',
+                  { $cond: [{ $gt: [{ $size: '$lost' }, 0] }, 'lostDispute', 'completed'] },
+                ],
+              },
+              count: { $sum: 1 },
+            },
+          },
         ]),
-        Dispute.distinct('gig', { createdAt: { $gte: start } }),
         Proposal.distinct('freelancer', { createdAt: { $gte: activeSince } }),
         Payment.distinct('freelancer', { updatedAt: { $gte: activeSince } }),
         User.distinct('_id', { role: UserRole.FREELANCER, lastLogin: { $gte: activeSince } }),
       ]);
 
-    const outcome = Object.fromEntries(outcomes.map((o) => [o._id, o.count])) as Partial<Record<GigStatus, number>>;
-    const completed = outcome[GigStatus.COMPLETED] ?? 0;
-    const unsuccessful = (outcome[GigStatus.CANCELLED] ?? 0) + disputedGigs.length;
+    const outcome = Object.fromEntries(outcomes.map((o) => [o._id, o.count])) as Partial<Record<(typeof outcomes)[number]['_id'], number>>;
+    const completed = outcome.completed ?? 0;
+    const cancelled = outcome.cancelled ?? 0;
+    const lostDisputes = outcome.lostDispute ?? 0;
+    const unsuccessful = cancelled + lostDisputes;
     const activeFreelancers = new Set(
       [...proposalAuthors, ...paidFreelancers, ...recentLogins].map((id: Types.ObjectId) => id.toString())
     ).size;
@@ -151,7 +176,7 @@ export const getAnalytics = async (req: AuthRequest, res: Response, next: NextFu
         activeFreelancers,
         topCategories: categories,
         jobSuccessRate: completed + unsuccessful ? Math.round((completed / (completed + unsuccessful)) * 100) : 0,
-        jobOutcomes: { completed, cancelled: outcome[GigStatus.CANCELLED] ?? 0, disputed: disputedGigs.length },
+        jobOutcomes: { completed, cancelled, disputed: lostDisputes }, // disputed = completed after a dispute lost by the freelancer
         userGrowth,
       },
     });

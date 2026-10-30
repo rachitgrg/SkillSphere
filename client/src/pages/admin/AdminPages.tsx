@@ -399,7 +399,7 @@ export function AnalyticsPage() {
                 ['Platform revenue', formatCurrency(a.totalRevenue)],
                 ['Active freelancers (30d)', a.activeFreelancers],
                 ['Job success rate', `${a.jobSuccessRate}%`],
-                ['Completed / cancelled / disputed', `${a.jobOutcomes.completed} / ${a.jobOutcomes.cancelled} / ${a.jobOutcomes.disputed}`],
+                ['Completed / cancelled / lost disputes', `${a.jobOutcomes.completed} / ${a.jobOutcomes.cancelled} / ${a.jobOutcomes.disputed}`],
               ].map(([label, value]) => (
                 <div key={label} className="glass-card rounded-2xl border border-slate-800 p-4">
                   <div className="text-xs text-slate-400">{label}</div>

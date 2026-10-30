@@ -277,7 +277,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   posting the same amount as a new counter-offer. Add an explicit `POST /proposals/:id/accept-offer`
   (freelancer only, last offer must be the client's) that records `agreedAt` and keeps status
   `negotiating`, and show "Freelancer agreed to ₹X — hire now" on the client side.
-- [ ] **P2‑5 Job success rate double counts.** `adminController.ts:137` adds every gig that *ever* had a
+- [x] **P2‑5 Job success rate double counts.** `adminController.ts:137` adds every gig that *ever* had a
   dispute to "unsuccessful", even when it was later completed (it is then in both buckets). Count a gig
   once by its final outcome (completed / cancelled / completed-after-lost-dispute).
 - [ ] **P2‑6 Admin payment summary is empty.** `paymentController.ts:177` maps admin to the freelancer

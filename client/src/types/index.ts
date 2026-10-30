@@ -820,6 +820,7 @@ export interface AdminAnalytics {
   activeFreelancers: number;
   topCategories: { category: string; gigs: number; gmv: number }[];
   jobSuccessRate: number;
+  /** Finished gigs, each counted once; `disputed` = completed after a dispute the freelancer lost. */
   jobOutcomes: { completed: number; cancelled: number; disputed: number };
   userGrowth: { month: string; total: number; freelancers: number; clients: number }[];
 }
