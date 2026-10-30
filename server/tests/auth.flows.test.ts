@@ -8,6 +8,12 @@ import { decrypt } from '../src/utils/crypto';
 import { UserRole } from '../src/types';
 import { createUser, STRONG_PASSWORD } from './helpers';
 
+/**
+ * The TOTP code for the 30-second step `offset` steps from now. A used code (or an older one) is
+ * refused, so a test that uses several codes takes them from increasing steps (-1, 0, +1 are valid).
+ */
+const codeAt = (secret: string, offset: number) => authenticator.clone({ epoch: Date.now() + offset * 30_000 }).generate(secret);
+
 // Capture the tokens that would be emailed.
 const sent: { kind: 'verify' | 'reset'; to: string; token: string }[] = [];
 jest.mock('../src/utils/sendEmail', () => ({
@@ -109,7 +115,7 @@ describe('two-factor authentication (4.1)', () => {
     expect(stored!.twoFactorSecret).not.toContain(secret); // encrypted at rest
 
     expect((await request(app).post('/api/v1/auth/2fa/enable').set(user.auth).send({ code: '000000' })).status).toBe(400);
-    const enabled = await request(app).post('/api/v1/auth/2fa/enable').set(user.auth).send({ code: authenticator.generate(secret) });
+    const enabled = await request(app).post('/api/v1/auth/2fa/enable').set(user.auth).send({ code: codeAt(secret, -1) });
     expect(enabled.status).toBe(200);
     expect(enabled.body.data.backupCodes).toHaveLength(8);
     return { user, secret, backupCodes: enabled.body.data.backupCodes as string[] };
@@ -138,6 +144,28 @@ describe('two-factor authentication (4.1)', () => {
     const challenge = async () => (await login(user.user.email)).body.data.tempToken;
     expect((await request(app).post('/api/v1/auth/2fa/verify').send({ tempToken: await challenge(), code: backupCodes[0] })).status).toBe(200);
     expect((await request(app).post('/api/v1/auth/2fa/verify').send({ tempToken: await challenge(), code: backupCodes[0] })).status).toBe(400);
+  });
+
+  it('a TOTP code works once: replaying it, or an older one, is refused (P2-10)', async () => {
+    const { user, secret } = await enable2fa(); // used the previous step's code
+    const challenge = async () => (await login(user.user.email)).body.data.tempToken as string;
+    const verify = (tempToken: string, code: string) => request(app).post('/api/v1/auth/2fa/verify').send({ tempToken, code });
+
+    const code = codeAt(secret, 0);
+    expect((await verify(await challenge(), code)).status).toBe(200);
+    expect((await verify(await challenge(), code)).status).toBe(400); // replay
+    expect((await verify(await challenge(), codeAt(secret, -1))).status).toBe(400); // older step
+    expect((await verify(await challenge(), codeAt(secret, 1))).status).toBe(200); // the next code is fine
+  });
+
+  it('two logins racing with the same code: only one gets in (P2-10)', async () => {
+    const { user, secret } = await enable2fa();
+    const tokens = await Promise.all([login(user.user.email), login(user.user.email)]);
+    const code = codeAt(secret, 0);
+    const results = await Promise.all(
+      tokens.map((t) => request(app).post('/api/v1/auth/2fa/verify').send({ tempToken: t.body.data.tempToken, code }))
+    );
+    expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
   });
 
   it('disabling requires the password and a code', async () => {
@@ -178,7 +206,7 @@ describe('Google sign-in (4.1)', () => {
       await request(app).post('/api/v1/auth/2fa/setup').set(created.auth).expect(200);
       const stored = await User.findById(created.user._id).select('+twoFactorSecret');
       const seed = decrypt(stored!.twoFactorSecret!);
-      await request(app).post('/api/v1/auth/2fa/enable').set(created.auth).send({ code: authenticator.generate(seed) }).expect(200);
+      await request(app).post('/api/v1/auth/2fa/enable').set(created.auth).send({ code: codeAt(seed, -1) }).expect(200);
       return { user: await User.findById(created.user._id), secret: seed };
     })();
 

@@ -294,6 +294,7 @@ export interface IUser extends Document {
   twoFactorEnabled: boolean;
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
+  twoFactorLastStep?: number;
   needsRoleSelection?: boolean;
   notificationPreferences?: NotificationPreferences;
   lastLoginIp?: string;

@@ -9,6 +9,7 @@ const SENSITIVE_FIELDS = [
   'refreshSessions',
   'twoFactorSecret',
   'twoFactorBackupCodes',
+  'twoFactorLastStep',
   'lastLoginIp',
   'passwordResetToken',
   'passwordResetExpires',
@@ -109,6 +110,8 @@ const userSchema = new Schema<IUser>(
       select: false,
     },
     // sha256 hashes of one-time backup codes.
+    // Last TOTP time step accepted; codes from that step or earlier are refused (no replay).
+    twoFactorLastStep: { type: Number, select: false },
     twoFactorBackupCodes: {
       type: [String],
       select: false,

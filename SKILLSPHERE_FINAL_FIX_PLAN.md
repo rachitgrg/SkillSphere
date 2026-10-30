@@ -297,7 +297,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   Delete the unused `serializeUser`/`deserializeUser` (sessions are disabled).
   - Done with a signed-nonce cookie state store (`cookieStateStore` in `config/passport.ts`), since
     passport's `state: true` needs sessions. New Google users are `isVerified` only if Google says so.
-- [ ] **P2‑10 TOTP codes can be replayed.** `accountService.checkSecondFactor` accepts the same code
+- [x] **P2‑10 TOTP codes can be replayed.** `accountService.checkSecondFactor` accepts the same code
   again within the ±1 step window. Store the last used time-step on the user and reject reuse.
 - [ ] **P2‑11 Presence leaks every online user id.** `config/socket.ts:60–61` broadcasts presence to
   everyone and sends the full online list on connect. Limit presence to users who share a conversation

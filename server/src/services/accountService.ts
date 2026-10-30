@@ -105,24 +105,45 @@ class AccountService {
   /** Activates 2FA after the first valid code and returns one-time backup codes (shown once). */
   async enableTwoFactor(user: IUser, code: string): Promise<string[] | null> {
     const secret = await this.secretOf(user._id);
-    if (!secret || !authenticator.check(code, secret)) return null;
+    const step = secret ? this.timeStepOf(code, secret) : null;
+    if (step === null) return null;
     const backupCodes = Array.from({ length: BACKUP_CODE_COUNT }, () => randomToken(5));
-    await User.updateOne({ _id: user._id }, { twoFactorEnabled: true, twoFactorBackupCodes: backupCodes.map(sha256) });
+    await User.updateOne(
+      { _id: user._id },
+      { twoFactorEnabled: true, twoFactorBackupCodes: backupCodes.map(sha256), twoFactorLastStep: step } // the setup code can't log in
+    );
     return backupCodes;
   }
 
   async disableTwoFactor(user: IUser): Promise<void> {
     await User.updateOne(
       { _id: user._id },
-      { $set: { twoFactorEnabled: false }, $unset: { twoFactorSecret: 1, twoFactorBackupCodes: 1 } }
+      { $set: { twoFactorEnabled: false }, $unset: { twoFactorSecret: 1, twoFactorBackupCodes: 1, twoFactorLastStep: 1 } }
     );
   }
 
-  /** Accepts a current TOTP code, or consumes a backup code. */
+  /** The 30-second time step a valid TOTP code belongs to (within the ±1 step window), or null. */
+  private timeStepOf(code: string, secret: string): number | null {
+    const delta = authenticator.checkDelta(code, secret);
+    if (delta === null) return null;
+    return Math.floor(Date.now() / 1000 / authenticator.allOptions().step) + delta;
+  }
+
+  /**
+   * Accepts a TOTP code once (a code, or any older one, can't be replayed: its time step must be
+   * later than the last one used, checked and recorded atomically), or consumes a backup code.
+   */
   async checkSecondFactor(userId: string, code: string): Promise<boolean> {
     const normalized = code.replace(/\s/g, '');
     const secret = await this.secretOf(userId);
-    if (secret && /^\d{6}$/.test(normalized) && authenticator.check(normalized, secret)) return true;
+    const step = secret && /^\d{6}$/.test(normalized) ? this.timeStepOf(normalized, secret) : null;
+    if (step !== null) {
+      const { modifiedCount } = await User.updateOne(
+        { _id: userId, $or: [{ twoFactorLastStep: { $exists: false } }, { twoFactorLastStep: { $lt: step } }] },
+        { $set: { twoFactorLastStep: step } }
+      );
+      return modifiedCount === 1;
+    }
     const { modifiedCount } = await User.updateOne(
       { _id: userId, twoFactorBackupCodes: sha256(normalized.toLowerCase()) },
       { $pull: { twoFactorBackupCodes: sha256(normalized.toLowerCase()) } }
