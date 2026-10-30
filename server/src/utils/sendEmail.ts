@@ -108,26 +108,3 @@ export const sendPasswordResetEmail = async (
     `,
   });
 };
-
-export const sendGigNotificationEmail = async (
-  email: string,
-  gigTitle: string,
-  message: string
-): Promise<void> => {
-  await sendEmail({
-    to: email,
-    subject: `Gig Update: ${gigTitle} - SkillSphere`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Gig Update</h2>
-        <h3>${gigTitle}</h3>
-        <p>${message}</p>
-        <a href="${env.CLIENT_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">
-          View Dashboard
-        </a>
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-        <p style="color: #9ca3af; font-size: 12px;">SkillSphere Notifications</p>
-      </div>
-    `,
-  });
-};

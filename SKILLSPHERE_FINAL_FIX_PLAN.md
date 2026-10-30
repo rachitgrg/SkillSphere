@@ -331,7 +331,7 @@ Ask the user for these; never invent them. Everything works without them in fall
 - [x] **P3‑3 Dead payment-service methods.** `paymentService.getRevenueByMonth`, `getPaymentsForUser`,
   `getPaymentsByGig` are never called. Delete. `processPayouts` returns `queued.length` instead of the
   number actually processed — return the processed count.
-- [ ] **P3‑4 Duplicate, unescaped email templates.** `services/emailService.ts` has six unused methods
+- [x] **P3‑4 Duplicate, unescaped email templates.** `services/emailService.ts` has six unused methods
   (`sendProposalNotification`, `sendProposalStatusEmail`, `sendPaymentNotification`,
   `sendDisputeNotification`, `sendReviewNotification`, `sendWelcomeEmail`) that interpolate user text
   into HTML **without escaping**; `utils/sendEmail.ts` has unused `sendGigNotificationEmail`. Delete
