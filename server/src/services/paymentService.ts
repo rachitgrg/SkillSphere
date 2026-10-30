@@ -538,6 +538,7 @@ class PaymentService {
    */
   async processPayouts(limit = 100): Promise<number> {
     const queued = await Payment.find({ status: PaymentStatus.RELEASED, 'payout.status': 'queued' }).limit(limit);
+    let processed = 0;
     for (const payment of queued) {
       const reference = `sim_payout_${crypto.randomBytes(6).toString('hex')}`;
       const done = await Payment.updateOne(
@@ -545,6 +546,7 @@ class PaymentService {
         { $set: { 'payout.status': 'processed', 'payout.processedAt': new Date(), 'payout.reference': reference } }
       );
       if (!done.modifiedCount) continue;
+      processed += 1;
       await notificationService.create({
         recipient: payment.freelancer.toString(),
         type: NotificationType.PAYOUT_PROCESSED,
@@ -555,20 +557,7 @@ class PaymentService {
         category: 'payments',
       });
     }
-    return queued.length;
-  }
-
-  async getPaymentsForUser(userId: Types.ObjectId | string): Promise<IPayment[]> {
-    return Payment.find({ $or: [{ client: userId }, { freelancer: userId }] })
-      .populate('gig', 'title')
-      .sort({ createdAt: -1 });
-  }
-
-  async getPaymentsByGig(gigId: string): Promise<IPayment[]> {
-    return Payment.find({ gig: gigId })
-      .populate('client', 'firstName lastName email')
-      .populate('freelancer', 'firstName lastName email')
-      .sort({ createdAt: -1 });
+    return processed;
   }
 
   /** Totals by status for one client or freelancer, or (admin) for the whole platform at gross amounts. */

@@ -328,7 +328,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - `utils/validators.ts`: `idParamSchema`, `searchSchema`, `sendMessageSchema`
     (`sendMessageSchema` duplicates the socket schema), `loginSchema.twoFactorCode` (unused field).
   - `types/index.ts`: `ApiResponse`, `DashboardStats`, `SearchFilters`, `MatchScore` if unreferenced.
-- [ ] **P3‑3 Dead payment-service methods.** `paymentService.getRevenueByMonth`, `getPaymentsForUser`,
+- [x] **P3‑3 Dead payment-service methods.** `paymentService.getRevenueByMonth`, `getPaymentsForUser`,
   `getPaymentsByGig` are never called. Delete. `processPayouts` returns `queued.length` instead of the
   number actually processed — return the processed count.
 - [ ] **P3‑4 Duplicate, unescaped email templates.** `services/emailService.ts` has six unused methods

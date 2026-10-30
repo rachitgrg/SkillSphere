@@ -141,6 +141,14 @@ describe('paymentService money movements', () => {
     expect(await paymentService.processPayouts()).toBe(0);
   });
 
+  it('processPayouts reports what it processed, not what it found (P3-3)', async () => {
+    const { payment } = await escrowed();
+    await paymentService.releasePayment(payment._id);
+    // Two overlapping runs see the same queued payout; only one may pay it and count it.
+    const counts = await Promise.all([paymentService.processPayouts(), paymentService.processPayouts()]);
+    expect(counts.reduce((a, b) => a + b, 0)).toBe(1);
+  });
+
   it('refunding a never-captured pending payment cancels it instead (P2-2)', async () => {
     const { payment } = await escrowed();
     await Payment.updateOne({ _id: payment._id }, { $set: { status: PaymentStatus.PENDING }, $unset: { razorpayPaymentId: 1 } });
