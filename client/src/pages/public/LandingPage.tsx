@@ -21,32 +21,37 @@ import type { LucideIcon } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { useTrendingSkills } from '../../hooks/queries/useMarketplace';
+import { usePlatformStats } from '../../hooks/queries/useConfig';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
 type Category = {
   title: string;
-  count: string;
   icon: LucideIcon;
   iconClassName: string;
-  badge?: string;
-  badgeClassName?: string;
 };
 
 const categories: Category[] = [
-  { title: 'Web Development', count: '12,500+ freelancers', icon: Code2, iconClassName: 'text-blue-400 bg-blue-500/10', badge: 'Trending', badgeClassName: 'border-blue-400/20 bg-blue-500/10 text-blue-300' },
-  { title: 'Mobile Development', count: '8,200+ freelancers', icon: MonitorSmartphone, iconClassName: 'text-emerald-400 bg-emerald-500/10', badge: 'AI Pick', badgeClassName: 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300' },
-  { title: 'UI/UX Design', count: '6,800+ freelancers', icon: PenTool, iconClassName: 'text-pink-400 bg-pink-500/10', badge: 'Popular', badgeClassName: 'border-pink-400/20 bg-pink-500/10 text-pink-300' },
-  { title: 'Digital Marketing', count: '5,600+ freelancers', icon: Rocket, iconClassName: 'text-amber-400 bg-amber-500/10' },
-  { title: 'Writing & Translation', count: '4,900+ freelancers', icon: PenTool, iconClassName: 'text-violet-400 bg-violet-500/10' },
-  { title: 'Video & Animation', count: '3,400+ freelancers', icon: Video, iconClassName: 'text-cyan-400 bg-cyan-500/10' },
+  { title: 'Web Development', icon: Code2, iconClassName: 'text-blue-400 bg-blue-500/10' },
+  { title: 'Mobile Development', icon: MonitorSmartphone, iconClassName: 'text-emerald-400 bg-emerald-500/10' },
+  { title: 'UI/UX Design', icon: PenTool, iconClassName: 'text-pink-400 bg-pink-500/10' },
+  { title: 'Digital Marketing', icon: Rocket, iconClassName: 'text-amber-400 bg-amber-500/10' },
+  { title: 'Writing & Translation', icon: PenTool, iconClassName: 'text-violet-400 bg-violet-500/10' },
+  { title: 'Video & Animation', icon: Video, iconClassName: 'text-cyan-400 bg-cyan-500/10' },
 ];
 
-const metrics = [
-  { label: 'Happy Clients', value: '10,000+', icon: UsersRound, className: 'text-blue-400 bg-blue-500/10' },
-  { label: 'Verified Freelancers', value: '25,000+', icon: ShieldCheck, className: 'text-indigo-400 bg-indigo-500/10' },
-  { label: 'Projects Completed', value: '50,000+', icon: BriefcaseBusiness, className: 'text-cyan-400 bg-cyan-500/10' },
-  { label: 'Average Rating', value: '4.8/5', icon: Star, className: 'text-amber-400 bg-amber-500/10' },
-];
+const plural = (n: number, word: string) => `${n.toLocaleString('en-IN')} ${word}${n === 1 ? '' : 's'}`;
+
+/** The stats strip, from live platform counts (a dash while loading or unavailable). */
+const useMetrics = () => {
+  const stats = usePlatformStats().data;
+  const show = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleString('en-IN'));
+  return [
+    { label: 'Open Projects', value: show(stats?.openGigs), icon: BriefcaseBusiness, className: 'text-blue-400 bg-blue-500/10' },
+    { label: 'Verified Freelancers', value: show(stats?.verifiedFreelancers), icon: ShieldCheck, className: 'text-indigo-400 bg-indigo-500/10' },
+    { label: 'Projects Completed', value: show(stats?.completedProjects), icon: UsersRound, className: 'text-cyan-400 bg-cyan-500/10' },
+    { label: 'Average Rating', value: stats?.averageRating ? `${stats.averageRating}/5` : '—', icon: Star, className: 'text-amber-400 bg-amber-500/10' },
+  ];
+};
 
 const fadeUp = {
   initial: { opacity: 0, y: 22 },
@@ -64,21 +69,6 @@ const audienceCardVariants = {
   hover: { y: -4 },
 };
 
-type TrustedBrand = {
-  name: string;
-  mark: 'orbit' | 'beam' | 'pulse' | 'stack' | 'grid' | 'wave' | 'ring';
-};
-
-const trustedBrands: TrustedBrand[] = [
-  { name: 'zomentum', mark: 'orbit' },
-  { name: 'BrightAI', mark: 'beam' },
-  { name: 'Pulse', mark: 'pulse' },
-  { name: 'cloudstack', mark: 'stack' },
-  { name: 'tensorcorp', mark: 'grid' },
-  { name: 'vertwave', mark: 'wave' },
-  { name: 'layerops', mark: 'ring' },
-];
-
 function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
   return (
     <motion.div
@@ -88,25 +78,6 @@ function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; 
     >
       {children}
     </motion.div>
-  );
-}
-
-function TrustedLogo({ name, mark }: TrustedBrand) {
-  const markPaths = {
-    orbit: <><circle cx="13" cy="14" r="7" stroke="currentColor" strokeWidth="1.6" /><path d="M4 14h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>,
-    beam: <><path d="m5 19 7-11 7 11" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M8.5 14h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>,
-    pulse: <path d="M3 15h4l2.5-6 4.2 10 2.5-5H23" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />,
-    stack: <><path d="m13 5 9 5-9 5-9-5 9-5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="m4 14 9 5 9-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></>,
-    grid: <><rect x="5" y="6" width="6" height="6" rx="1" fill="currentColor" /><rect x="14" y="6" width="6" height="6" rx="1" fill="currentColor" opacity="0.62" /><rect x="5" y="15" width="6" height="6" rx="1" fill="currentColor" opacity="0.62" /><rect x="14" y="15" width="6" height="6" rx="1" fill="currentColor" /></>,
-    wave: <path d="M3 16c3.6 0 3.6-7 7.2-7s3.6 7 7.2 7 3.6-7 7.2-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
-    ring: <><circle cx="12" cy="14" r="7" stroke="currentColor" strokeWidth="1.6" /><circle cx="12" cy="14" r="2" fill="currentColor" /></>,
-  };
-
-  return (
-    <svg viewBox="0 0 132 28" aria-label={name} role="img" className="h-7 w-[116px] fill-none">
-      <g>{markPaths[mark]}</g>
-      <text x="30" y="18" fill="currentColor" fontSize="12" fontFamily="Inter, sans-serif" fontWeight="600" letterSpacing="-0.2">{name}</text>
-    </svg>
   );
 }
 
@@ -292,6 +263,8 @@ function TrendingSkills() {
 
 export const LandingPage = () => {
   useDocumentTitle(null);
+  const metrics = useMetrics();
+  const openByCategory = new Map(usePlatformStats().data?.categories.map((c) => [c.category, c.openGigs]));
   return (
     <div className="min-h-screen overflow-hidden bg-[#020b16] text-white">
       <Navbar />
@@ -356,12 +329,11 @@ export const LandingPage = () => {
               </div>
             </Reveal>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {categories.map(({ title, count, icon: Icon, iconClassName, badge, badgeClassName }, index) => (
+              {categories.map(({ title, icon: Icon, iconClassName }, index) => (
                 <Reveal key={title} delay={index * 0.04}>
-                  <Link to="/gigs" className="group relative flex h-full items-center gap-3 rounded-xl border border-slate-800/80 bg-[#091627]/80 p-3.5 transition duration-300 ease-out hover:-translate-y-1 hover:border-primary-300/50 hover:bg-slate-900 hover:shadow-lg hover:shadow-primary-950/30 focus-ring">
+                  <Link to={`/gigs?category=${encodeURIComponent(title)}`} className="group relative flex h-full items-center gap-3 rounded-xl border border-slate-800/80 bg-[#091627]/80 p-3.5 transition duration-300 ease-out hover:-translate-y-1 hover:border-primary-300/50 hover:bg-slate-900 hover:shadow-lg hover:shadow-primary-950/30 focus-ring">
                     <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 ease-out group-hover:scale-110 ${iconClassName}`}><Icon className="h-4 w-4" /></span>
-                    <span className="min-w-0 pr-12"><span className="block truncate text-xs font-medium text-slate-200 group-hover:text-white">{title}</span><span className="mt-1 block text-[10px] text-slate-500">{count}</span></span>
-                    {badge && <span className={`absolute right-2.5 top-2.5 rounded-full border px-1.5 py-0.5 text-[8px] font-medium leading-none ${badgeClassName}`}>{badge}</span>}
+                    <span className="min-w-0 pr-12"><span className="block truncate text-xs font-medium text-slate-200 group-hover:text-white">{title}</span><span className="mt-1 block text-[10px] text-slate-500">{openByCategory.get(title) ? plural(openByCategory.get(title)!, 'open project') : 'Browse projects'}</span></span>
                   </Link>
                 </Reveal>
               ))}
@@ -407,12 +379,6 @@ export const LandingPage = () => {
               </Reveal>
             </div>
 
-            <Reveal delay={0.15} className="mt-12 text-center">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">Trusted by businesses and talent worldwide</p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-4 sm:gap-x-8">
-                {trustedBrands.map((brand) => <div key={brand.name} className="text-slate-600 transition-colors duration-300 ease-out hover:text-slate-300"><TrustedLogo {...brand} /></div>)}
-              </div>
-            </Reveal>
           </div>
         </section>
       </main>

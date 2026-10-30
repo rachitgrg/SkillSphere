@@ -201,6 +201,15 @@ export interface PlatformConfig {
   platformFeePercentage: number;
 }
 
+/** Live public counts for the landing page (GET /config/stats). */
+export interface PlatformStats {
+  openGigs: number;
+  verifiedFreelancers: number;
+  completedProjects: number;
+  averageRating: number | null;
+  categories: { category: string; openGigs: number }[];
+}
+
 export interface FreelancerProfile {
   _id: ID;
   user: UserSummary | ID;

@@ -62,6 +62,7 @@ export const ROUTES: RouteDoc[] = [
   { method: 'put', path: '/auth/change-password', tag: 'Auth', summary: 'Change password (revokes other sessions)', access: 'auth', body: bodyOf(v.changePasswordSchema) },
 
   { method: 'get', path: '/config/', tag: 'Config', summary: 'Which optional integrations (uploads, payments, AI, Google) are live', access: 'public' },
+  { method: 'get', path: '/config/stats', tag: 'Config', summary: 'Live public counts for the landing page (cached 10 min)', access: 'public' },
 
   // Users
   { method: 'get', path: '/users/me', tag: 'Users', summary: 'Current user and role profile', access: 'auth' },

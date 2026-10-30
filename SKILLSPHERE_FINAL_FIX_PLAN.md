@@ -348,7 +348,7 @@ Ask the user for these; never invent them. Everything works without them in fall
   - Done: depcheck's only real finding was the server script importing types from the undeclared
     `mongodb` (now via mongoose's `mongo` re-export). Kept: `tailwindcss` (used by `@tailwindcss/vite`
     and the CSS import, a depcheck false positive) and `@testing-library/dom` (peer dependency of RTL 16).
-- [ ] **P3‑7 Fake marketing content on the landing page.** `pages/public/LandingPage.tsx:35–47` shows
+- [x] **P3‑7 Fake marketing content on the landing page.** `pages/public/LandingPage.tsx:35–47` shows
   invented numbers ("12,500+ freelancers", "10,000+ happy clients", "50,000+ projects") and a
   "trusted by" row (`:73–79`) that includes **a real company name (zomentum)**. For a portfolio project
   this reads as fabricated. Replace with live counts from a new public, cached endpoint

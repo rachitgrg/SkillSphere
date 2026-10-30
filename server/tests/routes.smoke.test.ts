@@ -43,6 +43,7 @@ const CASES: Record<string, Case> = {
   'PUT /api/v1/auth/change-password': { role: 'client', body: () => ({ currentPassword: 'wrong', newPassword: 'N3wPassword!' }) },
 
   'GET /api/v1/config/': { role: 'public', path: () => '/api/v1/config' },
+  'GET /api/v1/config/stats': { role: 'public' },
 
   // Users
   'GET /api/v1/users/me': { role: 'freelancer' },
